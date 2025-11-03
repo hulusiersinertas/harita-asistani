@@ -83,15 +83,44 @@ function renderHarita(gorevListesi) {
     const geoObjects = [];
     gorevListesi.forEach(gorev => {
         if (gorev.enlem && gorev.boylam) {
-            const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], {
-                rowIndex: gorev.rowIndex
-            }, { preset: 'islands#blueDotIcon' });
+            // =========================================================================
+            // ==== YENİ GELİŞTİRME: Aksiyon Butonlu Özel Balon İçeriği Oluşturma ====
+            // =========================================================================
+            const adSoyadEscaped = gorev.adSoyad.replace(/'/g, "\\'"); // ' karakteri hatasını önle
+            const balloonContent = `
+                <div class="balloon-content">
+                    <h4>${gorev.adSoyad}</h4>
+                    <p>${gorev.tamAdres}</p>
+                    <div class="buton-grup">
+                        <button class="buton verildi-buton" onclick="updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button>
+                        <button class="buton evde-yok-buton" onclick="updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button>
+                    </div>
+                    <div class="buton-grup" style="margin-top: 8px;">
+                         <a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a>
+                         <button class="buton diger-buton" onclick="updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${adSoyadEscaped}')">Adres Y. </button>
+                    </div>
+                </div>
+            `;
             
+            const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], {
+                // Balon içeriği olarak artık standart metin değil, kendi HTML'imizi veriyoruz.
+                balloonContent: balloonContent,
+                // Pine tıklandığında alttaki detay panelini de güncellesin diye rowIndex'i saklıyoruz.
+                rowIndex: gorev.rowIndex
+            }, { 
+                preset: 'islands#blueDotIcon',
+                // Balonun otomatik kapanmasını engellemek ve boyutlarını ayarlamak için
+                balloonMaxWidth: 250,
+                balloonMaxHeight: 200,
+                hideIconOnBalloonOpen: false
+            });
+
+            // Pine tıklandığında, alttaki detay panelini de senkronize et
             placemark.events.add('click', (e) => {
                 const rowIndex = e.get('target').properties.get('rowIndex');
                 renderDetayPaneli(rowIndex);
-                vurgula(rowIndex);
             });
+            
             geoObjects.push(placemark);
         }
     });
@@ -103,7 +132,6 @@ function renderHarita(gorevListesi) {
         myMap.setBounds(clusterer.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
     }
 }
-
 function renderDetayPaneli(rowIndex) {
     const detayElementi = document.getElementById('gorev-detay');
     const gorev = gorevler.find(g => g.rowIndex === rowIndex);
@@ -199,4 +227,5 @@ function vurgula(rowIndex) {
         setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500);
     }
 }
+
 
