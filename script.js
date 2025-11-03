@@ -44,7 +44,7 @@ async function fetchSheetData() {
                 rowIndex: index + 4, adSoyad: row[4] || 'İsim Yok', durum: row[10] || '',
                 tamAdres: row[11] || 'Adres Yok', enlem: enlem, boylam: boylam, sonuc: row[14] || '', gizli: false
             };
-        }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor'); // SADECE DURUMU "BEKLİYOR" OLANLARI AL
+        }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor');
 
         renderUI();
     } catch (error) {
@@ -74,22 +74,36 @@ function renderUI() {
 
         let navigasyonButonu = `<button class="buton nav-buton" disabled>Konum Yok</button>`;
         
-        // Geliştirme 1: Koordinatı olan ve olmayanları ayır
         if (gorev.enlem && gorev.boylam) {
-            // Koordinatı VARSA: Pin oluştur ve navigasyon butonunu aktif et
             const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], {
-                rowIndex: gorev.rowIndex,
+                rowIndex: gorev.rowIndex, // Pin'in içine hangi göreve ait olduğunu saklıyoruz
                 balloonContentHeader: `<b>${gorev.adSoyad}</b>`,
                 balloonContentBody: gorev.tamAdres
             }, { preset: 'islands#blueDotIconWithCaption' });
+            
+            // =========================================================================
+            // ==== YENİ GELİŞTİRME 1: Pine tıklama olayını ekliyoruz ====
+            // =========================================================================
+            placemark.events.add('click', function (e) {
+                // Tıklanan pinin içindeki rowIndex'i al
+                const targetRowIndex = e.get('target').properties.get('rowIndex');
+                const kartElement = document.getElementById(`gorev-${targetRowIndex}`);
+                if (kartElement) {
+                    // İlgili karta doğru sayfayı kaydır
+                    kartElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Geçici olarak kartı vurgula
+                    kartElement.style.transition = 'background-color 0.5s';
+                    kartElement.style.backgroundColor = '#e7f3ff';
+                    setTimeout(() => { kartElement.style.backgroundColor = 'white'; }, 1500);
+                }
+            });
+
             geoObjects.push(placemark);
             navigasyonButonu = `<a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a>`;
         } else {
-            // Koordinatı YOKSA: Kartı kırmızı ile vurgula
             kart.classList.add('gorev-karti-hatali');
         }
 
-        // Geliştirme 2: Onay kutusu için 'adSoyad' bilgisini butona ekle
         kart.innerHTML = `
             <h3>${gorev.adSoyad}</h3><p>${gorev.tamAdres}</p>
             <div class="buton-grup">
@@ -113,27 +127,35 @@ function renderUI() {
     }
 }
 
-// Geliştirme 2: Onay kutusu eklendi
 async function updateGorev(rowIndex, sonuc, adSoyad) {
     if (!confirm(`"${adSoyad}" için durum "${sonuc}" olarak güncellenecektir. Emin misiniz?`)) {
-        return; // Kullanıcı "İptal" derse işlemi durdur
+        return;
     }
     
     const gorevKarti = document.getElementById(`gorev-${rowIndex}`);
     gorevKarti.style.opacity = '0.5';
+
+    // =========================================================================
+    // ==== YENİ GELİŞTİRME 2: Anlık Arayüz Güncellemesi ====
+    // =========================================================================
+    // Sunucuya isteği göndermeden ÖNCE arayüzü optimist olarak güncelle
+    const gorevIndex = gorevler.findIndex(g => g.rowIndex === rowIndex);
+    if (gorevIndex > -1) {
+        gorevler[gorevIndex].gizli = true; // Görevi "gizli" olarak işaretle
+        renderUI(); // Arayüzü (hem liste hem harita) anında yeniden çiz
+    }
+    // =========================================================================
+
     const url = `${APPS_SCRIPT_URL}?sheet=${aracSheetName}&row=${rowIndex}&sonuc=${encodeURIComponent(sonuc)}`;
     try {
         await fetch(url, { method: 'POST', mode: 'no-cors' });
-        
-        // Anlık güncelleme için görevi "gizli" olarak işaretle ve arayüzü yeniden çiz
-        const gorevIndex = gorevler.findIndex(g => g.rowIndex === rowIndex);
-        if (gorevIndex > -1) {
-            gorevler[gorevIndex].gizli = true; 
-            renderUI(); // Haritayı ve listeyi anında güncelle
-        }
-        
+        // İstek başarıyla gitti (yanıtı beklemiyoruz)
     } catch(error) {
-        alert('Sunucuya bağlanırken bir hata oluştu.');
-        gorevKarti.style.opacity = '1';
+        alert('Sunucuya bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin.');
+        // Hata durumunda, gizlenmiş görevi geri göster ve arayüzü tekrar çiz
+        if (gorevIndex > -1) {
+            gorevler[gorevIndex].gizli = false;
+            renderUI();
+        }
     }
 }
