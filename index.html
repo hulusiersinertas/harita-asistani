@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dağıtım Görevleri</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Yandex Harita API'sini yüklüyoruz -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" type="text/javascript"></script>
+</head>
+<body>
+    <div id="header">
+        <h1 id="arac-baslik">Yükleniyor...</h1>
+        <div id="gorev-sayaci"></div>
+    </div>
+    <div id="map"></div>
+    <div id="gorev-listesi">
+        <p>Görevler yükleniyor, lütfen bekleyin...</p>
+    </div>
+    
+    <!-- 1. ADIM: ÖNCE bizim script'imizi yüklüyoruz ki içindeki fonksiyonlar tanımlansın -->
+    <script src="script.js"></script>
+    
+    <!-- 2. ADIM: SONRA Google'ın script'ini yüklüyoruz ve bittiğinde bizim 'startApp' fonksiyonumuzu çağırmasını söylüyoruz -->
+    <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
+
+</body>
+</html>
