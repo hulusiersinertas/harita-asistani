@@ -8,6 +8,7 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ_i5tk-FInC2S
 
 let myMap, aracSheetName, gorevler = [];
 
+// Sayfa yüklendiğinde buton olayını bağla
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gorunum-degistir-btn').addEventListener('click', toggleGorunum);
 });
@@ -68,7 +69,8 @@ function renderTamListe(gorevListesi) {
     gorevListesi.forEach(gorev => {
         const kart = document.createElement('div');
         kart.className = 'gorev-karti';
-        kart.onclick = () => listedenGorevSec(gorev.rowIndex);
+        kart.id = `liste-gorev-${gorev.rowIndex}`;
+        kart.onclick = () => listedenGorevSec(gorev.rowIndex); // Tıklama olayı eklendi
         if (!gorev.enlem || !gorev.boylam) {
             kart.classList.add('gorev-karti-hatali');
         }
@@ -85,9 +87,12 @@ function renderHarita(gorevListesi) {
             const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], {
                 rowIndex: gorev.rowIndex
             }, { preset: 'islands#blueDotIcon' });
+            
+            // Pine tıklanınca detay panelini göster
             placemark.events.add('click', (e) => {
                 const rowIndex = e.get('target').properties.get('rowIndex');
                 renderDetayPaneli(rowIndex);
+                vurgula(rowIndex); // Hem harita hem liste kartını vurgula
             });
             geoObjects.push(placemark);
         }
@@ -106,7 +111,7 @@ function renderDetayPaneli(rowIndex) {
     const gorev = gorevler.find(g => g.rowIndex === rowIndex);
 
     if (!gorev) {
-        detayElementi.innerHTML = '<p style="color: #888;">Detayları görmek için haritadan bir nokta seçin.</p>';
+        detayElementi.innerHTML = '<p style="color: #888;">Detayları görmek için haritadan bir nokta seçin veya listeyi açın.</p>';
         return;
     }
     
@@ -133,7 +138,7 @@ async function updateGorev(rowIndex, sonuc, adSoyad) {
     const gorevIndex = gorevler.findIndex(g => g.rowIndex === rowIndex);
     if (gorevIndex > -1) {
         gorevler[gorevIndex].gizli = true; 
-        renderUI(); // Arayüzü anında yeniden çiz
+        renderUI(); // Arayüzü (hem liste hem harita) anında yeniden çiz
     }
     
     const url = `${APPS_SCRIPT_URL}?sheet=${aracSheetName}&row=${rowIndex}&sonuc=${encodeURIComponent(sonuc)}`;
@@ -158,18 +163,30 @@ function toggleGorunum() {
     } else {
         btn.textContent = 'Listeyi Göster';
     }
-    // Haritanın yeniden boyutlandırıldığını API'ye bildir
+    // Haritanın yeniden boyutlandırıldığını API'ye bildirerek hatayı düzelt
     myMap.container.fitToViewport();
 }
 
 function listedenGorevSec(rowIndex) {
     const gorev = gorevler.find(g => g.rowIndex === rowIndex);
     if (gorev && gorev.enlem && gorev.boylam) {
-        myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
+        myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 }); // Haritayı ilgili pine odakla
     }
     renderDetayPaneli(rowIndex);
     // Liste görünümünden harita görünümüne geç
     if (document.body.classList.contains('liste-odakli')) {
         toggleGorunum();
+    }
+    vurgula(rowIndex);
+}
+
+function vurgula(rowIndex) {
+    // Önceki tüm vurguları kaldır
+    document.querySelectorAll('.vurgulandi').forEach(el => el.classList.remove('vurgulandi'));
+    // Yeni kartı bul ve vurgula
+    const kartElement = document.getElementById(`liste-gorev-${rowIndex}`);
+    if (kartElement) {
+        kartElement.classList.add('vurgulandi');
+        setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500); // 1.5 saniye sonra vurguyu kaldır
     }
 }
