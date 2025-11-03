@@ -24,7 +24,7 @@ function initClient() {
 function initMapAndData() {
     const params = new URLSearchParams(window.location.search);
     aracSheetName = params.get('arac');
-    if (!aracSheetName) { document.getElementById('arac-baslik').textContent = "HATA"; return; }
+    if (!aracSheetName) { document.getElementById('arac-baslik').textContent = "HATA"; document.getElementById('gorev-listesi').innerHTML = `<p style="color:red;">URL'de araç belirtilmemiş! (Örn: ?arac=OP-1)</p>`; return; }
     document.getElementById('arac-baslik').textContent = `${aracSheetName} Görevleri`;
     myMap = new ymaps.Map("map", { center: [39.7667, 30.5256], zoom: 12 });
     fetchSheetData();
@@ -52,7 +52,6 @@ async function fetchSheetData() {
 function renderUI() {
     const bekleyenGorevler = gorevler.filter(g => !g.gizli);
     document.getElementById('gorev-sayaci').textContent = `Kalan: ${bekleyenGorevler.length}`;
-    
     renderTamListe(bekleyenGorevler);
     renderHarita(bekleyenGorevler);
     renderDetayPaneli();
@@ -83,39 +82,33 @@ function renderHarita(gorevListesi) {
     const geoObjects = [];
     gorevListesi.forEach(gorev => {
         if (gorev.enlem && gorev.boylam) {
-            // =========================================================================
-            // ==== YENİ GELİŞTİRME: Aksiyon Butonlu Özel Balon İçeriği Oluşturma ====
-            // =========================================================================
-            const adSoyadEscaped = gorev.adSoyad.replace(/'/g, "\\'"); // ' karakteri hatasını önle
-            const balloonContent = `
+            const adSoyadEscaped = gorev.adSoyad.replace(/'/g, "\\'");
+            
+            const balloonLayoutString = `
                 <div class="balloon-content">
                     <h4>${gorev.adSoyad}</h4>
                     <p>${gorev.tamAdres}</p>
                     <div class="buton-grup">
-                        <button class="buton verildi-buton" onclick="updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button>
-                        <button class="buton evde-yok-buton" onclick="updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button>
+                        <button class="buton verildi-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button>
+                        <button class="buton evde-yok-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button>
                     </div>
                     <div class="buton-grup" style="margin-top: 8px;">
                          <a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a>
-                         <button class="buton diger-buton" onclick="updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${adSoyadEscaped}')">Adres Y. </button>
+                         <button class="buton diger-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${adSoyadEscaped}')">Adres Y.</button>
                     </div>
                 </div>
             `;
             
+            const BalloonContentLayout = ymaps.templateLayoutFactory.createClass(balloonLayoutString);
+            
             const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], {
-                // Balon içeriği olarak artık standart metin değil, kendi HTML'imizi veriyoruz.
-                balloonContent: balloonContent,
-                // Pine tıklandığında alttaki detay panelini de güncellesin diye rowIndex'i saklıyoruz.
                 rowIndex: gorev.rowIndex
             }, { 
                 preset: 'islands#blueDotIcon',
-                // Balonun otomatik kapanmasını engellemek ve boyutlarını ayarlamak için
-                balloonMaxWidth: 250,
-                balloonMaxHeight: 200,
-                hideIconOnBalloonOpen: false
+                balloonContentLayout: BalloonContentLayout,
+                balloonPanelMaxMapArea: 0
             });
 
-            // Pine tıklandığında, alttaki detay panelini de senkronize et
             placemark.events.add('click', (e) => {
                 const rowIndex = e.get('target').properties.get('rowIndex');
                 renderDetayPaneli(rowIndex);
@@ -132,6 +125,7 @@ function renderHarita(gorevListesi) {
         myMap.setBounds(clusterer.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
     }
 }
+
 function renderDetayPaneli(rowIndex) {
     const detayElementi = document.getElementById('gorev-detay');
     const gorev = gorevler.find(g => g.rowIndex === rowIndex);
@@ -151,16 +145,21 @@ function renderDetayPaneli(rowIndex) {
         <p>${gorev.tamAdres}</p>
         <div class="buton-grup">
             ${navButon}
-            <button class="buton verildi-buton" onclick="updateGorev(${gorev.rowIndex}, 'Verildi', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Verildi</button>
-            <button class="buton evde-yok-buton" onclick="updateGorev(${gorev.rowIndex}, 'Evde Yok', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Evde Yok</button>
-            <button class="buton diger-buton" onclick="updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Adres Yanlış</button>
+            <button class="buton verildi-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Verildi', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Verildi</button>
+            <button class="buton evde-yok-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Evde Yok</button>
+            <button class="buton diger-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Adres Yanlış</button>
         </div>
     `;
 }
 
-async function updateGorev(rowIndex, sonuc, adSoyad) {
+// Global scope'a taşınan fonksiyon (onclick'lerin çalışması için)
+window.updateGorev = async function(rowIndex, sonuc, adSoyad) {
     if (!confirm(`"${adSoyad}" için durum "${sonuc}" olarak güncellenecektir. Emin misiniz?`)) return;
     
+    if (myMap.balloon.isOpen()) {
+        myMap.balloon.close();
+    }
+
     const gorevIndex = gorevler.findIndex(g => g.rowIndex === rowIndex);
     if (gorevIndex > -1) {
         gorevler[gorevIndex].gizli = true; 
@@ -177,28 +176,24 @@ async function updateGorev(rowIndex, sonuc, adSoyad) {
             renderUI();
         }
     }
-}
+};
 
 function toggleGorunum() {
     const body = document.body;
     const btn = document.getElementById('gorunum-degistir-btn');
     const mapElement = document.getElementById('map');
 
-    // Harita elementine, CSS geçişi bittiğinde çalışacak olan olayı BİR KERE mahsus ekle.
     function onTransitionEnd() {
         if (myMap) {
             myMap.container.fitToViewport();
         }
-        // Olay dinleyicisini işi bittikten sonra kaldır ki tekrar tekrar çalışmasın.
         mapElement.removeEventListener('transitionend', onTransitionEnd);
     }
     mapElement.addEventListener('transitionend', onTransitionEnd);
 
-    // Şimdi class'ları değiştirerek animasyonu tetikle
     body.classList.toggle('liste-odakli');
     body.classList.toggle('harita-odakli');
     
-    // Buton metnini güncelle
     if (body.classList.contains('liste-odakli')) {
         btn.textContent = 'Haritayı Göster';
     } else {
@@ -212,7 +207,6 @@ function listedenGorevSec(rowIndex) {
         myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
     }
     renderDetayPaneli(rowIndex);
-    
     if (document.body.classList.contains('liste-odakli')) {
         toggleGorunum();
     }
@@ -227,5 +221,3 @@ function vurgula(rowIndex) {
         setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500);
     }
 }
-
-
