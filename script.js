@@ -154,25 +154,28 @@ async function updateGorev(rowIndex, sonuc, adSoyad) {
 function toggleGorunum() {
     const body = document.body;
     const btn = document.getElementById('gorunum-degistir-btn');
+    const mapElement = document.getElementById('map');
+
+    // Harita elementine, CSS geçişi bittiğinde çalışacak olan olayı BİR KERE mahsus ekle.
+    function onTransitionEnd() {
+        if (myMap) {
+            myMap.container.fitToViewport();
+        }
+        // Olay dinleyicisini işi bittikten sonra kaldır ki tekrar tekrar çalışmasın.
+        mapElement.removeEventListener('transitionend', onTransitionEnd);
+    }
+    mapElement.addEventListener('transitionend', onTransitionEnd);
+
+    // Şimdi class'ları değiştirerek animasyonu tetikle
     body.classList.toggle('liste-odakli');
     body.classList.toggle('harita-odakli');
     
+    // Buton metnini güncelle
     if (body.classList.contains('liste-odakli')) {
         btn.textContent = 'Haritayı Göster';
     } else {
         btn.textContent = 'Listeyi Göster';
     }
-    
-    // =========================================================================
-    // ==== DEĞİŞİKLİK BURADA: CSS geçişinin bitmesini bekleyip haritayı ayarla ====
-    // =========================================================================
-    // CSS'teki transition süresi 0.4s (400ms), biz ondan biraz sonra çalıştırıyoruz.
-    setTimeout(() => {
-        if (myMap) {
-            myMap.container.fitToViewport();
-        }
-    }, 450);
-    // =========================================================================
 }
 
 function listedenGorevSec(rowIndex) {
@@ -196,3 +199,4 @@ function vurgula(rowIndex) {
         setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500);
     }
 }
+
