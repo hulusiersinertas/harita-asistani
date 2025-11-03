@@ -1,33 +1,3 @@
-Evet, anladım. Mükemmel bir şekilde anlattınız. Bu, çok tipik ve çözmesi kolay bir harita API sorunudur.
-
-Sorunun Teknik Adı: "Harita Yeniden Boyutlandırma Sorunu"
-
-Neden Oluyor?
-
-Sayfa ilk yüklendiğinde, Yandex Harita API'si, #map elementinin o anki boyutlarına (height: ~%80) göre kendini ayarlar ve o alana harita parçalarını çizer.
-
-Biz "Listeyi Göster" butonuna bastığımızda, CSS ile #map elementinin yüksekliğini aniden küçültürüz (height: 30%). Harita API'si bu değişikliği fark eder ve kendini yeni küçük alana sığdırır.
-
-Ancak, "Haritayı Göster" butonuna basıp #map elementini tekrar büyüttüğümüzde (height: ~%80), Harita API'si bu "büyüme" olayından otomatik olarak haberdar olmaz. Kendini hala eski, küçük alana göre ayarlanmış zanneder ve sadece o küçük alana harita çizer. Geri kalan devasa alan ise boş, beyaz kalır.
-
-Çözüm:
-Haritanın boyutunu değiştiren her işlemden sonra, Yandex Harita API'sine "Hey, senin içinde bulunduğun kutunun boyutu değişti, git kendine bir çeki düzen ver!" dememiz gerekiyor. Bu komut, myMap.container.fitToViewport()'tur.
-
-Sizin bana verdiğiniz geri bildirime göre, bu komutu toggleGorunum fonksiyonunun içine eklemişim, ama anlaşılan o ki bu yeterli olmamış veya yanlış zamanda tetiklenmiş.
-
-Şimdi size, bu komutun kesin olarak doğru zamanda çalışmasını garanti altına alan, son ve nihai script.js dosyasını veriyorum. Bu, bu can sıkıcı beyaz ekran sorununu çözecektir.
-
-Nihai script.js (Harita Boyutlandırma Sorunu Düzeltilmiş)
-
-Diğer dosyalarınızda (index.html, style.css) hiçbir değişiklik yapmanıza gerek yok. Sadece script.js dosyasını güncelleyeceğiz.
-
-Lütfen script.js dosyanızın tüm içeriğini silin ve aşağıdaki, tamamen doğru çalışan versiyonu yapıştırın.
-
-code
-JavaScript
-download
-content_copy
-expand_less
 // =================================================================================
 // == AYARLAR
 // =================================================================================
@@ -226,12 +196,3 @@ function vurgula(rowIndex) {
         setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500);
     }
 }
-
-Ne Değişti?
-Tek ve en önemli değişiklik toggleGorunum fonksiyonunun içinde:
-
-myMap.container.fitToViewport() komutunu, bir setTimeout'un içine aldık.
-
-Bu, CSS animasyonunun (panelin küçülüp büyümesinin) bitmesi için ona 450 milisaniye süre tanır. Animasyon bittikten ve #map elementi son boyutuna ulaştıktan sonra, fitToViewport() komutu çalışır ve haritaya "Şimdi git kendini bu yeni ve son boyuta göre ayarla" der.
-
-Bu basit zamanlama hilesi, haritanın her zaman doğru boyutta çizilmesini garanti altına alacaktır. Lütfen bu son script.js'i GitHub'a yükleyip Ctrl+Shift+R ile sayfayı yenileyin.
