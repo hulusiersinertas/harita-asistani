@@ -1,29 +1,24 @@
 :root { --ust-panel-yuksekligi: 60px; }
 body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
 #ust-panel { position: fixed; top: 0; left: 0; right: 0; height: var(--ust-panel-yuksekligi); background-color: #007bff; color: white; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 20; }
-#arac-baslik { font-size: 1.1em; white-space: nowrap; }
-.kontrol-butonlari { display: flex; align-items: center; gap: 15px; }
-#gorev-sayaci { font-size: 0.9em; font-weight: bold; }
-#gorunum-degistir-btn { padding: 8px 12px; border: 1px solid white; background-color: transparent; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+.panel-sol { text-align: left; }
+.panel-sag { display: flex; align-items: center; gap: 10px; }
+#arac-baslik { font-size: 1.1em; margin: 0; }
+#gorev-sayaci { font-size: 0.8em; font-weight: bold; opacity: 0.8; }
+.filtre-kontrolu { padding: 8px 12px; border: 1px solid white; background-color: rgba(255,255,255,0.2); color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+#mahalle-filtre { -webkit-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto; padding-right: 2em; }
+#mahalle-filtre option { color: black; background-color: white; }
 #map { position: fixed; top: var(--ust-panel-yuksekligi); left: 0; right: 0; z-index: 10; transition: height 0.4s ease; }
 #alt-panel { position: fixed; bottom: 0; left: 0; right: 0; background-color: #f8f9fa; box-shadow: 0 -2px 8px rgba(0,0,0,0.15); z-index: 30; transition: height 0.4s ease; overflow: hidden; }
 #gorev-listesi-tam { height: 100%; overflow-y: auto; padding: 8px; box-sizing: border-box; }
 #gorev-detay { padding: 15px; box-sizing: border-box; text-align: center; height: 100%; }
 
-/* Harita Odaklı Görünüm Ayarları */
-body.harita-odakli #map { height: calc(100% - var(--ust-panel-yuksekligi) - 150px); } /* Harita büyük */
-body.harita-odakli #alt-panel { height: 150px; } /* Alt panel küçük */
-body.harita-odakli #gorev-listesi-tam { display: none; } /* Tam liste gizli */
-body.harita-odakli #gorev-detay { display: block; } /* Detay paneli görünür */
-
-/* Liste Odaklı Görünüm Ayarları */
-body.liste-odakli #map { height: 30%; } /* Harita küçük */
-body.liste-odakli #alt-panel { height: calc(70% - var(--ust-panel-yuksekligi)); } /* Alt panel büyük */
-body.liste-odakli #gorev-listesi-tam { display: block; } /* Tam liste görünür */
-body.liste-odakli #gorev-detay { display: none; } /* Detay paneli gizli */
+/* Görünüm Ayarları */
+body.harita-odakli #map { height: calc(100% - var(--ust-panel-yuksekligi) - 150px); } body.harita-odakli #alt-panel { height: 150px; } body.harita-odakli #gorev-listesi-tam { display: none; } body.harita-odakli #gorev-detay { display: block; }
+body.liste-odakli #map { height: 30%; } body.liste-odakli #alt-panel { height: calc(70% - var(--ust-panel-yuksekligi)); } body.liste-odakli #gorev-listesi-tam { display: block; } body.liste-odakli #gorev-detay { display: none; }
 
 .gorev-karti { background-color: white; border: 1px solid #ddd; border-left: 5px solid #007bff; border-radius: 5px; padding: 10px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: background-color 0.5s; cursor: pointer; }
-.gorev-karti.vurgulandi { background-color: #e7f3ff !important; } /* Vurgulama stili */
+.gorev-karti.vurgulandi { background-color: #e7f3ff !important; }
 .gorev-karti.gizli { display: none; }
 .gorev-karti-hatali { border-left-color: #dc3545; background-color: #fff3f3; }
 .gorev-karti h3, #gorev-detay h3 { margin: 0 0 5px 0; font-size: 1.1em; color: #333; }
