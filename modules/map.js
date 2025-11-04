@@ -3,101 +3,57 @@
 // == Sorumluluk: Yandex Harita'yı oluşturur, pinleri yönetir ve harita etkileşimlerini sağlar.
 // =================================================================================
 
-let sonSecilenPlacemark = null;
-
 const MapManager = {
+    // Hangi pinin seçili olduğunu takip etmek için
+    sonSecilenPlacemark: null,
+
     // Haritayı başlatır
     initMap: function(elementId) {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
             zoom: 12
         });
+        
+        // Haritaya tıklanınca listeyi kapatma (isteğe bağlı, sonra eklenebilir)
+        AppState.myMap.events.add('click', () => {
+            if (document.body.classList.contains('liste-odakli')) {
+                UI.toggleGorunum();
+            }
+        });
     },
 
     // Görevleri harita üzerinde pin olarak çizer
-    function renderHarita(gorevListesi) {
-    const myMap = AppState.myMap;
-    myMap.geoObjects.removeAll();
-    AppState.tumPlacemarks = [];
-    sonSecilenPlacemark = null; // Harita yenilendiğinde seçimi sıfırla
-
-    const collection = new ymaps.GeoObjectCollection(null, {});
-
-    gorevListesi.forEach(gorev => {
-        if (gorev.enlem && gorev.boylam) {
-            
-            const placemark = new ymaps.Placemark(
-                [gorev.enlem, gorev.boylam], 
-                { 
-                    rowIndex: gorev.rowIndex, 
-                    mahalle: gorev.mahalle 
-                }, 
-                { 
-                    // BALON KODLARI TAMAMEN KALDIRILDI
-                    // Varsayılan, seçilmemiş pin stili: Mavi Nokta
-                    preset: 'islands#blueCircleIcon'
-                }
-            );
-            
-            placemark.events.add('click', (e) => {
-                const targetPlacemark = e.get('target');
-                const rowIndex = targetPlacemark.properties.get('rowIndex');
-                
-                // Pin vurgulama fonksiyonunu çağır
-                vurgulaPin(targetPlacemark);
-                
-                // Diğer arayüz fonksiyonlarını çağır
-                UI.renderDetayPaneli(rowIndex);
-                UI.vurgula(rowIndex); // Liste kartını da vurgula
-            });
-
-            AppState.tumPlacemarks.push(placemark);
-            collection.add(placemark);
-        }
-    });
-
-    if (collection.getLength() > 0) {
-        myMap.geoObjects.add(collection);
-        // Haritayı, ilk yüklemede ve filtrelerde odaklamak için bu satırı koruyoruz
-        // myMap.setBounds(collection.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
-    }
-}
-
-
-// YENİ YARDIMCI FONKSİYON: Pin vurgulama mantığı
-function vurgulaPin(secilenPlacemark) {
-    // Eğer önceden seçilmiş bir pin varsa, onu varsayılan stiline geri döndür
-    if (sonSecilenPlacemark) {
-        sonSecilenPlacemark.options.set('preset', 'islands#blueCircleIcon');
-    }
-
-    // Yeni seçilen pini vurgulu stile (kırmızı raptiye) çevir
-    secilenPlacemark.options.set('preset', 'islands#redIcon');
-
-    // Bu pini "son seçilen" olarak kaydet
-    sonSecilenPlacemark = secilenPlacemark;
-}
+    renderHarita: function(gorevListesi) {
         const myMap = AppState.myMap;
         myMap.geoObjects.removeAll();
         AppState.tumPlacemarks = [];
+        this.sonSecilenPlacemark = null; // Harita yenilendiğinde seçimi sıfırla
 
         const collection = new ymaps.GeoObjectCollection(null, {});
 
         gorevListesi.forEach(gorev => {
             if (gorev.enlem && gorev.boylam) {
-                const adSoyadEscaped = gorev.adSoyad.replace(/'/g, "\\'");
-                const balloonLayoutString = `<div class="balloon-content"><h4>${gorev.adSoyad}</h4><p>${gorev.tamAdres}</p><div class="buton-grup"><button class="buton verildi-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button><button class="buton evde-yok-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button></div><div class="buton-grup" style="margin-top: 8px;"><a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a><button class="buton diger-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${adSoyadEscaped}')">Adres Y.</button></div></div>`;
-                const BalloonContentLayout = ymaps.templateLayoutFactory.createClass(balloonLayoutString);
-                
-                const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], 
-                    { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, 
-                    { preset: 'islands#blueDotIcon', balloonContentLayout: BalloonContentLayout, balloonPanelMaxMapArea: 0 }
+                const placemark = new ymaps.Placemark(
+                    [gorev.enlem, gorev.boylam], 
+                    { 
+                        rowIndex: gorev.rowIndex, 
+                        mahalle: gorev.mahalle 
+                    }, 
+                    { 
+                        // BALON KODLARI TAMAMEN KALDIRILDI
+                        // Varsayılan, seçilmemiş pin stili: Mavi Nokta
+                        preset: 'islands#blueCircleIcon'
+                    }
                 );
                 
                 placemark.events.add('click', (e) => {
-                    const rowIndex = e.get('target').properties.get('rowIndex');
+                    const targetPlacemark = e.get('target');
+                    const rowIndex = targetPlacemark.properties.get('rowIndex');
+                    
+                    this.vurgulaPin(targetPlacemark);
+                    
                     UI.renderDetayPaneli(rowIndex);
-                    UI.vurgula(rowIndex);
+                    UI.vurgula(rowIndex); // Liste kartını da vurgula
                 });
 
                 AppState.tumPlacemarks.push(placemark);
@@ -113,16 +69,18 @@ function vurgulaPin(secilenPlacemark) {
     // Haritadaki pinleri seçilen mahalleye göre vurgular/soluklaştırır
     filtreleHarita: function(secilenMahalle) {
         const boundsToShow = [];
+        this.sonSecilenPlacemark = null; // Filtre değişince seçimi sıfırla
+
         AppState.tumPlacemarks.forEach(placemark => {
             const pinMahalle = placemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#blueDotIcon');
+                placemark.options.set('preset', 'islands#blueCircleIcon'); // Varsayılan stil
                 placemark.options.set('opacity', 1);
                 if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
                     boundsToShow.push(placemark.geometry.getCoordinates());
                 }
             } else {
-                placemark.options.set('preset', 'islands#greyDotIcon');
+                placemark.options.set('preset', 'islands#greyCircleIcon'); // Pasif stil
                 placemark.options.set('opacity', 0.5);
             }
         });
@@ -135,12 +93,27 @@ function vurgulaPin(secilenPlacemark) {
         }
     },
 
-    // Haritayı belirtilen göreve odaklar
+    // Haritayı belirtilen göreve odaklar ve pinini vurgular
     odaklan: function(rowIndex) {
         const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
         if (gorev && gorev.enlem && gorev.boylam) {
             AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
+
+            // İlgili pini bul ve vurgula
+            const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
+            if (placemarkToSelect) {
+                this.vurgulaPin(placemarkToSelect);
+            }
         }
+    },
+    
+    // Bir pini vurgulayan yardımcı fonksiyon
+    vurgulaPin: function(secilenPlacemark) {
+        if (this.sonSecilenPlacemark) {
+            this.sonSecilenPlacemark.options.set('preset', 'islands#blueCircleIcon');
+        }
+        secilenPlacemark.options.set('preset', 'islands#redIcon'); // Seçili pini kırmızı raptiye yap
+        this.sonSecilenPlacemark = secilenPlacemark;
     },
 
     // Haritanın boyutunun değiştiğini API'ye bildirir
