@@ -7,26 +7,30 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" type="text/javascript"></script>
 </head>
-<body class="harita-odakli"> <!-- Varsayılan görünüm sınıfı -->
+<body class="harita-odakli">
 
     <div id="ust-panel">
-        <h1 id="arac-baslik">Yükleniyor...</h1>
-        <div class="kontrol-butonlari">
+        <div class="panel-sol">
+            <h1 id="arac-baslik">Yükleniyor...</h1>
             <div id="gorev-sayaci"></div>
-            <button id="gorunum-degistir-btn">Listeyi Göster</button>
+        </div>
+        <div class="panel-sag">
+            <!-- YENİ MAHALLE FİLTRESİ BURADA -->
+            <select id="mahalle-filtre" class="filtre-kontrolu">
+                <option value="TUMU">Tüm Mahalleler</option>
+            </select>
+            <button id="gorunum-degistir-btn" class="filtre-kontrolu">Listeyi Göster</button>
         </div>
     </div>
 
     <div id="map"></div>
 
     <div id="alt-panel">
-        <div id="gorev-listesi-tam"></div> <!-- Tam liste burada görünecek -->
-        <div id="gorev-detay"></div> <!-- Tekil görev detayı burada görünecek -->
+        <div id="gorev-listesi-tam"></div>
+        <div id="gorev-detay"></div>
     </div>
     
     <script src="script.js"></script>
     <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
 </body>
 </html>
-
-
