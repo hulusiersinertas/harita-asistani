@@ -12,17 +12,8 @@ const MapManager = {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
             zoom: 12,
-            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl'],
-            // =========================================================================
-            // ==== DEĞİŞİKLİK BURADA: Haritanın sahip olacağı TÜM davranışları en başta tanımlıyoruz ====
-            // =========================================================================
-            // Bu, varsayılan setin üzerine yazmak yerine, istediğimiz seti en baştan kurar.
-            behaviors: [
-                'drag',         // Haritayı fareyle sürükleme
-                'scrollZoom',   // Fare tekerleğiyle zoom yapma
-                'rotate',       // Ctrl + Sürükle ile döndürme
-                'multiTouch'    // Mobil cihazlarda çoklu dokunma hareketleri
-            ]
+            // Varsayılan kontrol setini kullanıyoruz
+            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
         });
         
         // Haritaya tıklanınca (eğer liste modundaysa) harita moduna geri dön
@@ -38,7 +29,7 @@ const MapManager = {
         const myMap = AppState.myMap;
         myMap.geoObjects.removeAll();
         AppState.tumPlacemarks = [];
-        this.sonSecilenPlacemark = null;
+        this.sonSecilenPlacemark = null; // Harita yenilendiğinde seçimi sıfırla
 
         const collection = new ymaps.GeoObjectCollection(null, {});
 
@@ -78,18 +69,18 @@ const MapManager = {
     // Haritadaki pinleri seçilen mahalleye göre vurgular/soluklaştırır
     filtreleHarita: function(secilenMahalle) {
         const boundsToShow = [];
-        this.sonSecilenPlacemark = null; 
+        this.sonSecilenPlacemark = null; // Filtre değişince seçimi sıfırla
 
         AppState.tumPlacemarks.forEach(placemark => {
             const pinMahalle = placemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#blueCircleIcon');
+                placemark.options.set('preset', 'islands#blueCircleIcon'); // Varsayılan stil
                 placemark.options.set('opacity', 1);
                 if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
                     boundsToShow.push(placemark.geometry.getCoordinates());
                 }
             } else {
-                placemark.options.set('preset', 'islands#greyCircleIcon');
+                placemark.options.set('preset', 'islands#greyCircleIcon'); // Pasif stil
                 placemark.options.set('opacity', 0.5);
             }
         });
