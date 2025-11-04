@@ -36,12 +36,18 @@ async function fetchSheetData() {
         tumGorevler = (response.result.values || []).map((row, index) => {
             const hamEnlem = row[12], hamBoylam = row[13];
             const enlemStr = String(hamEnlem || '').replace(/,/g, ''), boylamStr = String(hamBoylam || '').replace(/,/g, '');
+            
+            // =========================================================================
+            // ==== DEĞİŞİKLİK BURADA: Mahalle adını "TamAdres" içinden doğru ayıklama ====
+            // =========================================================================
             const tamAdres = row[11] || '';
-            const mahalleMatch = tamAdres.match(/^([^,]+? (MAH\.|MAHALLESİ))/i);
+            // Adres metninin başından başlayıp "MAH." veya "MAHALLESİ" kelimesine kadar olan kısmı al.
+            const mahalleMatch = tamAdres.match(/^.*?(MAH\.|MAHALLESİ)/i);
+            const mahalleAdi = mahalleMatch ? mahalleMatch[0].trim().toUpperCase() : 'BİLİNMEYEN';
 
             return {
                 rowIndex: index + 4, adSoyad: row[4] || 'İsim Yok', durum: row[10] || '', tamAdres: tamAdres, 
-                mahalle: mahalleMatch ? mahalleMatch[1].trim().toUpperCase() : 'BİLİNMEYEN',
+                mahalle: mahalleAdi,
                 enlem: enlemStr.length > 2 ? parseFloat(enlemStr.slice(0, 2) + '.' + enlemStr.slice(2)) : null,
                 boylam: boylamStr.length > 2 ? parseFloat(boylamStr.slice(0, 2) + '.' + boylamStr.slice(2)) : null,
                 gizli: false
@@ -151,3 +157,4 @@ async function updateGorev(rowIndex, sonuc, adSoyad) { if (!confirm(`"${adSoyad}
 function toggleGorunum() { const body = document.body; const btn = document.getElementById('gorunum-degistir-btn'); const mapElement = document.getElementById('map'); function onTransitionEnd() { if (myMap) { myMap.container.fitToViewport(); } mapElement.removeEventListener('transitionend', onTransitionEnd); } mapElement.addEventListener('transitionend', onTransitionEnd); body.classList.toggle('liste-odakli'); body.classList.toggle('harita-odakli'); if (body.classList.contains('liste-odakli')) { btn.textContent = 'Haritayı Göster'; } else { btn.textContent = 'Listeyi Göster'; } }
 function listedenGorevSec(rowIndex) { const gorev = tumGorevler.find(g => g.rowIndex === rowIndex); if (gorev && gorev.enlem && gorev.boylam) { myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 }); } renderDetayPaneli(rowIndex); if (document.body.classList.contains('liste-odakli')) { toggleGorunum(); } vurgula(rowIndex); }
 function vurgula(rowIndex) { document.querySelectorAll('.vurgulandi').forEach(el => el.classList.remove('vurgulandi')); const kartElement = document.getElementById(`liste-gorev-${rowIndex}`); if (kartElement) { kartElement.classList.add('vurgulandi'); setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500); } }
+
