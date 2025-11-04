@@ -12,14 +12,19 @@ const MapManager = {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
             zoom: 12,
-            // Harita üzerindeki standart kontrol butonları
-            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
+            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl'],
+            // =========================================================================
+            // ==== DEĞİŞİKLİK BURADA: Haritanın sahip olacağı TÜM davranışları en başta tanımlıyoruz ====
+            // =========================================================================
+            // Bu, varsayılan setin üzerine yazmak yerine, istediğimiz seti en baştan kurar.
+            behaviors: [
+                'drag',         // Haritayı fareyle sürükleme
+                'scrollZoom',   // Fare tekerleğiyle zoom yapma
+                'rotate',       // Ctrl + Sürükle ile döndürme
+                'multiTouch'    // Mobil cihazlarda çoklu dokunma hareketleri
+            ]
         });
         
-        // Döndürme davranışını manuel olarak etkinleştir.
-        // Kullanım: Ctrl + Sol Fare Tuşu basılı tutarak döndürün.
-        AppState.myMap.behaviors.enable('rotate');
-
         // Haritaya tıklanınca (eğer liste modundaysa) harita moduna geri dön
         AppState.myMap.events.add('click', () => {
             if (document.body.classList.contains('liste-odakli')) {
@@ -33,7 +38,7 @@ const MapManager = {
         const myMap = AppState.myMap;
         myMap.geoObjects.removeAll();
         AppState.tumPlacemarks = [];
-        this.sonSecilenPlacemark = null; // Harita yenilendiğinde seçimi sıfırla
+        this.sonSecilenPlacemark = null;
 
         const collection = new ymaps.GeoObjectCollection(null, {});
 
@@ -73,18 +78,18 @@ const MapManager = {
     // Haritadaki pinleri seçilen mahalleye göre vurgular/soluklaştırır
     filtreleHarita: function(secilenMahalle) {
         const boundsToShow = [];
-        this.sonSecilenPlacemark = null; // Filtre değişince seçimi sıfırla
+        this.sonSecilenPlacemark = null; 
 
         AppState.tumPlacemarks.forEach(placemark => {
             const pinMahalle = placemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#blueCircleIcon'); // Varsayılan stil
+                placemark.options.set('preset', 'islands#blueCircleIcon');
                 placemark.options.set('opacity', 1);
                 if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
                     boundsToShow.push(placemark.geometry.getCoordinates());
                 }
             } else {
-                placemark.options.set('preset', 'islands#greyCircleIcon'); // Pasif stil
+                placemark.options.set('preset', 'islands#greyCircleIcon');
                 placemark.options.set('opacity', 0.5);
             }
         });
@@ -99,7 +104,7 @@ const MapManager = {
 
     // Haritayı belirtilen göreve odaklar ve pinini vurgular
     odaklan: function(rowIndex) {
-        const gorev = AppState.tumPlacemarks.find(g => g.rowIndex === rowIndex);
+        const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
         if (gorev && gorev.enlem && gorev.boylam) {
             AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
 
