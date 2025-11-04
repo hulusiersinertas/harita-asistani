@@ -12,13 +12,14 @@ const MapManager = {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
             zoom: 12,
-            // Harita üzerinde görünecek standart kontrol butonları
+            // Harita üzerindeki standart kontrol butonları
             controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
-        }, {
-            // Haritayı sağ fare tuşuyla eğme ve döndürme izni
-            allowTilt: true
         });
         
+        // Döndürme davranışını manuel olarak etkinleştir.
+        // Kullanım: Ctrl + Sol Fare Tuşu basılı tutarak döndürün.
+        AppState.myMap.behaviors.enable('rotate');
+
         // Haritaya tıklanınca (eğer liste modundaysa) harita moduna geri dön
         AppState.myMap.events.add('click', () => {
             if (document.body.classList.contains('liste-odakli')) {
@@ -98,7 +99,7 @@ const MapManager = {
 
     // Haritayı belirtilen göreve odaklar ve pinini vurgular
     odaklan: function(rowIndex) {
-        const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
+        const gorev = AppState.tumPlacemarks.find(g => g.rowIndex === rowIndex);
         if (gorev && gorev.enlem && gorev.boylam) {
             AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
 
