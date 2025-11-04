@@ -87,69 +87,59 @@ function renderTamListe(gorevListesi) {
     });
 }
 
-function renderHarita(gorevListesi) {
+function renderHarita() {
     console.log("--- renderHarita BAŞLADI ---");
-    console.log(`Haritaya çizilecek ${gorevListesi.length} görev var.`);
+    console.log(`Haritaya çizilecek ${tumGorevler.length} görev var.`);
     
     myMap.geoObjects.removeAll();
     tumPlacemarks = [];
 
-    if (!gorevListesi || gorevListesi.length === 0) {
-        console.warn("renderHarita: Çizilecek görev bulunamadı, fonksiyon sonlandırıldı.");
+    if (!tumGorevler || tumGorevler.length === 0) {
+        console.warn("renderHarita: Çizilecek görev bulunamadı.");
         return;
     }
 
     try {
-        gorevListesi.forEach((gorev, index) => {
-            console.log(`Döngü Adım ${index + 1}: ${gorev.adSoyad} işleniyor...`);
-
+        tumGorevler.forEach((gorev, index) => {
             if (gorev.enlem && gorev.boylam && !isNaN(gorev.enlem) && !isNaN(gorev.boylam)) {
-                
-                console.log(` -> Koordinatlar geçerli: [${gorev.enlem}, ${gorev.boylam}]`);
-                
                 const placemark = new ymaps.Placemark(
                     [gorev.enlem, gorev.boylam], 
-                    { 
-                        rowIndex: gorev.rowIndex, 
-                        mahalle: gorev.mahalle,
-                        balloonContentHeader: `<b>${gorev.adSoyad}</b>`,
-                        balloonContentBody: gorev.tamAdres
-                    }, 
-                    { 
-                        preset: 'islands#blueCircleIcon' 
-                    }
+                    { iconCaption: gorev.adSoyad }, 
+                    { preset: 'islands#blueCircleIcon' }
                 );
-                
-                console.log(` -> Placemark nesnesi oluşturuldu.`);
-
-                placemark.events.add('click', (e) => {
-                    const rowIndex = e.get('target').properties.get('rowIndex');
-                    renderDetayPaneli(rowIndex);
-                    vurgula(rowIndex);
-                    myMap.balloon.open(placemark.geometry.getCoordinates(), placemark.properties.getAll());
-                });
-
                 tumPlacemarks.push(placemark);
-                console.log(` -> Pin, 'tumPlacemarks' dizisine eklendi. (Toplam: ${tumPlacemarks.length})`);
-
-            } else {
-                console.error(`!!! HATA !!! Döngü Adım ${index + 1}: ${gorev.adSoyad} için koordinatlar geçersiz veya sayı değil! Enlem: ${gorev.enlem}, Boylam: ${gorev.boylam}`);
             }
         });
 
         console.log(`Döngü tamamlandı. Toplam ${tumPlacemarks.length} adet pin oluşturuldu.`);
 
         if (tumPlacemarks.length > 0) {
-            myMap.geoObjects.add(...tumPlacemarks);
-            console.log("Tüm pinler haritaya başarıyla eklendi.");
-            myMap.setBounds(myMap.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
-            console.log("Harita sınırları ayarlandı.");
+            
+            // =========================================================================
+            // ==== SON DÜZELTME: Çizim için küçük bir gecikme ekliyoruz ====
+            // =========================================================================
+            setTimeout(() => {
+                // Kümeleyiciyi tekrar aktif edelim, en iyi yöntem budur.
+                const clusterer = new ymaps.Clusterer({ preset: 'islands#blueClusterIcons' });
+                clusterer.add(tumPlacemarks);
+                myMap.geoObjects.add(clusterer);
+                console.log("Tüm pinler (clusterer ile) haritaya eklendi.");
+
+                // Harita sınırlarını, pinler eklendikten sonra ayarla
+                myMap.setBounds(clusterer.getBounds(), {
+                    checkZoomRange: true,
+                    zoomMargin: 40
+                });
+                console.log("Harita sınırları ayarlandı.");
+            }, 100); // 100 milisaniye gibi çok kısa bir gecikme yeterlidir.
+            // =========================================================================
+
         } else {
             console.warn("Haritaya eklenecek geçerli pin bulunamadı.");
         }
 
     } catch (error) {
-        console.error("!!! KRİTİK HATA !!! renderHarita fonksiyonunun 'forEach' döngüsü içinde bir hata oluştu:", error);
+        console.error("!!! KRİTİK HATA !!! renderHarita döngüsünde hata:", error);
     }
     
     console.log("--- renderHarita BİTTİ ---");
@@ -190,5 +180,6 @@ async function updateGorev(rowIndex, sonuc, adSoyad) { if (!confirm(`"${adSoyad}
 function toggleGorunum() { const body = document.body; const btn = document.getElementById('gorunum-degistir-btn'); const mapElement = document.getElementById('map'); function onTransitionEnd() { if (myMap) { myMap.container.fitToViewport(); } mapElement.removeEventListener('transitionend', onTransitionEnd); } mapElement.addEventListener('transitionend', onTransitionEnd); body.classList.toggle('liste-odakli'); body.classList.toggle('harita-odakli'); if (body.classList.contains('liste-odakli')) { btn.textContent = 'Haritayı Göster'; } else { btn.textContent = 'Listeyi Göster'; } }
 function listedenGorevSec(rowIndex) { const gorev = tumGorevler.find(g => g.rowIndex === rowIndex); if (gorev && gorev.enlem && gorev.boylam) { myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 }); } renderDetayPaneli(rowIndex); if (document.body.classList.contains('liste-odakli')) { toggleGorunum(); } vurgula(rowIndex); }
 function vurgula(rowIndex) { document.querySelectorAll('.vurgulandi').forEach(el => el.classList.remove('vurgulandi')); const kartElement = document.getElementById(`liste-gorev-${rowIndex}`); if (kartElement) { kartElement.classList.add('vurgulandi'); setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500); } }
+
 
 
