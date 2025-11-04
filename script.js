@@ -2,7 +2,7 @@
 // == AYARLAR
 // =================================================================================
 const GOOGLE_API_KEY = "AIzaSyBgtFHotp01PD_MHOTqfFmYHmP6Zb-mFsY";
-const SPREADSHET_ID = "1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc";
+const SPREADSHEET_ID = "1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ_i5tk-FInC2SxiE8opGY7ZbI9ffqyRPj5eJDnrxMrCdTKeJ2EffUzc5OS-GeeGZt/exec";
 // =================================================================================
 
@@ -32,17 +32,18 @@ async function fetchSheetData() {
     const range = `'${aracSheetName}'!A4:P`;
     try {
         const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
-        tumGorevler = (response.result.values || []).map(row => {
+        tumGorevler = (response.result.values || []).map((row, index) => {
             const hamEnlem = row[12], hamBoylam = row[13];
             const enlemStr = String(hamEnlem || '').replace(/,/g, ''), boylamStr = String(hamBoylam || '').replace(/,/g, '');
             const tamAdres = row[11] || '';
             const mahalleMatch = tamAdres.match(/^.*?(MAH\.|MAHALLESİ)/i);
             return {
-                rowIndex: row.length > 0 ? (response.result.values.indexOf(row) + 4) : null,
+                rowIndex: index + 4,
                 adSoyad: row[4] || 'İsim Yok', durum: row[10] || '', tamAdres: tamAdres, 
                 mahalle: mahalleMatch ? mahalleMatch[0].trim().toUpperCase() : 'BİLİNMEYEN',
                 enlem: enlemStr.length > 2 ? parseFloat(enlemStr.slice(0, 2) + '.' + enlemStr.slice(2)) : null,
                 boylam: boylamStr.length > 2 ? parseFloat(boylamStr.slice(0, 2) + '.' + boylamStr.slice(2)) : null,
+                gizli: false
             };
         }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor');
         
@@ -113,7 +114,6 @@ function renderUI() {
     });
 
     if (geoObjects.length > 0) {
-        // ARTIK CLUSTERER KULLANMIYORUZ, DOĞRUDAN EKLİYORUZ
         myMap.geoObjects.add(...geoObjects);
         myMap.setBounds(myMap.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
     } else if (gosterilecekGorevler.length > 0) {
@@ -129,24 +129,20 @@ window.updateGorev = async function(rowIndex, sonuc, adSoyad) {
         myMap.balloon.close();
     }
 
-    // Görevi hafızadan "gizli" olarak işaretle ve arayüzü yeniden çiz
     const gorevIndex = tumGorevler.findIndex(g => g.rowIndex === rowIndex);
     if (gorevIndex > -1) {
         tumGorevler[gorevIndex].gizli = true; 
         renderUI();
     }
     
-    // Arka planda Google'ı güncelle
     const url = `${APPS_SCRIPT_URL}?sheet=${aracSheetName}&row=${rowIndex}&sonuc=${encodeURIComponent(sonuc)}`;
     try {
         await fetch(url, { method: 'POST', mode: 'no-cors' });
     } catch(error) {
         alert('Sunucuya bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin.');
-        // Hata durumunda, gizlenmiş görevi geri göster
         if (gorevIndex > -1) {
             tumGorevler[gorevIndex].gizli = false;
             renderUI();
         }
     }
 };
-
