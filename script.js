@@ -2,7 +2,7 @@
 // == AYARLAR
 // =================================================================================
 const GOOGLE_API_KEY = "AIzaSyBgtFHotp01PD_MHOTqfFmYHmP6Zb-mFsY";
-const SPREADSHE-T_ID = "1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc";
+const SPREADSHET_ID = "1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ_i5tk-FInC2SxiE8opGY7ZbI9ffqyRPj5eJDnrxMrCdTKeJ2EffUzc5OS-GeeGZt/exec";
 // =================================================================================
 
@@ -149,3 +149,4 @@ window.updateGorev = async function(rowIndex, sonuc, adSoyad) {
         }
     }
 };
+
