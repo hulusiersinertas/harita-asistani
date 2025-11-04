@@ -35,55 +35,53 @@ async function fetchSheetData() {
     } catch (error) { console.error("Veri çekme hatası:", error); }
 }
 
-function renderHarita(gorevListesi) {
+function renderHarita() {
     myMap.geoObjects.removeAll();
     const geoObjects = [];
 
-    console.log(`--- renderHarita BAŞLADI ---`);
-    console.log(`${gorevListesi.length} adet görev render edilecek.`);
+    console.log(`renderHarita fonksiyonu, ${tumGorevler.length} görev ile çalıştırıldı.`);
 
-    if (!gorevListesi || gorevListesi.length === 0) {
-        console.error("renderHarita'ya boş görev listesi geldi. Fonksiyon durduruldu.");
+    if (!tumGorevler || tumGorevler.length === 0) {
+        console.warn("Haritaya eklenecek görev bulunamadı.");
         return;
     }
 
-    try {
-        gorevListesi.forEach((gorev, index) => {
-            if (gorev.enlem && gorev.boylam) {
-                // Her bir döngü adımını konsola yazdır
-                console.log(`[Döngü ${index + 1}/${gorevListesi.length}] Pin oluşturuluyor: ${gorev.adSoyad}`);
-                const placemark = new ymaps.Placemark(
-                    [gorev.enlem, gorev.boylam],
-                    { iconCaption: gorev.adSoyad },
-                    { preset: 'islands#blueDotIcon' }
-                );
-                geoObjects.push(placemark);
-            } else {
-                console.warn(`[Döngü ${index + 1}] Görev atlandı (koordinat yok): ${gorev.adSoyad}`);
-            }
-        });
+    tumGorevler.forEach((gorev, index) => {
+        if (gorev.enlem && gorev.boylam) {
+            console.log(`Pin ekleniyor: ${index + 1}. ${gorev.adSoyad} - [${gorev.enlem}, ${gorev.boylam}]`);
+            const placemark = new ymaps.Placemark(
+                [gorev.enlem, gorev.boylam], 
+                { iconCaption: gorev.adSoyad }, 
+                { preset: 'islands#blueDotIcon' }
+            );
+            geoObjects.push(placemark);
+        } else {
+            console.warn(`Görev atlandı (koordinat yok): ${gorev.adSoyad}`);
+        }
+    });
 
-        console.log(`--- Döngü BİTTİ ---`);
-        console.log(`${geoObjects.length} adet pin (placemark) başarıyla oluşturuldu.`);
+    console.log(`${geoObjects.length} adet pin (placemark) oluşturuldu.`);
 
-        if (geoObjects.length > 0) {
-            console.log("Pinler haritaya ekleniyor...");
-            // Pinleri haritaya tek tek ekleyerek nerede hata olduğunu bulmaya çalışalım
-            for(let i = 0; i < geoObjects.length; i++) {
-                myMap.geoObjects.add(geoObjects[i]);
-            }
-            console.log(`${myMap.geoObjects.getLength()} adet pin haritaya eklendi.`);
-
-            console.log("Harita sınırları ayarlanıyor...");
+    if (geoObjects.length > 0) {
+        myMap.geoObjects.add(...geoObjects);
+        console.log("Tüm pinler haritaya eklendi.");
+        
+        // =========================================================================
+        // ==== NİHAİ ÇÖZÜM: setBounds'ı küçük bir gecikmeyle çağırmak ====
+        // =========================================================================
+        // Harita API'sine, tüm nesneleri çizmesi ve sınırlarını hesaplaması için
+        // çok kısa bir "nefes alma" süresi veriyoruz (100 milisaniye).
+        setTimeout(() => {
+            console.log("Harita sınırları ayarlanıyor (gecikmeli)...");
             myMap.setBounds(myMap.geoObjects.getBounds(), {
                 checkZoomRange: true,
                 zoomMargin: 40
             });
             console.log("Harita sınırları ayarlandı. İşlem tamam.");
-        } else {
-            console.error("Haritaya eklenecek hiç pin oluşturulamadı.");
-        }
-    } catch (error) {
-        console.error("!!! renderHarita fonksiyonu içinde beklenmedik bir HATA oluştu !!!", error);
+        }, 100);
+        // =========================================================================
+
+    } else {
+        console.warn("Haritaya eklenecek geçerli koordinata sahip pin bulunamadı.");
     }
 }
