@@ -3,15 +3,14 @@
 // =================================================================================
 const GOOGLE_API_KEY = "AIzaSyBgtFHotp01PD_MHOTqfFmYHmP6Zb-mFsY";
 const SPREADSHEET_ID = "1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ_i5tk-FInC2SxiE8opGY7ZbI9ffqyRPj5eJDnrxMrCdTKeJ2EffUzc5OS-GeeGZt/exec";
 // =================================================================================
 
-let myMap;
-let aracSheetName;
-let tumGorevler = [];
+let myMap, aracSheetName, tumGorevler = [], tumPlacemarks = [];
 
-// Olay dinleyicileri
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('mahalle-filtre').addEventListener('change', renderUI);
+    document.getElementById('gorunum-degistir-btn').addEventListener('click', toggleGorunum);
+    document.getElementById('mahalle-filtre').addEventListener('change', filtrele);
 });
 
 function startApp() { gapi.load('client', initClient); }
@@ -34,22 +33,32 @@ async function fetchSheetData() {
     const range = `'${aracSheetName}'!A4:P`;
     try {
         const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: range });
-        tumGorevler = (response.result.values || []).map(row => {
+        tumGorevler = (response.result.values || []).map((row, index) => {
             const hamEnlem = row[12], hamBoylam = row[13];
             const enlemStr = String(hamEnlem || '').replace(/,/g, ''), boylamStr = String(hamBoylam || '').replace(/,/g, '');
             const tamAdres = row[11] || '';
             const mahalleMatch = tamAdres.match(/^.*?(MAH\.|MAHALLESİ)/i);
             return {
-                adSoyad: row[4] || 'İsim Yok', durum: row[10] || '', tamAdres: tamAdres, 
+                rowIndex: index + 4, adSoyad: row[4] || 'İsim Yok', durum: row[10] || '', tamAdres: tamAdres, 
                 mahalle: mahalleMatch ? mahalleMatch[0].trim().toUpperCase() : 'BİLİNMEYEN',
                 enlem: enlemStr.length > 2 ? parseFloat(enlemStr.slice(0, 2) + '.' + enlemStr.slice(2)) : null,
                 boylam: boylamStr.length > 2 ? parseFloat(boylamStr.slice(0, 2) + '.' + boylamStr.slice(2)) : null,
+                gizli: false
             };
         }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor');
         
         mahalleFiltresiniDoldur();
         renderUI();
     } catch (error) { console.error("Veri çekme hatası:", error); }
+}
+
+function renderUI() {
+    const bekleyenGorevler = tumGorevler.filter(g => !g.gizli);
+    document.getElementById('gorev-sayaci').textContent = `Kalan: ${bekleyenGorevler.length}`;
+    renderTamListe(bekleyenGorevler);
+    renderHarita(bekleyenGorevler);
+    renderDetayPaneli();
+    filtrele();
 }
 
 function mahalleFiltresiniDoldur() {
@@ -63,60 +72,81 @@ function mahalleFiltresiniDoldur() {
     });
 }
 
-function renderUI() {
-    const secilenMahalle = document.getElementById('mahalle-filtre').value;
-    const gorevListesiElementi = document.getElementById('gorev-listesi');
-    
-    myMap.geoObjects.removeAll();
-    gorevListesiElementi.innerHTML = '';
-
-    const gosterilecekGorevler = tumGorevler.filter(gorev => 
-        secilenMahalle === 'TUMU' || gorev.mahalle === secilenMahalle
-    );
-
-    document.getElementById('gorev-sayaci').textContent = `Gösterilen: ${gosterilecekGorevler.length}`;
-
-    if (gosterilecekGorevler.length === 0) {
-        myMap.setCenter([39.7667, 30.5256], 12);
-        return;
-    }
-
-    // =========================================================================
-    // ==== DEĞİŞİKLİK BURADA: Pinleri bir GeoObjectCollection içinde topluyoruz ====
-    // =========================================================================
-    const collection = new ymaps.GeoObjectCollection(null, {
-        preset: 'islands#blueDotIcon' // Tüm koleksiyon için varsayılan stil
-    });
-
-    gosterilecekGorevler.forEach(gorev => {
-        if (gorev.enlem && gorev.boylam) {
-            const placemark = new ymaps.Placemark(
-                [gorev.enlem, gorev.boylam], 
-                { iconCaption: gorev.adSoyad }
-            );
-            collection.add(placemark); // Pini tek tek yaymak yerine koleksiyona ekle
-        }
-
+function renderTamListe(gorevListesi) {
+    const listeElementi = document.getElementById('gorev-listesi-tam');
+    listeElementi.innerHTML = '';
+    gorevListesi.forEach(gorev => {
         const kart = document.createElement('div');
         kart.className = 'gorev-karti';
+        kart.id = `liste-gorev-${gorev.rowIndex}`;
+        kart.dataset.mahalle = gorev.mahalle;
+        kart.onclick = () => listedenGorevSec(gorev.rowIndex);
+        if (!gorev.enlem || !gorev.boylam) kart.classList.add('gorev-karti-hatali');
         kart.innerHTML = `<h3>${gorev.adSoyad}</h3><p>${gorev.tamAdres}</p>`;
-        gorevListesiElementi.appendChild(kart);
+        listeElementi.appendChild(kart);
+    });
+}
+
+function renderHarita(gorevListesi) {
+    myMap.geoObjects.removeAll();
+    tumPlacemarks = [];
+    const collection = new ymaps.GeoObjectCollection(null, {});
+
+    gorevListesi.forEach(gorev => {
+        if (gorev.enlem && gorev.boylam) {
+            const adSoyadEscaped = gorev.adSoyad.replace(/'/g, "\\'");
+            const balloonLayoutString = `<div class="balloon-content"><h4>${gorev.adSoyad}</h4><p>${gorev.tamAdres}</p><div class="buton-grup"><button class="buton verildi-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button><button class="buton evde-yok-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button></div><div class="buton-grup" style="margin-top: 8px;"><a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a><button class="buton diger-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${adSoyadEscaped}')">Adres Y.</button></div></div>`;
+            const BalloonContentLayout = ymaps.templateLayoutFactory.createClass(balloonLayoutString);
+            
+            const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], 
+                { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, 
+                { preset: 'islands#blueDotIcon', balloonContentLayout: BalloonContentLayout, balloonPanelMaxMapArea: 0 }
+            );
+            placemark.events.add('click', (e) => {
+                const rowIndex = e.get('target').properties.get('rowIndex');
+                renderDetayPaneli(rowIndex);
+                vurgula(rowIndex);
+            });
+            tumPlacemarks.push(placemark);
+            collection.add(placemark);
+        }
     });
 
     if (collection.getLength() > 0) {
-        myMap.geoObjects.add(collection); // Tüm koleksiyonu haritaya tek seferde ekle
-        myMap.setBounds(collection.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+        myMap.geoObjects.add(collection);
     }
-}```
+}
 
-**Ne Değişti ve Neden?**
+function renderDetayPaneli(rowIndex) {
+    const detayElementi = document.getElementById('gorev-detay');
+    const gorev = tumGorevler.find(g => g.rowIndex === rowIndex);
+    if (!gorev) { detayElementi.innerHTML = '<p style="color: #888;">Detayları görmek için bir nokta seçin.</p>'; return; }
+    let navButon = `<button class="buton nav-buton" disabled>Konum Yok</button>`;
+    if (gorev.enlem && gorev.boylam) { navButon = `<a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a>`; }
+    detayElementi.innerHTML = `<h3>${gorev.adSoyad}</h3><p>${gorev.tamAdres}</p><div class="buton-grup">${navButon}<button class="buton verildi-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Verildi', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Verildi</button><button class="buton evde-yok-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Evde Yok</button><button class="buton diger-buton" onclick="window.updateGorev(${gorev.rowIndex}, 'Adres Yanlış', '${gorev.adSoyad.replace(/'/g, "\\'")}')">Adres Yanlış</button></div>`;
+}
 
-*   **`myMap.geoObjects.add(...geoObjects)`'ı Sildik:** Bu, potansiyel olarak hataya yol açan "yayma" operatörüydü.
-*   **`const collection = new ymaps.GeoObjectCollection(...)`:** Yandex'in kendi pin gruplama nesnesini oluşturduk. Bu, haritaya eklenecek pinler için özel bir "konteyner" gibidir.
-*   **`collection.add(placemark)`:** Her bir pini, doğrudan haritaya değil, bu güvenli konteynerin içine ekledik.
-*   **`myMap.geoObjects.add(collection)`:** Döngü bittikten sonra, içinde tüm pinleri barındıran bu konteyneri **tek bir nesne olarak** haritaya ekledik.
-*   **`myMap.setBounds(collection.getBounds(), ...)`:** `setBounds` komutunu, haritanın genel `geoObjects`'ine değil, bizim oluşturduğumuz bu özel `collection`'ın sınırlarına göre ayarladık.
+function filtrele() {
+    const secilenMahalle = document.getElementById('mahalle-filtre').value;
+    const boundsToShow = [];
+    tumPlacemarks.forEach(placemark => {
+        const pinMahalle = placemark.properties.get('mahalle');
+        if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
+            placemark.options.set('preset', 'islands#blueDotIcon'); placemark.options.set('opacity', 1);
+            if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') boundsToShow.push(placemark.geometry.getCoordinates());
+        } else {
+            placemark.options.set('preset', 'islands#greyDotIcon'); placemark.options.set('opacity', 0.5);
+        }
+    });
+    document.querySelectorAll('#gorev-listesi-tam .gorev-karti').forEach(kart => {
+        if (secilenMahalle === 'TUMU' || kart.dataset.mahalle === secilenMahalle) { kart.style.display = 'block'; } else { kart.style.display = 'none'; }
+    });
+    if (boundsToShow.length > 0) {
+        myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 });
+    }
+}
 
-Bu yöntem, Yandex API'si ile çalışırken çok sayıda nesneyi yönetmenin en doğru ve en sağlam yoludur. API'ye "İşte sana bir grup, bu grubun sınırlarına odaklan" demiş oluyoruz.
-
-Lütfen bu son kodu `script.js` dosyanıza yapıştırın, GitHub'a yükleyin ve **Ctrl+Shift+R** ile sayfayı son bir kez yenileyin. Bu sefer tüm pinlerin haritada görünmesi gerekiyor.
+window.updateGorev = async function(rowIndex, sonuc, adSoyad) { if (!confirm(`"${adSoyad}" için durum "${sonuc}" olarak güncellenecektir. Emin misiniz?`)) return; if (myMap.balloon.isOpen()) { myMap.balloon.close(); } const gorevIndex = tumGorevler.findIndex(g => g.rowIndex === rowIndex); if (gorevIndex > -1) { tumGorevler[gorevIndex].gizli = true; renderUI(); } const url = `${APPS_SCRIPT_URL}?sheet=${aracSheetName}&row=${rowIndex}&sonuc=${encodeURIComponent(sonuc)}`; try { await fetch(url, { method: 'POST', mode: 'no-cors' }); } catch (error) { alert('Sunucuya bağlanırken hata oluştu.'); if (gorevIndex > -1) { tumGorevler[gorevIndex].gizli = false; renderUI(); } } }
+function toggleGorunum() { const body = document.body; const btn = document.getElementById('gorunum-degistir-btn'); const mapElement = document.getElementById('map'); function onTransitionEnd() { if (myMap) { myMap.container.fitToViewport(); } mapElement.removeEventListener('transitionend', onTransitionEnd); } mapElement.addEventListener('transitionend', onTransitionEnd); body.classList.toggle('liste-odakli'); body.classList.toggle('harita-odakli'); if (body.classList.contains('liste-odakli')) { btn.textContent = 'Haritayı Göster'; } else { btn.textContent = 'Listeyi Göster'; } }
+function listedenGorevSec(rowIndex) { const gorev = tumGorevler.find(g => g.rowIndex === rowIndex); if (gorev && gorev.enlem && gorev.boylam) { myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 }); } renderDetayPaneli(rowIndex); if (document.body.classList.contains('liste-odakli')) { toggleGorunum(); } vurgula(rowIndex); }
+function vurgula(rowIndex) { document.querySelectorAll('.vurgulandi').forEach(el => el.classList.remove('vurgulandi')); const kartElement = document.getElementById(`liste-gorev-${rowIndex}`); if (kartElement) { kartElement.classList.add('vurgulandi'); setTimeout(() => { kartElement.classList.remove('vurgulandi'); }, 1500); } }
