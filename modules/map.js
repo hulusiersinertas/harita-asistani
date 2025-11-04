@@ -11,10 +11,15 @@ const MapManager = {
     initMap: function(elementId) {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
-            zoom: 12
+            zoom: 12,
+            // Harita üzerinde görünecek standart kontrol butonları
+            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
+        }, {
+            // Haritayı sağ fare tuşuyla eğme ve döndürme izni
+            allowTilt: true
         });
         
-        // Haritaya tıklanınca listeyi kapatma (isteğe bağlı, sonra eklenebilir)
+        // Haritaya tıklanınca (eğer liste modundaysa) harita moduna geri dön
         AppState.myMap.events.add('click', () => {
             if (document.body.classList.contains('liste-odakli')) {
                 UI.toggleGorunum();
@@ -40,8 +45,6 @@ const MapManager = {
                         mahalle: gorev.mahalle 
                     }, 
                     { 
-                        // BALON KODLARI TAMAMEN KALDIRILDI
-                        // Varsayılan, seçilmemiş pin stili: Mavi Nokta
                         preset: 'islands#blueCircleIcon'
                     }
                 );
@@ -53,7 +56,7 @@ const MapManager = {
                     this.vurgulaPin(targetPlacemark);
                     
                     UI.renderDetayPaneli(rowIndex);
-                    UI.vurgula(rowIndex); // Liste kartını da vurgula
+                    UI.vurgula(rowIndex);
                 });
 
                 AppState.tumPlacemarks.push(placemark);
@@ -99,7 +102,6 @@ const MapManager = {
         if (gorev && gorev.enlem && gorev.boylam) {
             AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
 
-            // İlgili pini bul ve vurgula
             const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
             if (placemarkToSelect) {
                 this.vurgulaPin(placemarkToSelect);
