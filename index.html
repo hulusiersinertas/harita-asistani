@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dağıtım Görevleri</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" type="text/javascript"></script>
+    <!-- Yandex API'si en başta yükleniyor -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=YANDEX_API_ANAHTARINIZI_BURAYA_YAPIŞTIRIN&lang=tr_TR" type="text/javascript"></script>
 </head>
 <body class="harita-odakli">
+
     <div id="ust-panel">
         <div class="panel-sol">
             <h1 id="arac-baslik">Yükleniyor...</h1>
@@ -20,13 +22,29 @@
             <button id="gorunum-degistir-btn" class="filtre-kontrolu">Listeyi Göster</button>
         </div>
     </div>
+
     <div id="map"></div>
+
     <div id="alt-panel">
         <div id="gorev-listesi-tam"></div>
         <div id="gorev-detay"></div>
     </div>
+    
+    <!-- ========================================================================= -->
+    <!-- ==== MODÜLER YAPI BAŞLANGICI ==== -->
+    <!-- ========================================================================= -->
+    <!-- Modüllerimizi doğru sırada yüklüyoruz -->
+    <script src="modules/config.js"></script>
+    <script src="modules/ui.js"></script>
+    <script src="modules/map.js"></script>
+    <script src="modules/api.js"></script>
+    
+    <!-- Orkestra şefi olan ana script'i en son yüklüyoruz -->
     <script src="script.js"></script>
+    
+    <!-- Google API'sini en son yüklüyoruz ve bittiğinde ana script'teki startApp'ı çağırıyoruz -->
     <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
+    <!-- ========================================================================= -->
+
 </body>
 </html>
-
