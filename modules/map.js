@@ -3,6 +3,8 @@
 // == Sorumluluk: Yandex Harita'yı oluşturur, pinleri yönetir ve harita etkileşimlerini sağlar.
 // =================================================================================
 
+let sonSecilenPlacemark = null;
+
 const MapManager = {
     // Haritayı başlatır
     initMap: function(elementId) {
@@ -13,7 +15,68 @@ const MapManager = {
     },
 
     // Görevleri harita üzerinde pin olarak çizer
-    renderHarita: function(gorevListesi) {
+    function renderHarita(gorevListesi) {
+    const myMap = AppState.myMap;
+    myMap.geoObjects.removeAll();
+    AppState.tumPlacemarks = [];
+    sonSecilenPlacemark = null; // Harita yenilendiğinde seçimi sıfırla
+
+    const collection = new ymaps.GeoObjectCollection(null, {});
+
+    gorevListesi.forEach(gorev => {
+        if (gorev.enlem && gorev.boylam) {
+            
+            const placemark = new ymaps.Placemark(
+                [gorev.enlem, gorev.boylam], 
+                { 
+                    rowIndex: gorev.rowIndex, 
+                    mahalle: gorev.mahalle 
+                }, 
+                { 
+                    // BALON KODLARI TAMAMEN KALDIRILDI
+                    // Varsayılan, seçilmemiş pin stili: Mavi Nokta
+                    preset: 'islands#blueCircleIcon'
+                }
+            );
+            
+            placemark.events.add('click', (e) => {
+                const targetPlacemark = e.get('target');
+                const rowIndex = targetPlacemark.properties.get('rowIndex');
+                
+                // Pin vurgulama fonksiyonunu çağır
+                vurgulaPin(targetPlacemark);
+                
+                // Diğer arayüz fonksiyonlarını çağır
+                UI.renderDetayPaneli(rowIndex);
+                UI.vurgula(rowIndex); // Liste kartını da vurgula
+            });
+
+            AppState.tumPlacemarks.push(placemark);
+            collection.add(placemark);
+        }
+    });
+
+    if (collection.getLength() > 0) {
+        myMap.geoObjects.add(collection);
+        // Haritayı, ilk yüklemede ve filtrelerde odaklamak için bu satırı koruyoruz
+        // myMap.setBounds(collection.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+    }
+}
+
+
+// YENİ YARDIMCI FONKSİYON: Pin vurgulama mantığı
+function vurgulaPin(secilenPlacemark) {
+    // Eğer önceden seçilmiş bir pin varsa, onu varsayılan stiline geri döndür
+    if (sonSecilenPlacemark) {
+        sonSecilenPlacemark.options.set('preset', 'islands#blueCircleIcon');
+    }
+
+    // Yeni seçilen pini vurgulu stile (kırmızı raptiye) çevir
+    secilenPlacemark.options.set('preset', 'islands#redIcon');
+
+    // Bu pini "son seçilen" olarak kaydet
+    sonSecilenPlacemark = secilenPlacemark;
+}
         const myMap = AppState.myMap;
         myMap.geoObjects.removeAll();
         AppState.tumPlacemarks = [];
