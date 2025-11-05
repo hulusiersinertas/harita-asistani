@@ -67,13 +67,14 @@ const MapManager = {
     },
     
     odaklan: function(rowIndex) {
-        const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
-        if (gorev && gorev.enlem && gorev.boylam) {
-            AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
-            const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
-            if (placemarkToSelect) this.vurgulaPin(placemarkToSelect);
-        }
-    },
+    const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
+    if (gorev && gorev.enlem && gorev.boylam) {
+        // Zoom seviyesini 17'den 16'ya düşürdük
+        AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 16, { duration: 500 });
+        const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
+        if (placemarkToSelect) this.vurgulaPin(placemarkToSelect);
+    }
+},
     
     vurgulaPin: function(secilenPlacemark) {
         const secilenMahalle = document.getElementById('mahalle-filtre').value;
@@ -91,6 +92,7 @@ const MapManager = {
 
     boyutlandir: function() { if (AppState.myMap) AppState.myMap.container.fitToViewport(); }
 };
+
 
 
 
