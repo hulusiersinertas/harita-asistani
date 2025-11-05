@@ -159,25 +159,36 @@ const UI = {
 
     // Telefonla arama yardımcı fonksiyonu
     handlePhoneCall: function(phoneString) {
-        if (!phoneString || phoneString.trim() === '') {
-            alert("Bu kişi için kayıtlı bir telefon numarası bulunamadı.");
-            return;
-        }
-        
-        const phoneNumbers = phoneString.match(/0\d{9,10}/g) || [];
-        
-        if (phoneNumbers.length === 0) {
-            alert(`Kayıtlı metin içinde geçerli bir telefon numarası bulunamadı:\n"${phoneString}"`);
-        } else if (phoneNumbers.length === 1) {
-            window.location.href = `tel:${phoneNumbers[0]}`;
+    if (!phoneString || phoneString.trim() === '') {
+        alert("Bu kişi için kayıtlı bir telefon numarası bulunamadı.");
+        return;
+    }
+    
+    const phoneNumbers = phoneString.match(/0\d{9,10}/g) || [];
+    
+    if (phoneNumbers.length === 0) {
+        alert(`Kayıtlı metin içinde geçerli bir telefon numarası bulunamadı:\n"${phoneString}"`);
+        return; // İşlemi durdur
+    } 
+    
+    let numberToCall;
+    if (phoneNumbers.length === 1) {
+        numberToCall = phoneNumbers[0];
+    } else {
+        const secim = prompt(`Birden fazla numara bulundu. Hangisini aramak istersiniz?\n\n${phoneNumbers.join("\n")}`, phoneNumbers[0]);
+        if (secim && phoneNumbers.includes(secim)) {
+            numberToCall = secim;
         } else {
-            const secim = prompt(`Birden fazla numara bulundu. Hangisini aramak istersiniz?\n\n${phoneNumbers.join("\n")}`, phoneNumbers[0]);
-            if (secim && phoneNumbers.includes(secim)) {
-                window.location.href = `tel:${secim}`;
-            }
+            return; // Kullanıcı iptal ederse işlemi durdur
         }
+    }
+
+    // Arama yapmadan önce son bir onay al
+    if (confirm(`"${numberToCall}" numarası aranacaktır. Onaylıyor musunuz?`)) {
+        window.location.href = `tel:${numberToCall}`;
     }
 };
 
 // Fonksiyonları global scope'a taşıyoruz ki HTML içindeki onclick'ler çalışsın
 window.UI = UI;
+
