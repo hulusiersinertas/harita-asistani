@@ -91,7 +91,7 @@ const MapManager = {
     },
 
     // Görevleri harita üzerinde pin olarak çizer
-    renderHarita: function(gorevListesi) {
+renderHarita: function(gorevListesi) {
     const myMap = AppState.myMap;
     myMap.geoObjects.removeAll();
     AppState.tumPlacemarks = [];
@@ -104,55 +104,37 @@ const MapManager = {
             const placemark = new ymaps.Placemark(
                 [gorev.enlem, gorev.boylam], 
                 { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, 
-                { preset: 'islands#redCircleDotIcon' } // Varsayılan stil: İçi Dolu Kırmızı Nokta
+                { preset: 'islands#redDotIcon' }
             );
+            
             placemark.events.add('click', (e) => {
                 const targetPlacemark = e.get('target');
                 const rowIndex = targetPlacemark.properties.get('rowIndex');
+                const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
+                
+                // =========================================================================
+                // ==== YENİ GELİŞTİRME: Otomatik Mahalle Filtreleme ====
+                // =========================================================================
+                if (gorev && document.getElementById('mahalle-filtre').value !== gorev.mahalle) {
+                    document.getElementById('mahalle-filtre').value = gorev.mahalle;
+                    UI.filtrele();
+                }
+                // =========================================================================
+
                 this.vurgulaPin(targetPlacemark);
                 UI.renderDetayPaneli(rowIndex);
                 UI.vurgula(rowIndex);
             });
+
             AppState.tumPlacemarks.push(placemark);
             collection.add(placemark);
         }
     });
-    if (collection.getLength() > 0) myMap.geoObjects.add(collection);
-},
 
-    // Haritadaki pinleri seçilen mahalleye göre vurgular/soluklaştırır
-    filtreleHarita: function(secilenMahalle) {
-    const boundsToShow = [];
-    this.sonSecilenPlacemark = null;
-
-    AppState.tumPlacemarks.forEach(placemark => {
-        const pinMahalle = placemark.properties.get('mahalle');
-        if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-        placemark.options.set('preset', 'islands#redCircleDotIcon'); // Aktif stil
-            placemark.options.set('opacity', 1);
-            if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
-                boundsToShow.push(placemark.geometry.getCoordinates());
-            }
-        } else {
-        placemark.options.set('preset', 'islands#yellowCircleDotIcon'); // Pasif stil
-            placemark.options.set('opacity', 0.6);
-        }
-    });
-
-    if (boundsToShow.length > 0) {
-        AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 });
+    if (collection.getLength() > 0) {
+        myMap.geoObjects.add(collection);
     }
 },
-
-    // Haritayı belirtilen göreve odaklar ve pinini vurgular
-    odaklan: function(rowIndex) {
-        const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
-        if (gorev && gorev.enlem && gorev.boylam) {
-            AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 17, { duration: 500 });
-            const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
-            if (placemarkToSelect) this.vurgulaPin(placemarkToSelect);
-        }
-    },
     
     // Bir pini vurgulayan yardımcı fonksiyon
     vurgulaPin: function(secilenPlacemark) {
@@ -178,6 +160,7 @@ secilenPlacemark.options.set('preset', 'islands#greenIcon');
         }
     }
 };
+
 
 
 
