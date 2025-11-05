@@ -6,7 +6,7 @@ const MapManager = {
     sonSecilenPlacemark: null, userPlacemark: null, currentUserLocation: null, currentRoute: null,
 
     initMap: function(elementId) {
-        AppState.myMap = new ymaps.Map(elementId, { center: [39.7667, 30.5256], zoom: 12, controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl'] }, { yandexMapAutoSwitch: true });
+        AppState.myMap = new ymaps.Map(elementId, { center: [39.7667, 30.5256], zoom: 12, controls: ['zoomControl'] }, { yandexMapAutoSwitch: true });
         AppState.myMap.events.add('click', () => { if (document.body.classList.contains('liste-odakli')) UI.toggleGorunum(); });
         this.startGeolocation();
     },
@@ -21,7 +21,9 @@ const MapManager = {
         const collection = new ymaps.GeoObjectCollection(null, {});
         gorevListesi.forEach(gorev => {
             if (gorev.enlem && gorev.boylam) {
-                const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, { preset: 'islands#redDotIcon' });
+                const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, { 
+                    preset: 'islands#redDotIcon' // Varsayılan stil: İçi Dolu Kırmızı Nokta
+                });
                 placemark.events.add('click', (e) => {
                     const targetPlacemark = e.get('target');
                     const rowIndex = targetPlacemark.properties.get('rowIndex');
@@ -46,15 +48,28 @@ const MapManager = {
         AppState.tumPlacemarks.forEach(placemark => {
             const pinMahalle = placemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#redDotIcon');
+                placemark.options.set('preset', 'islands#redDotIcon'); // Aktif stil
                 placemark.options.set('opacity', 1);
-                if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') boundsToShow.push(placemark.geometry.getCoordinates());
+                boundsToShow.push(placemark.geometry.getCoordinates());
             } else {
-                placemark.options.set('preset', 'islands#yellowDotIcon');
+                placemark.options.set('preset', 'islands#yellowDotIcon'); // Pasif stil
                 placemark.options.set('opacity', 0.6);
             }
         });
-        if (boundsToShow.length > 0) AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 });
+
+        // =========================================================================
+        // ==== DEĞİŞİKLİK BURADA: Sabit Zoom Mantığı ====
+        // =========================================================================
+        if (boundsToShow.length > 0) {
+            if (secilenMahalle === 'TUMU') {
+                // "Tüm Mahalleler" seçiliyse, hepsini gösterecek şekilde uzaklaş
+                AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 });
+            } else {
+                // Belirli bir mahalle seçiliyse, o mahallenin merkezine SABİT bir zoom seviyesiyle odaklan
+                const center = ymaps.util.bounds.getCenter(ymaps.util.bounds.fromPoints(boundsToShow));
+                AppState.myMap.setCenter(center, 15, { duration: 500 }); // Zoom seviyesi: 15
+            }
+        }
     },
     
     odaklan: function(rowIndex) {
@@ -76,7 +91,7 @@ const MapManager = {
                 this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon');
             }
         }
-        secilenPlacemark.options.set('preset', 'islands#greenIcon');
+        secilenPlacemark.options.set('preset', 'islands#greenIcon'); // Vurgu rengi yeşil raptiye
         this.sonSecilenPlacemark = secilenPlacemark;
     },
 
