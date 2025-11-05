@@ -35,8 +35,13 @@ const UI = {
     });
 },
     renderDetayPaneli: function(rowIndex) {
+    const detayElementi = this.elements.gorevDetay;
     const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
-    if (!gorev) { this.elements.gorevDetay.innerHTML = '<p style="color: #888;">Detayları görmek için bir nokta seçin.</p>'; return; }
+
+    if (!gorev) {
+        detayElementi.innerHTML = '<p style="color: #888;">Detayları görmek için bir nokta seçin.</p>';
+        return;
+    }
     
     let navButon = `<button class="buton nav-buton" disabled>Konum Yok</button>`;
     if (gorev.enlem && gorev.boylam) { navButon = `<a href="https://yandex.com.tr/harita/?rtext=~${gorev.enlem},${gorev.boylam}" target="_blank" class="buton nav-buton">Navigasyon</a>`; }
@@ -45,18 +50,23 @@ const UI = {
     const miktarText = gorev.miktar ? ` (${gorev.miktar} Kişilik)` : '';
     const adresNotuHTML = gorev.adresNotu ? `<span class="adres-notu">${gorev.adresNotu.toUpperCase()}</span>` : '';
 
-    this.elements.gorevDetay.innerHTML = `
-        <h3>${gorev.adSoyad}${miktarText}</h3>
-        ${adresNotuHTML}
-        <p>${gorev.tamAdres}</p>
-        <div class="buton-grup">
-            ${navButon}
-            <button class="buton" style="background-color: #fbc02d; color: black;" onclick="UI.handlePhoneCall('${gorev.telefon}')">Telefonla Ara</button>
+    // Boşluk div'ini de içeren tam HTML
+    detayElementi.innerHTML = `
+        <div> <!-- İçeriği bir sarmalayıcıya alıyoruz -->
+            <h3>${gorev.adSoyad}${miktarText}</h3>
+            ${adresNotuHTML}
+            <p>${gorev.tamAdres}</p>
+            <div class="buton-grup">
+                ${navButon}
+                <button class="buton" style="background-color: #fbc02d; color: black;" onclick="UI.handlePhoneCall('${gorev.telefon}')">Telefonla Ara</button>
+            </div>
+            <div class="buton-grup">
+                <button class="buton verildi-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button>
+                <button class="buton evde-yok-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button>
+            </div>
         </div>
-        <div class="buton-grup">
-            <button class="buton verildi-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Verildi', '${adSoyadEscaped}')">Verildi</button>
-            <button class="buton evde-yok-buton" onclick="UI.updateGorev(${gorev.rowIndex}, 'Evde Yok', '${adSoyadEscaped}')">Evde Yok</button>
-        </div>`;
+        <div class="alt-bosluk"></div> <!-- Boşluğu JavaScript ile ekliyoruz -->
+    `;
 },
     
     filtrele: function() {
@@ -88,6 +98,7 @@ const UI = {
     handlePhoneCall: function(phoneString) { if (!phoneString) { alert("Numara yok."); return; } const phoneNumbers = phoneString.match(/0\d{9,10}/g) || []; if (phoneNumbers.length === 0) { alert(`Geçerli numara yok: "${phoneString}"`); return; } let numberToCall = phoneNumbers[0]; if (phoneNumbers.length > 1) { const secim = prompt(`Birden fazla numara var. Hangisi?\n\n${phoneNumbers.join("\n")}`, phoneNumbers[0]); if (secim && phoneNumbers.includes(secim)) numberToCall = secim; else return; } if (confirm(`"${numberToCall}" aranacak. Onaylıyor musunuz?`)) { window.location.href = `tel:${numberToCall}`; } }
 };
 window.UI = UI;
+
 
 
 
