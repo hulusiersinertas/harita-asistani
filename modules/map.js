@@ -6,8 +6,27 @@ const MapManager = {
     sonSecilenPlacemark: null, userPlacemark: null, currentUserLocation: null, currentRoute: null,
 
     initMap: function(elementId) {
-        AppState.myMap = new ymaps.Map(elementId, { center: [39.7667, 30.5256], zoom: 12, controls: ['zoomControl'] }, { yandexMapAutoSwitch: true });
-        AppState.myMap.events.add('click', () => { if (document.body.classList.contains('liste-odakli')) UI.toggleGorunum(); });
+        AppState.myMap = new ymaps.Map(elementId, {
+            center: [39.7667, 30.5256],
+            zoom: 12,
+            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl'],
+            // =========================================================================
+            // ==== NİHAİ DÜZELTME: "Tam Paket" yüklendiği için bu ayar artık çalışacak ====
+            // =========================================================================
+            behaviors: [
+                'drag',         // Haritayı fareyle sürükleme
+                'scrollZoom',   // Fare tekerleğiyle zoom yapma
+                'multiTouch',   // Mobil cihazlarda çoklu dokunma hareketleri
+                'rotate'        // Ctrl + Sürükle ile DÖNDÜRME
+            ]
+        });
+        
+        AppState.myMap.events.add('click', () => {
+            if (document.body.classList.contains('liste-odakli')) {
+                UI.toggleGorunum();
+            }
+        });
+        
         this.startGeolocation();
     },
 
@@ -21,9 +40,7 @@ const MapManager = {
         const collection = new ymaps.GeoObjectCollection(null, {});
         gorevListesi.forEach(gorev => {
             if (gorev.enlem && gorev.boylam) {
-                const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, { 
-                    preset: 'islands#redCircleDotIcon' // DOĞRU İKON
-                });
+                const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, { preset: 'islands#redDotIcon' });
                 placemark.events.add('click', (e) => {
                     const targetPlacemark = e.get('target');
                     const rowIndex = targetPlacemark.properties.get('rowIndex');
@@ -48,51 +65,39 @@ const MapManager = {
         AppState.tumPlacemarks.forEach(placemark => {
             const pinMahalle = placemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#redCircleDotIcon'); // DOĞRU İKON
+                placemark.options.set('preset', 'islands#redDotIcon');
                 placemark.options.set('opacity', 1);
                 if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') boundsToShow.push(placemark.geometry.getCoordinates());
             } else {
-                placemark.options.set('preset', 'islands#yellowCircleDotIcon'); // DOĞRU İKON
+                placemark.options.set('preset', 'islands#yellowDotIcon');
                 placemark.options.set('opacity', 0.6);
             }
         });
         if (boundsToShow.length > 0) {
-            if (secilenMahalle === 'TUMU') {
-                AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 });
-            } else {
-                const center = ymaps.util.bounds.getCenter(ymaps.util.bounds.fromPoints(boundsToShow));
-                AppState.myMap.setCenter(center, 15, { duration: 500 });
-            }
+            if (secilenMahalle === 'TUMU') { AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 }); }
+            else { const center = ymaps.util.bounds.getCenter(ymaps.util.bounds.fromPoints(boundsToShow)); AppState.myMap.setCenter(center, 15, { duration: 500 }); }
         }
     },
     
     odaklan: function(rowIndex) {
-    const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
-    if (gorev && gorev.enlem && gorev.boylam) {
-        // Zoom seviyesini 17'den 16'ya düşürdük
-        AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 16, { duration: 500 });
-        const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
-        if (placemarkToSelect) this.vurgulaPin(placemarkToSelect);
-    }
-},
+        const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
+        if (gorev && gorev.enlem && gorev.boylam) {
+            AppState.myMap.setCenter([gorev.enlem, gorev.boylam], 16, { duration: 500 });
+            const placemarkToSelect = AppState.tumPlacemarks.find(p => p.properties.get('rowIndex') === rowIndex);
+            if (placemarkToSelect) this.vurgulaPin(placemarkToSelect);
+        }
+    },
     
     vurgulaPin: function(secilenPlacemark) {
         const secilenMahalle = document.getElementById('mahalle-filtre').value;
         if (this.sonSecilenPlacemark) {
             const prevPinMahalle = this.sonSecilenPlacemark.properties.get('mahalle');
-            if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) {
-                this.sonSecilenPlacemark.options.set('preset', 'islands#redCircleDotIcon'); // DOĞRU İKON
-            } else {
-                this.sonSecilenPlacemark.options.set('preset', 'islands#yellowCircleDotIcon'); // DOĞRU İKON
-            }
+            if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) { this.sonSecilenPlacemark.options.set('preset', 'islands#redDotIcon'); }
+            else { this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon'); }
         }
-        secilenPlacemark.options.set('preset', 'islands#violetSouvenirsCircleIcon');
+        secilenPlacemark.options.set('preset', 'islands#greenIcon');
         this.sonSecilenPlacemark = secilenPlacemark;
     },
 
     boyutlandir: function() { if (AppState.myMap) AppState.myMap.container.fitToViewport(); }
 };
-
-
-
-
