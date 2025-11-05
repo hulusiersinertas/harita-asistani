@@ -93,19 +93,31 @@ const MapManager = {
     // Görevleri harita üzerinde pin olarak çizer
     renderHarita: function(gorevListesi) {
         const myMap = AppState.myMap;
-        myMap.geoObjects.removeAll();
+        
+        // Önceki tüm görev pinlerini ve rotayı temizle, AMA kullanıcı pinini bırak.
+        myMap.geoObjects.each(geoObject => {
+            if (geoObject !== this.userPlacemark) {
+                myMap.geoObjects.remove(geoObject);
+            }
+        });
+        
         AppState.tumPlacemarks = [];
         this.sonSecilenPlacemark = null;
 
         const collection = new ymaps.GeoObjectCollection(null, {});
         gorevListesi.forEach(gorev => {
             if (gorev.enlem && gorev.boylam) {
-                const placemark = new ymaps.Placemark([gorev.enlem, gorev.boylam], {
-                    rowIndex: gorev.rowIndex,
-                    mahalle: gorev.mahalle
-                }, {
-                    preset: 'islands#blueCircleIcon'
-                });
+                const placemark = new ymaps.Placemark(
+                    [gorev.enlem, gorev.boylam], 
+                    { 
+                        rowIndex: gorev.rowIndex, 
+                        mahalle: gorev.mahalle 
+                    }, 
+                    { 
+                        preset: 'islands#blueCircleIcon'
+                    }
+                );
+                
                 placemark.events.add('click', (e) => {
                     const targetPlacemark = e.get('target');
                     const rowIndex = targetPlacemark.properties.get('rowIndex');
@@ -113,6 +125,7 @@ const MapManager = {
                     UI.renderDetayPaneli(rowIndex);
                     UI.vurgula(rowIndex);
                 });
+
                 AppState.tumPlacemarks.push(placemark);
                 collection.add(placemark);
             }
@@ -120,11 +133,15 @@ const MapManager = {
 
         if (collection.getLength() > 0) {
             myMap.geoObjects.add(collection);
-        }
-        
-        // Kullanıcı pini varsa, onu da tekrar ekle (removeAll'dan sonra)
-        if (this.userPlacemark) {
-            myMap.geoObjects.add(this.userPlacemark);
+
+            // Sadece ilk yüklemede veya filtre değiştiğinde odaklanma yapalım.
+            // Bu, rota çizildiğinde harita odağının bozulmasını engeller.
+            if (!this.currentRoute) {
+                 myMap.setBounds(collection.getBounds(), {
+                    checkZoomRange: true,
+                    zoomMargin: 40
+                });
+            }
         }
     },
 
@@ -181,3 +198,4 @@ const MapManager = {
         }
     }
 };
+
