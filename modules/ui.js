@@ -135,13 +135,26 @@ const UI = {
 
     // Listeden bir görev seçildiğinde çalışır
     listedenGorevSec: function(rowIndex) {
-        MapManager.odaklan(rowIndex);
-        this.renderDetayPaneli(rowIndex);
-        if (this.elements.body.classList.contains('liste-odakli')) {
-            this.toggleGorunum();
-        }
-        this.vurgula(rowIndex);
-    },
+    const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
+    if (!gorev) return;
+
+    // =========================================================================
+    // ==== YENİ GELİŞTİRME: Otomatik Mahalle Filtreleme ====
+    // =========================================================================
+    // Üstteki dropdown'ın değerini, seçilen görevin mahallesi olarak ayarla
+    this.elements.mahalleFiltre.value = gorev.mahalle;
+    // Filtreleme fonksiyonunu manuel olarak tetikle
+    this.filtrele();
+    // =========================================================================
+    
+    MapManager.odaklan(rowIndex); // Harita modülüne odaklanmasını söyle
+    this.renderDetayPaneli(rowIndex);
+    
+    if (this.elements.body.classList.contains('liste-odakli')) {
+        this.toggleGorunum();
+    }
+    this.vurgula(rowIndex);
+},
 
     // Bir kartı geçici olarak vurgular
     vurgula: function(rowIndex) {
@@ -191,3 +204,4 @@ const UI = {
 
 // Fonksiyonları global scope'a taşıyoruz ki HTML içindeki onclick'ler çalışsın
 window.UI = UI;
+
