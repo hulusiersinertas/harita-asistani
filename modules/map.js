@@ -92,85 +92,57 @@ const MapManager = {
 
     // Görevleri harita üzerinde pin olarak çizer
     renderHarita: function(gorevListesi) {
-        const myMap = AppState.myMap;
-        
-        // Önceki tüm görev pinlerini ve rotayı temizle, AMA kullanıcı pinini bırak.
-        myMap.geoObjects.each(geoObject => {
-            if (geoObject !== this.userPlacemark) {
-                myMap.geoObjects.remove(geoObject);
-            }
-        });
-        
-        AppState.tumPlacemarks = [];
-        this.sonSecilenPlacemark = null;
+    const myMap = AppState.myMap;
+    myMap.geoObjects.removeAll();
+    AppState.tumPlacemarks = [];
+    this.sonSecilenPlacemark = null;
 
-        const collection = new ymaps.GeoObjectCollection(null, {});
-        gorevListesi.forEach(gorev => {
-            if (gorev.enlem && gorev.boylam) {
-                const placemark = new ymaps.Placemark(
-                    [gorev.enlem, gorev.boylam], 
-                    { 
-                        rowIndex: gorev.rowIndex, 
-                        mahalle: gorev.mahalle 
-                    }, 
-                    { 
-                        preset: 'islands#blueCircleIcon'
-                    }
-                );
-                
-                placemark.events.add('click', (e) => {
-                    const targetPlacemark = e.get('target');
-                    const rowIndex = targetPlacemark.properties.get('rowIndex');
-                    this.vurgulaPin(targetPlacemark);
-                    UI.renderDetayPaneli(rowIndex);
-                    UI.vurgula(rowIndex);
-                });
+    const collection = new ymaps.GeoObjectCollection(null, {});
 
-                AppState.tumPlacemarks.push(placemark);
-                collection.add(placemark);
-            }
-        });
-
-        if (collection.getLength() > 0) {
-            myMap.geoObjects.add(collection);
-
-            // Sadece ilk yüklemede veya filtre değiştiğinde odaklanma yapalım.
-            // Bu, rota çizildiğinde harita odağının bozulmasını engeller.
-            if (!this.currentRoute) {
-                 myMap.setBounds(collection.getBounds(), {
-                    checkZoomRange: true,
-                    zoomMargin: 40
-                });
-            }
+    gorevListesi.forEach(gorev => {
+        if (gorev.enlem && gorev.boylam) {
+            const placemark = new ymaps.Placemark(
+                [gorev.enlem, gorev.boylam], 
+                { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, 
+                { preset: 'islands#redDotIcon' } // Varsayılan stil: Kırmızı Nokta
+            );
+            placemark.events.add('click', (e) => {
+                const targetPlacemark = e.get('target');
+                const rowIndex = targetPlacemark.properties.get('rowIndex');
+                this.vurgulaPin(targetPlacemark);
+                UI.renderDetayPaneli(rowIndex);
+                UI.vurgula(rowIndex);
+            });
+            AppState.tumPlacemarks.push(placemark);
+            collection.add(placemark);
         }
-    },
+    });
+    if (collection.getLength() > 0) myMap.geoObjects.add(collection);
+},
 
     // Haritadaki pinleri seçilen mahalleye göre vurgular/soluklaştırır
     filtreleHarita: function(secilenMahalle) {
-        const boundsToShow = [];
-        this.sonSecilenPlacemark = null;
+    const boundsToShow = [];
+    this.sonSecilenPlacemark = null;
 
-        AppState.tumPlacemarks.forEach(placemark => {
-            const pinMahalle = placemark.properties.get('mahalle');
-            if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#blueCircleIcon');
-                placemark.options.set('opacity', 1);
-                if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
-                    boundsToShow.push(placemark.geometry.getCoordinates());
-                }
-            } else {
-                placemark.options.set('preset', 'islands#greyCircleIcon');
-                placemark.options.set('opacity', 0.5);
+    AppState.tumPlacemarks.forEach(placemark => {
+        const pinMahalle = placemark.properties.get('mahalle');
+        if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
+            placemark.options.set('preset', 'islands#redDotIcon'); // Aktif stil: Kırmızı Nokta
+            placemark.options.set('opacity', 1);
+            if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
+                boundsToShow.push(placemark.geometry.getCoordinates());
             }
-        });
-
-        if (boundsToShow.length > 0) {
-            AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), {
-                checkZoomRange: true,
-                zoomMargin: 40
-            });
+        } else {
+            placemark.options.set('preset', 'islands#yellowDotIcon'); // Pasif stil: Sarı Nokta
+            placemark.options.set('opacity', 0.6);
         }
-    },
+    });
+
+    if (boundsToShow.length > 0) {
+        AppState.myMap.setBounds(ymaps.util.bounds.fromPoints(boundsToShow), { checkZoomRange: true, zoomMargin: 40 });
+    }
+},
 
     // Haritayı belirtilen göreve odaklar ve pinini vurgular
     odaklan: function(rowIndex) {
@@ -184,12 +156,20 @@ const MapManager = {
     
     // Bir pini vurgulayan yardımcı fonksiyon
     vurgulaPin: function(secilenPlacemark) {
-        if (this.sonSecilenPlacemark) {
-            this.sonSecilenPlacemark.options.set('preset', 'islands#blueCircleIcon');
+    const secilenMahalle = document.getElementById('mahalle-filtre').value;
+    // Önceki seçimi, o anki filtre durumuna göre doğru renge döndür
+    if (this.sonSecilenPlacemark) {
+        const prevPinMahalle = this.sonSecilenPlacemark.properties.get('mahalle');
+        if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) {
+            this.sonSecilenPlacemark.options.set('preset', 'islands#redDotIcon');
+        } else {
+            this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon');
         }
-        secilenPlacemark.options.set('preset', 'islands#redIcon');
-        this.sonSecilenPlacemark = secilenPlacemark;
-    },
+    }
+    // Yeni seçilen pini vurgulu stile (parlak yeşil) çevir
+    secilenPlacemark.options.set('preset', 'islands#greenIcon');
+    this.sonSecilenPlacemark = secilenPlacemark;
+},
 
     // Haritanın boyutunun değiştiğini API'ye bildirir
     boyutlandir: function() {
@@ -198,4 +178,5 @@ const MapManager = {
         }
     }
 };
+
 
