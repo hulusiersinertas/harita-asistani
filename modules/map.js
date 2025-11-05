@@ -85,10 +85,11 @@ const MapManager = {
                 this.sonSecilenPlacemark.options.set('preset', 'islands#yellowCircleDotIcon'); // DOĞRU İKON
             }
         }
-        secilenPlacemark.options.set('preset', 'islands#violetCircleDotIcon');
+        secilenPlacemark.options.set('preset', 'islands#blueSouvenirsCircleIcon');
         this.sonSecilenPlacemark = secilenPlacemark;
     },
 
     boyutlandir: function() { if (AppState.myMap) AppState.myMap.container.fitToViewport(); }
 };
+
 
