@@ -45,3 +45,8 @@ body.liste-odakli #map { height: 30%; } body.liste-odakli #alt-panel { height: c
 .evde-yok-buton { background-color: #ffc107; color: black; }
 .diger-buton { background-color: #dc3545; }
 .adres-notu { font-weight: bold; color: #b71c1c; display: block; margin-bottom: 5px; font-size: 0.9em; }
+.alt-bosluk {
+    height: 25px; /* İstediğiniz boşluk miktarı */
+    width: 100%;
+    flex-shrink: 0; /* Küçülmesini engelle */
+}
