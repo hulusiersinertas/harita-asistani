@@ -157,38 +157,37 @@ const UI = {
     setAracBaslik: function(text) { this.elements.aracBaslik.textContent = text; },
     showError: function(message) { this.elements.gorevListesiTam.innerHTML = `<p style="color:red;">${message}</p>`; },
 
-    // Telefonla arama yardımcı fonksiyonu
+    // Telefonla arama yardımcı fonksiyonu (ONAY EKLENMİŞ HALİ)
     handlePhoneCall: function(phoneString) {
-    if (!phoneString || phoneString.trim() === '') {
-        alert("Bu kişi için kayıtlı bir telefon numarası bulunamadı.");
-        return;
-    }
-    
-    const phoneNumbers = phoneString.match(/0\d{9,10}/g) || [];
-    
-    if (phoneNumbers.length === 0) {
-        alert(`Kayıtlı metin içinde geçerli bir telefon numarası bulunamadı:\n"${phoneString}"`);
-        return; // İşlemi durdur
-    } 
-    
-    let numberToCall;
-    if (phoneNumbers.length === 1) {
-        numberToCall = phoneNumbers[0];
-    } else {
-        const secim = prompt(`Birden fazla numara bulundu. Hangisini aramak istersiniz?\n\n${phoneNumbers.join("\n")}`, phoneNumbers[0]);
-        if (secim && phoneNumbers.includes(secim)) {
-            numberToCall = secim;
-        } else {
-            return; // Kullanıcı iptal ederse işlemi durdur
+        if (!phoneString || phoneString.trim() === '') {
+            alert("Bu kişi için kayıtlı bir telefon numarası bulunamadı.");
+            return;
         }
-    }
+        
+        const phoneNumbers = phoneString.match(/0\d{9,10}/g) || [];
+        
+        if (phoneNumbers.length === 0) {
+            alert(`Kayıtlı metin içinde geçerli bir telefon numarası bulunamadı:\n"${phoneString}"`);
+            return;
+        } 
+        
+        let numberToCall;
+        if (phoneNumbers.length === 1) {
+            numberToCall = phoneNumbers[0];
+        } else {
+            const secim = prompt(`Birden fazla numara bulundu. Hangisini aramak istersiniz?\n\n${phoneNumbers.join("\n")}`, phoneNumbers[0]);
+            if (secim && phoneNumbers.includes(secim)) {
+                numberToCall = secim;
+            } else {
+                return; // Kullanıcı iptal ederse işlemi durdur
+            }
+        }
 
-    // Arama yapmadan önce son bir onay al
-    if (confirm(`"${numberToCall}" numarası aranacaktır. Onaylıyor musunuz?`)) {
-        window.location.href = `tel:${numberToCall}`;
+        if (confirm(`"${numberToCall}" numarası aranacaktır. Onaylıyor musunuz?`)) {
+            window.location.href = `tel:${numberToCall}`;
+        }
     }
 };
 
 // Fonksiyonları global scope'a taşıyoruz ki HTML içindeki onclick'ler çalışsın
 window.UI = UI;
-
