@@ -82,18 +82,20 @@ const UI = {
     },
 
     // Filtreleme işlemini yönetir
-    filtrele: function() {
-        const secilenMahalle = this.elements.mahalleFiltre.value;
-        MapManager.filtreleHarita(secilenMahalle);
+filtrele: function() {
+    const secilenMahalle = this.elements.mahalleFiltre.value;
+    
+    // Harita modülündeki DOĞRU fonksiyonu çağır
+    MapManager.filtrele(secilenMahalle);
 
-        document.querySelectorAll('#gorev-listesi-tam .gorev-karti').forEach(kart => {
-            if (secilenMahalle === 'TUMU' || kart.dataset.mahalle === secilenMahalle) {
-                kart.style.display = 'block';
-            } else {
-                kart.style.display = 'none';
-            }
-        });
-    },
+    document.querySelectorAll('#gorev-listesi-tam .gorev-karti').forEach(kart => {
+        if (secilenMahalle === 'TUMU' || kart.dataset.mahalle === secilenMahalle) {
+            kart.style.display = 'block';
+        } else {
+            kart.style.display = 'none';
+        }
+    });
+},
 
     // Bir görevin durumunu günceller
     updateGorev: async function(rowIndex, sonuc, adSoyad) {
@@ -204,4 +206,5 @@ const UI = {
 
 // Fonksiyonları global scope'a taşıyoruz ki HTML içindeki onclick'ler çalışsın
 window.UI = UI;
+
 
