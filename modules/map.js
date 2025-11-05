@@ -104,7 +104,7 @@ const MapManager = {
             const placemark = new ymaps.Placemark(
                 [gorev.enlem, gorev.boylam], 
                 { rowIndex: gorev.rowIndex, mahalle: gorev.mahalle }, 
-                { preset: 'islands#redDotIcon' } // Varsayılan stil: Kırmızı Nokta
+                { preset: 'islands#redCircleDotIcon' } // Varsayılan stil: İçi Dolu Kırmızı Nokta
             );
             placemark.events.add('click', (e) => {
                 const targetPlacemark = e.get('target');
@@ -128,13 +128,13 @@ const MapManager = {
     AppState.tumPlacemarks.forEach(placemark => {
         const pinMahalle = placemark.properties.get('mahalle');
         if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-            placemark.options.set('preset', 'islands#redDotIcon'); // Aktif stil: Kırmızı Nokta
+        placemark.options.set('preset', 'islands#redCircleDotIcon'); // Aktif stil
             placemark.options.set('opacity', 1);
             if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
                 boundsToShow.push(placemark.geometry.getCoordinates());
             }
         } else {
-            placemark.options.set('preset', 'islands#yellowDotIcon'); // Pasif stil: Sarı Nokta
+        placemark.options.set('preset', 'islands#yellowCircleDotIcon'); // Pasif stil
             placemark.options.set('opacity', 0.6);
         }
     });
@@ -159,15 +159,15 @@ const MapManager = {
     const secilenMahalle = document.getElementById('mahalle-filtre').value;
     // Önceki seçimi, o anki filtre durumuna göre doğru renge döndür
     if (this.sonSecilenPlacemark) {
-        const prevPinMahalle = this.sonSecilenPlacemark.properties.get('mahalle');
-        if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) {
-            this.sonSecilenPlacemark.options.set('preset', 'islands#redDotIcon');
-        } else {
-            this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon');
-        }
+    const prevPinMahalle = this.sonSecilenPlacemark.properties.get('mahalle');
+    if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) {
+        this.sonSecilenPlacemark.options.set('preset', 'islands#redCircleDotIcon'); // Aktif renge geri dön
+    } else {
+        this.sonSecilenPlacemark.options.set('preset', 'islands#yellowCircleDotIcon'); // Pasif renge geri dön
     }
-    // Yeni seçilen pini vurgulu stile (parlak yeşil) çevir
-    secilenPlacemark.options.set('preset', 'islands#greenIcon');
+}
+// Yeni seçilen pini vurgulu stile (parlak yeşil) çevir
+secilenPlacemark.options.set('preset', 'islands#greenIcon');
     this.sonSecilenPlacemark = secilenPlacemark;
 },
 
@@ -178,5 +178,6 @@ const MapManager = {
         }
     }
 };
+
 
 
