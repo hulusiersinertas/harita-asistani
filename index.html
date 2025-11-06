@@ -1,77 +1,86 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Resmi Döndürme Butonu (Doğru Yükleyici ile)</title>
-    <style>
-        body, html, #map {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-            overflow: hidden;
-        }
-        .info {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            font-size: 14px;
-            text-align: center;
-        }
-    </style>
-    <!-- 1. KRİTİK VE NİHAİ DEĞİŞİKLİK: API'yi, "paket yükleyici" modülüyle birlikte çağırıyoruz. -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR&modules=loader"></script>
-</head>
-<body>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
+    <!-- To make the map appear, you must add your apikey -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=<b0e9e934-4234-409b-9414-a486ede76f0c>&lang=en_US" type="text/javascript"></script>
 
-    <div id="map"></div>
-    <div class="info">
-        Pusulayı veya Ctrl+Sürükle kullanarak haritayı döndürün.
-    </div>
+    <script
+      data-plugins="transform-modules-umd"
+      data-presets="typescript"
+      type="text/babel"
+      src="./common.ts"
+    ></script>
+    <script
+      data-plugins="transform-modules-umd"
+      data-presets="typescript"
+      type="text/babel"
+      src="../variables.ts"
+    ></script>
+    <script data-plugins="transform-modules-umd" data-presets="typescript" type="text/babel">
+      import {YMapControl} from '@yandex/ymaps3-types';
+      import {ENABLED_BEHAVIORS} from './common';
+      import {LOCATION} from '../variables';
 
-    <script type="text/javascript">
-        // API'nin hazır olmasını bekleyen en güvenilir yapı.
-        ymaps3.ready.then(init);
+      window.map = null;
 
-        async function init() {
-            try {
-                const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
+      main();
+      async function main() {
+          await ymaps3.ready;
+          const {YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls, YMapControl} = ymaps3;
 
-                // 2. Artık çalışacak olan import komutu:
-                // `&modules=loader` sayesinde Yandex bu paketi bulup getirebilecek.
-                const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
-                
-                const map = new ymaps3.YMap(document.getElementById('map'), {
-                    location: {
-                        center: [39.925533, 32.866287],
-                        zoom: 12,
-                        azimuth: 0,
-                        tilt: 0
-                    },
-                    // Bu davranışlar, pusula butonuyla birlikte standart jestleri de aktif tutar.
-                    behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
-                });
+          const {YMapRotateControl, YMapRotateTiltControl, YMapTiltControl} = await ymaps3.import(
+              '@yandex/ymaps3-default-ui-theme'
+          );
 
-                map.addChild(new ymaps3.YMapDefaultSchemeLayer());
+          class Tooltip extends ymaps3.YMapComplexEntity<{}> {
+              private _element: HTMLDivElement;
+              private _control: YMapControl;
 
-                // 3. Haritaya Yandex'in kendi resmi Döndürme Kontrolü'nü (Pusula) ekliyoruz.
-                map.addChild(
-                    new YMapControls({position: 'right'}, [
-                        new YMapRotateControl({}) // Varsayılan ayarlarla bir pusula butonu oluşturur.
-                    ])
-                );
-            } catch (error) {
-                console.error('Harita başlatılırken bir hata oluştu:', error);
-            }
-        }
+              constructor() {
+                  super({});
+              }
+
+              // Method for create a DOM control element
+              _createElement() {
+                  const tooltipElement = document.createElement('div');
+                  tooltipElement.innerText = 'Click on the buttons on the right side';
+                  tooltipElement.classList.add('tooltip');
+                  return tooltipElement;
+              }
+
+              // Method for attaching the control to the map
+              _onAttach() {
+                  this._element = this._createElement();
+                  this._control = new YMapControl({transparent: true}, this._element);
+                  this.addChild(this._control);
+              }
+          }
+
+          map = new YMap(document.getElementById('app'), {location: LOCATION, behaviors: ENABLED_BEHAVIORS}, [
+              new YMapDefaultSchemeLayer({}),
+              new YMapDefaultFeaturesLayer({})
+          ]);
+
+          map.addChild(new YMapControls({position: 'top left'}, [new Tooltip()]));
+
+          map.addChild(
+              new YMapControls({position: 'right'}, [
+                  new YMapRotateTiltControl({}),
+                  new YMapRotateControl({}),
+                  new YMapTiltControl({})
+              ])
+          );
+      }
     </script>
 
-</body>
+    <!-- prettier-ignore -->
+    <style> html, body, #app { width: 100%; height: 100%; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; } .toolbar { position: absolute; z-index: 1000; top: 0; left: 0; display: flex; align-items: center; padding: 16px; } .toolbar a { padding: 16px; }  </style>
+    <link rel="stylesheet" href="./common.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
 </html>
