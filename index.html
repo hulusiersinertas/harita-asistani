@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Harita Döndürme</title>
+    <title>Yandex Maps API - Fare ile Harita Döndürme</title>
     <style>
         body, html {
             width: 100%;
@@ -11,94 +11,114 @@
             margin: 0;
             padding: 0;
             font-family: sans-serif;
+            overflow: hidden; /* Sayfanın kaymasını engeller */
         }
         #map {
             width: 100%;
             height: 100%;
+            cursor: grab; /* Farenin normalde sürükleme imleci olmasını sağlar */
         }
-        .controls {
+        #map.grabbing {
+            cursor: grabbing; /* Sürükleme anında imleci değiştirir */
+        }
+        .info {
             position: absolute;
             top: 10px;
-            right: 10px;
-            background-color: white;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            display: flex;
-            gap: 10px;
-        }
-        .controls button {
-            padding: 8px 12px;
             font-size: 14px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            border-radius: 3px;
         }
     </style>
-    <!-- 
-        !!! ÖNEMLİ !!!
-        Aşağıdaki satırda bulunan "YOUR_API_KEY" yazısını
-        kendi Yandex Maps API anahtarınız ile değiştirmelisiniz.
-    -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 </head>
 <body>
 
     <div id="map"></div>
-
-    <div class="controls">
-        <button id="rotate-left">Sola Döndür</button>
-        <button id="rotate-right">Sağa Döndür</button>
-    </div>
+    <div class="info">Haritayı döndürmek için <strong>Ctrl</strong> tuşuna basılı tutun ve sürükleyin.</div>
 
     <script type="text/javascript">
-    ymaps3.ready.then(init);
+        ymaps3.ready.then(init);
 
-    function init() {
-        const map = new ymaps3.YMap(document.getElementById('map'), {
-            location: {
-                center: [39.925533, 32.866287],
-                zoom: 12
-            }
-        });
+        function init() {
+            const map = new ymaps3.YMap(document.getElementById('map'), {
+                location: {
+                    center: [39.925533, 32.866287],
+                    zoom: 12
+                }
+            });
 
-        map.addChild(new ymaps3.YMapDefaultSchemeLayer());
+            map.addChild(new ymaps3.YMapDefaultSchemeLayer());
+            
+            // --- Döndürme Mantığı Değişkenleri ---
+            let isCtrlPressed = false;
+            let isDragging = false;
+            
+            let startX = 0;         // Sürüklemenin başladığı X koordinatı
+            let startAzimuth = 0;   // Sürüklemenin başladığı andaki harita açısı
+            
+            // Haritanın son açısını saklamak için bu değişkeni koruyoruz.
+            let currentAzimuth = 0;
+            
+            // Hassasiyet: Farenin 1 piksellik hareketi kaç derecelik dönüş yapsın?
+            // Değeri artırırsanız daha hızlı döner, azaltırsanız daha yavaş.
+            const SENSITIVITY = 0.5;
 
-        const rotateLeftButton = document.getElementById('rotate-left');
-        const rotateRightButton = document.getElementById('rotate-right');
-        const ROTATION_STEP = 20;
+            // --- Olay Dinleyicileri ---
 
-        // Haritanın mevcut açısını takip etmek için bir değişken kullanıyoruz.
-        // Bu mantığın doğru çalıştığını önceki denemelerde kanıtladık.
-        let currentAzimuth = 0;
+            // 1. Ctrl tuşunun durumunu takip et
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Control') {
+                    isCtrlPressed = true;
+                }
+            });
 
-        rotateLeftButton.addEventListener('click', () => {
-            // Açıyı kendi değişkenimize göre güncelliyoruz.
-            currentAzimuth -= ROTATION_STEP;
-            updateCamera();
-        });
+            window.addEventListener('keyup', (event) => {
+                if (event.key === 'Control') {
+                    isCtrlPressed = false;
+                }
+            });
 
-        rotateRightButton.addEventListener('click', () => {
-            // Açıyı kendi değişkenimize göre güncelliyoruz.
-            currentAzimuth += ROTATION_STEP;
-            updateCamera();
-        });
+            // Yandex Map'in DOM elementini alıyoruz
+            const mapElement = map.domElement;
 
-        function updateCamera() {
-            console.log("Kamera güncelleniyor, yeni azimuth:", currentAzimuth);
+            // 2. Haritaya fare ile tıklandığında
+            mapElement.addEventListener('mousedown', (event) => {
+                // Sadece Ctrl tuşu basılıysa sürüklemeyi başlat
+                if (isCtrlPressed) {
+                    isDragging = true;
+                    startX = event.clientX;
+                    startAzimuth = currentAzimuth;
+                    mapElement.classList.add('grabbing'); // İmleci değiştir
+                    event.preventDefault(); // Tarayıcının varsayılan sürükleme davranışını engelle
+                }
+            });
+            
+            // 3. Fare hareket ettiğinde (Sürükleme)
+            // Dinleyiciyi 'window' üzerine ekliyoruz ki fare harita dışına çıksa bile sürükleme devam etsin
+            window.addEventListener('mousemove', (event) => {
+                if (isDragging) {
+                    const deltaX = event.clientX - startX;
+                    currentAzimuth = startAzimuth - (deltaX * SENSITIVITY); // Sağa sürükleyince sağa dönmesi için eksi(-) kullanıyoruz.
+                    
+                    map.setCamera({
+                        azimuth: currentAzimuth,
+                        // Sürükleme anında animasyon olmamalı, yoksa gecikmeli hissiyatı verir.
+                        duration: 0 
+                    });
+                }
+            });
 
-            // DOKÜMANLARDAN ÖĞRENDİĞİMİZ:
-            // setLocation yerine, özellikle kamerayı döndürmek için tasarlanmış
-            // setCamera metodunu kullanıyoruz.
-            map.setCamera({
-                azimuth: currentAzimuth,
-                duration: 400 // Animasyon süresi (milisaniye)
+            // 4. Fare tuşu bırakıldığında
+            // Dinleyiciyi 'window' üzerine ekliyoruz ki kullanıcı harita dışında bıraksa bile algılansın
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                mapElement.classList.remove('grabbing'); // İmleci eski haline getir
             });
         }
-    }
-</script>
+    </script>
+
 </body>
 </html>
-
-
-
