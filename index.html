@@ -35,7 +35,11 @@
             border-radius: 3px;
         }
     </style>
-    <!-- Yandex Maps API v3'ü kendi API anahtarınızla ekleyin -->
+    <!-- 
+        !!! ÖNEMLİ !!!
+        Aşağıdaki satırda bulunan "YOUR_API_KEY" yazısını
+        kendi Yandex Maps API anahtarınız ile değiştirmelisiniz.
+    -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 </head>
 <body>
@@ -48,7 +52,9 @@
     </div>
 
     <script type="text/javascript">
-        // API'nin yüklenmesini bekleyin
+        // ymaps3.ready, API'nin tamamen yüklendiğinden emin olur
+        // ve ardından init fonksiyonunu çağırır.
+        // Bu yapı, "ymaps3 is not defined" hatasını önlemek için kritiktir.
         ymaps3.ready.then(init);
 
         function init() {
@@ -81,22 +87,19 @@
 
             // Haritayı döndüren fonksiyon
             function rotateMap(angle) {
-                // Mevcut kamera bilgilerini alın
                 const currentCamera = {
                     center: map.center,
                     zoom: map.zoom,
-                    azimuth: map.azimuth, // Mevcut dönüş açısı
-                    tilt: map.tilt // Mevcut eğim açısı
+                    azimuth: map.azimuth,
+                    tilt: map.tilt
                 };
                 
-                // Yeni dönüş açısını hesaplayın
                 const newAzimuth = currentCamera.azimuth + angle;
 
-                // Haritanın konumunu ve kamerasını güncelleyin
                 map.setLocation({
-                    ...currentCamera, // center, zoom ve tilt değerlerini koru
+                    ...currentCamera,
                     azimuth: newAzimuth,
-                    duration: 300 // Animasyon süresi (milisaniye)
+                    duration: 300
                 });
             }
         }
@@ -104,4 +107,3 @@
 
 </body>
 </html>
-
