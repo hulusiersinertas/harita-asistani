@@ -2,67 +2,45 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Stabil Sürüm</title>
-    <style>
-        body, html, #map {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-            overflow: hidden;
-        }
-        .info {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            font-size: 14px;
-            text-align: center;
-        }
-    </style>
-    <!-- Standart ve çalışan API URL'si -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dağıtım Görevleri</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" type="text/javascript"></script>
 </head>
-<body>
+<body class="harita-odakli">
 
-    <div id="map"></div>
-    <div class="info">
-        <strong>Masaüstü:</strong> Döndürmek için Ctrl + Sürükle
+    <div id="ust-panel">
+        <div class="panel-sol">
+            <h1 id="arac-baslik">Yükleniyor...</h1>
+            <div id="gorev-sayaci"></div>
+        </div>
+        <div class="panel-sag">
+            <select id="mahalle-filtre" class="filtre-kontrolu">
+                <option value="TUMU">Tüm Mahalleler</option>
+            </select>
+            <button id="gorunum-degistir-btn" class="filtre-kontrolu">Listeyi Göster</button>
+        </div>
     </div>
 
-    <script type="text/javascript">
-        // API'nin hazır olmasını bekleyen en güvenilir yapı
-        ymaps3.ready.then(init);
+    <div id="map"></div>
 
-        function init() {
-            try {
-                // 'mouseRotate' hem masaüstü Ctrl+Drag'ı hem de (eğer API destekleseydi) mobil döndürmeyi yönetir.
-                const defaultBehaviors = ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom'];
-                
-                const map = new ymaps3.YMap(document.getElementById('map'), {
-                    location: {
-                        center: [39.925533, 32.866287],
-                        zoom: 12,
-                        // Döndürme özelliğini temelden aktif etmek için bu parametreler önemli.
-                        azimuth: 0,
-                        tilt: 0
-                    },
-                    behaviors: defaultBehaviors
-                });
-
-                map.addChild(new ymaps3.YMapDefaultSchemeLayer());
-
-            } catch (error) {
-                console.error('Harita başlatılırken bir hata oluştu:', error);
-            }
-        }
-    </script>
+    <div id="alt-panel">
+        <div id="panel-tutamaci"></div>
+        <div id="gorev-listesi-tam"></div>
+        <div id="gorev-detay"></div>
+    </div>
+    
+    <!-- Modüler Yapı -->
+    <script src="modules/config.js"></script>
+    <script src="modules/ui.js"></script>
+    <script src="modules/map.js"></script>
+    <script src="modules/api.js"></script>
+    
+    <!-- Orkestra Şefi -->
+    <script src="script.js"></script>
+    
+    <!-- Google API Başlatıcı -->
+    <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
 
 </body>
 </html>
