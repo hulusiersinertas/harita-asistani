@@ -1,63 +1,25 @@
 // =================================================================================
-// == ANA DOSYA: Orkestra Şefi (script.js)
-// == Sorumluluk: Uygulama başlatma zincirini yönetir ve modüller arası iletişimi sağlar.
+// == MODÜL: Yapılandırma (config.js)
+// == Sorumluluk: Tüm API anahtarlarını, ID'leri ve ayarları tek bir yerde tutar.
 // =================================================================================
 
-// Global Durum (State) Yönetimi
-const AppState = {
-    myMap: null,
-    aracSheetName: null,
-    tumGorevler: [],
-    tumPlacemarks: []
-};
+const AppConfig = {
+    // Kendi API anahtarlarınızı ve ID'lerinizi buraya yapıştırın
+    GOOGLE_API_KEY: "AIzaSyBgtFHotp01PD_MHOTqfFmYHmP6Zb-mFsY",
+    SPREADSHEET_ID: "1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc",
+    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwJ_i5tk-FInC2SxiE8opGY7ZbI9ffqyRPj5eJDnrxMrCdTKeJ2EffUzc5OS-GeeGZt/exec",
 
-// Olay Dinleyicileri
-document.addEventListener('DOMContentLoaded', () => {
-    // Arayüz modülündeki olay dinleyicilerini başlat
-    UI.initEventListeners();
-});
-
-// =================================================================================
-// == UYGULAMA BAŞLATMA ZİNCİRİ
-// =================================================================================
-
-// 1. Google API yüklendiğinde bu fonksiyon tetiklenir.
-function startApp() {
-    gapi.load('client', initClient);
-}
-
-// 2. Google API istemcisini başlatır.
-function initClient() {
-    API.initGoogleClient()
-        .then(() => {
-            // Google hazır olduğunda, Yandex haritayı başlat.
-            ymaps.ready(initMapAndData);
-        })
-        .catch(err => console.error("Google API istemcisi başlatılamadı:", err));
-}
-
-// 3. Yandex Harita'yı başlatır ve ilk veriyi çeker.
-function initMapAndData() {
-    const params = new URLSearchParams(window.location.search);
-    AppState.aracSheetName = params.get('arac');
-
-    if (!AppState.aracSheetName) {
-        UI.showError("URL'de araç belirtilmemiş! (Örn: ?arac=OP-1)");
-        return;
+    // E-Tablo Sütun İndeksleri (A=0, B=1, ...)
+    // Bu yapı sayesinde gelecekte sütunların yeri değişirse, sadece burayı güncelleriz.
+    SUTUNLAR: {
+        AD_SOYAD: 4,      // E
+        ADRES_NOTU: 5,    // F
+        MIKTAR: 6,        // G
+        TELEFON: 9,       // J
+        DURUM: 10,        // K
+        TAM_ADRES: 11,    // L
+        ENLEM: 12,        // M
+        BOYLAM: 13,       // N
+        SONUC: 14         // O
     }
-
-    UI.setAracBaslik(`${AppState.aracSheetName} Görevleri`);
-    MapManager.initMap("map"); // Harita modülünü başlat
-
-    // API modülü aracılığıyla ilk görev verisini çek.
-    API.fetchSheetData(AppState.aracSheetName)
-        .then(gorevler => {
-            AppState.tumGorevler = gorevler;
-            UI.mahalleFiltresiniDoldur(AppState.tumGorevler);
-            UI.render(); // Arayüz modülündeki ana çizim fonksiyonunu çağır
-        })
-        .catch(err => {
-            console.error("Veri çekme hatası:", err);
-            UI.showError("Veri çekilemedi. İzinleri veya Spreadsheet ID'yi kontrol edin.");
-        });
-}
+};
