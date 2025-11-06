@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Düzgün Döndürme (Mobil Çözüm)</title>
+    <title>Yandex Maps API - Resmi Döndürme Yöntemi</title>
     <style>
-        body, html {
+        body, html, #map {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
             font-family: sans-serif;
             overflow: hidden;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
         }
         .info {
             position: absolute;
@@ -30,22 +26,27 @@
             text-align: center;
         }
     </style>
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <script src="https://api-maps.yandex.ru/v3/?apikey=YOUR_API_KEY&lang=tr_TR"></script>
 </head>
 <body>
 
     <div id="map"></div>
     <div class="info">
         <strong>Masaüstü:</strong> Döndürmek için Ctrl + Sürükle<br>
-        <strong>Mobil:</strong> Döndürmek/Yakınlaştırmak için iki parmağınızı kullanın
+        <strong>Mobil:</strong> Döndürmek için iki parmağınızı kullanın
     </div>
 
     <script type="text/javascript">
-        ymaps3.ready.then(init);
+        // init fonksiyonunu async olarak işaretliyoruz çünkü içinde await kullanacağız.
+        async function init() {
+            // Standart Yandex Maps nesnelerini bekliyoruz.
+            await ymaps3.ready;
+            const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
 
-        function init() {
-            const defaultBehaviors = ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom'];
-
+            // === EN ÖNEMLİ KISIM ===
+            // Döndürme ve eğme kontrollerini içeren UI modülünü Yandex'ten import ediyoruz.
+            const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
+            
             const map = new ymaps3.YMap(document.getElementById('map'), {
                 location: {
                     center: [39.925533, 32.866287],
@@ -53,16 +54,23 @@
                     azimuth: 0,
                     tilt: 0
                 },
-                behaviors: defaultBehaviors,
-                
-                // === EN ÖNEMLİ MOBİL ÇÖZÜMÜ ===
-                // Haritayı açıkça 3D modunda başlatarak mobil cihazlarda
-                // döndürme ve eğme gibi özelliklerin aktif olmasını zorluyoruz.
-                mode: '3d'
+                // mouseRotate'in çalışması için bu davranışın hala ekli olması gerekiyor.
+                behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
             });
 
-            map.addChild(new ymaps3.YMapDefaultSchemeLayer());
+            map.addChild(new YMapDefaultSchemeLayer());
+
+            // Haritaya, import ettiğimiz Döndürme Kontrolü'nü (Pusula butonu) ekliyoruz.
+            // Bu kontrolü eklemek, mobil jestlerinin de doğru çalışmasını sağlar.
+            map.addChild(
+                new YMapControls({position: 'right'}, [
+                    new YMapRotateControl({})
+                ])
+            );
         }
+
+        // init fonksiyonunu çağırıyoruz.
+        init();
     </script>
 
 </body>
