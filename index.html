@@ -26,7 +26,9 @@
             text-align: center;
         }
     </style>
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- === EN ÖNEMLİ DEĞİŞİKLİK BURADA === -->
+    <!-- API'yi, ek paketleri yükleyebilmesi için "enterprise" modunda çağırıyoruz. -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=YOUR_API_KEY&lang=tr_TR&mode=enterprise"></script>
 </head>
 <body>
 
@@ -37,14 +39,11 @@
     </div>
 
     <script type="text/javascript">
-        // init fonksiyonunu async olarak işaretliyoruz çünkü içinde await kullanacağız.
+        // Bu JavaScript kodunda hiçbir değişiklik yok, çünkü zaten doğruydu.
         async function init() {
-            // Standart Yandex Maps nesnelerini bekliyoruz.
             await ymaps3.ready;
             const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
 
-            // === EN ÖNEMLİ KISIM ===
-            // Döndürme ve eğme kontrollerini içeren UI modülünü Yandex'ten import ediyoruz.
             const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
             
             const map = new ymaps3.YMap(document.getElementById('map'), {
@@ -54,14 +53,11 @@
                     azimuth: 0,
                     tilt: 0
                 },
-                // mouseRotate'in çalışması için bu davranışın hala ekli olması gerekiyor.
                 behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
             });
 
-            map.addChild(new YMapDefaultSchemeLayer());
+            map.addChild(new ymaps3.YMapDefaultSchemeLayer());
 
-            // Haritaya, import ettiğimiz Döndürme Kontrolü'nü (Pusula butonu) ekliyoruz.
-            // Bu kontrolü eklemek, mobil jestlerinin de doğru çalışmasını sağlar.
             map.addChild(
                 new YMapControls({position: 'right'}, [
                     new YMapRotateControl({})
@@ -69,10 +65,8 @@
             );
         }
 
-        // init fonksiyonunu çağırıyoruz.
         init();
     </script>
 
 </body>
 </html>
-
