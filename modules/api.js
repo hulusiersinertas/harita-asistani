@@ -1,10 +1,8 @@
 // =================================================================================
 // == MODÜL: API İşlemleri (api.js)
-// == Sorumluluk: Google Sheets API ile konuşur, veriyi çeker ve işler.
 // =================================================================================
 
 const API = {
-    // Google API istemcisini başlatır.
     initGoogleClient: function() {
         return gapi.client.init({
             'apiKey': AppConfig.GOOGLE_API_KEY,
@@ -12,7 +10,6 @@ const API = {
         });
     },
 
-    // E-Tablodan görev verisini çeker ve işleyip döndürür.
     fetchSheetData: async function(sheetName) {
         const range = `'${sheetName}'!A4:P`;
         try {
@@ -24,18 +21,16 @@ const API = {
             return (response.result.values || []).map((row, index) => {
                 const hamEnlem = row[AppConfig.SUTUNLAR.ENLEM];
                 const hamBoylam = row[AppConfig.SUTUNLAR.BOYLAM];
-                
                 const enlemStr = String(hamEnlem || '').replace(/,/g, '');
                 const boylamStr = String(hamBoylam || '').replace(/,/g, '');
-                
                 const tamAdres = row[AppConfig.SUTUNLAR.TAM_ADRES] || '';
                 const mahalleMatch = tamAdres.match(/^.*?(MAH\.|MAHALLESİ)/i);
 
                 return {
                     rowIndex: index + 4,
                     adSoyad: row[AppConfig.SUTUNLAR.AD_SOYAD] || 'İsim Yok',
-                    adresNotu: row[AppConfig.SUTUNLAR.ADRES_NOTU] || '',
-                    miktar: row[AppConfig.SUTUNLAR.MIKTAR] || '',
+                    adresNotu: row[AppConfig.SUTUNLAR.ADRES_NOTU] || '', // <-- YENİ EKLENDİ
+                    miktar: row[AppConfig.SUTUNLAR.MIKTAR] || '',       // <-- YENİ EKLENDİ
                     durum: row[AppConfig.SUTUNLAR.DURUM] || '',
                     tamAdres: tamAdres,
                     mahalle: mahalleMatch ? mahalleMatch[0].trim().toUpperCase() : 'BİLİNMEYEN',
@@ -47,11 +42,10 @@ const API = {
             }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor');
         } catch (error) {
             console.error("API.fetchSheetData hatası:", error);
-            throw error; // Hatayı yukarıya (script.js'e) fırlat
+            throw error;
         }
     },
 
-    // Bir görevin durumunu Apps Script'e göndererek günceller.
     updateGorevStatus: async function(rowIndex, sonuc) {
         const url = `${AppConfig.APPS_SCRIPT_URL}?sheet=${AppState.aracSheetName}&row=${rowIndex}&sonuc=${encodeURIComponent(sonuc)}`;
         try {
