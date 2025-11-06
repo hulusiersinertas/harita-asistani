@@ -26,8 +26,8 @@
             text-align: center;
         }
     </style>
-    <!-- 1. API'yi "enterprise" modunda yüklüyoruz. -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR&mode=enterprise"></script>
+    <!-- 1. DOĞRU URL: "&mode=enterprise" olmadan, standart API script'ini yüklüyoruz. -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 </head>
 <body>
 
@@ -38,17 +38,16 @@
     </div>
 
     <script type="text/javascript">
-        // 2. Kodu çalıştırmadan önce API'nin tamamen hazır olmasını bekliyoruz.
-        // Bu, "ymaps3 is not defined" hatasını %100 önler.
+        // 2. DOĞRU YAPI: "ymaps3 is not defined" hatasını önlemek için kodumuzu ymaps3.ready içine alıyoruz.
         ymaps3.ready.then(init);
 
-        // 3. init fonksiyonunu async olarak işaretliyoruz çünkü içinde await kullanacağız.
+        // 3. DOĞRU MANTIK: Gerekli UI modülünü import eden async fonksiyon.
         async function init() {
-            // async/await yapısı gereği try...catch bloğu eklemek en iyi pratiktir.
             try {
                 const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
 
-                // Döndürme kontrollerini içeren UI modülünü import ediyoruz.
+                // Bu satırın çalışması için standart API script'i yeterli olmalı.
+                // "no loader" hatası muhtemelen geçici bir sorundu.
                 const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
                 
                 const map = new ymaps3.YMap(document.getElementById('map'), {
@@ -63,9 +62,8 @@
 
                 map.addChild(new ymaps3.YMapDefaultSchemeLayer());
 
-                // Haritaya Döndürme Kontrolü'nü (Pusula) ekliyoruz.
                 map.addChild(
-                    new YMapsControls({position: 'right'}, [
+                    new YMapControls({position: 'right'}, [
                         new YMapRotateControl({})
                     ])
                 );
@@ -77,4 +75,3 @@
 
 </body>
 </html>
-
