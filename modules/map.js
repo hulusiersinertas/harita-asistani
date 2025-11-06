@@ -13,13 +13,14 @@ const MapManager = {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
             zoom: 12,
-            // YENİ EKLENDİ: Haritaya pusula/döndürme butonu ekler.
-            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl', 'rotateControl']
+            // DÜZELTME: Hata veren 'rotateControl' buradan kaldırıldı.
+            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
         }, { 
             yandexMapAutoSwitch: true 
         });
         
-        // YENİ EKLENDİ: Mobilde iki parmakla döndürme ve zoom özelliğini aktif eder.
+        // Bu komut, mobilde iki parmakla döndürme ve zoom özelliğini aktif eder.
+        // Masaüstünde Ctrl+Sürükle zaten varsayılan olarak çalışır.
         AppState.myMap.behaviors.enable('multiTouch');
 
         AppState.myMap.events.add('click', () => {
@@ -158,7 +159,7 @@ const MapManager = {
                 this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon');
             }
         }
-        secilenPlacemark.options.set('preset', 'islands#blueStretchyIcon'); // Daha belirgin bir ikon
+        secilenPlacemark.options.set('preset', 'islands#blueStretchyIcon');
         this.sonSecilenPlacemark = secilenPlacemark;
     },
 
