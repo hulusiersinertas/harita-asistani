@@ -9,29 +9,49 @@ const MapManager = {
     currentUserLocation: null,
     currentRoute: null,
 
-    initMap: function(elementId) {
-        AppState.myMap = new ymaps.Map(elementId, {
-            center: [39.7667, 30.5256],
-            zoom: 12,
-            // DÜZELTME: Hata veren 'rotateControl' buradan kaldırıldı.
-            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
-        }, { 
-            yandexMapAutoSwitch: true 
-        });
-        
-        // Bu komut, mobilde iki parmakla döndürme ve zoom özelliğini aktif eder.
-        // Masaüstünde Ctrl+Sürükle zaten varsayılan olarak çalışır.
-        AppState.myMap.behaviors.enable('multiTouch');
+   initMap: async function(elementId) {
+    try {
+        // v3 API'sinin tamamen hazır olmasını bekliyoruz.
+        await ymaps3.ready;
+        const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
 
-        AppState.myMap.events.add('click', () => {
-            if (document.body.classList.contains('liste-odakli')) {
-                UI.toggleGorunum();
-            }
-        });
+        // Döndürme kontrollerini ve mantığını içeren UI modülünü Yandex'ten import ediyoruz.
+        // Bu, mobil döndürmenin çalışması için KRİTİK adımdır.
+        const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
         
-        this.startGeolocation();
-    },
+        // v3 formatında haritayı oluşturuyoruz.
+        AppState.myMap = new ymaps3.YMap(document.getElementById(elementId), {
+            location: {
+                center: [30.5256, 39.7667], // Önce Boylam, sonra Enlem
+                zoom: 12,
+                azimuth: 0,
+                tilt: 0
+            },
+            // v3'te davranışlar bu şekilde bir dizi olarak belirtilir.
+            behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
+        });
 
+        // Haritaya varsayılan katmanı ekliyoruz.
+        AppState.myMap.addChild(new YMapDefaultSchemeLayer());
+
+        // Haritaya, import ettiğimiz Döndürme Kontrolü'nü (Pusula butonu) ekliyoruz.
+        AppState.myMap.addChild(
+            new YMapControls({position: 'right'}, [
+                new YMapRotateControl({})
+            ])
+        );
+
+        // --- Mevcut Kodunuzun v3 Entegrasyonu ---
+        // Not: Bu kısımlar v3'te farklı çalışacağı için şimdilik devre dışı bırakıldı.
+        // AppState.myMap.events.add('click', ...); // v3'te olay dinleme farklıdır.
+        // this.startGeolocation(); // v3'te konum bulma farklıdır.
+
+        console.log("Yandex Maps API v3.0 başarıyla başlatıldı ve döndürme özelliği aktif!");
+
+    } catch (error) {
+        console.error("Harita başlatılırken bir hata oluştu:", error);
+    }
+},
     startGeolocation: function() {
         ymaps.geolocation.get({ provider: 'browser', mapStateAutoApply: false }).then(result => {
             this.currentUserLocation = result.geoObjects.position;
@@ -169,3 +189,4 @@ const MapManager = {
         }
     }
 };
+
