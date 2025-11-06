@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Nihai Çözüm (Babel ile)</title>
+    <title>Yandex Maps API - Resmi Döndürme Butonu (Doğru Yükleyici ile)</title>
     <style>
         body, html, #map {
             width: 100%;
@@ -26,28 +26,26 @@
             text-align: center;
         }
     </style>
-    <!-- 1. GEREKLİ ADIM: Babel derleyicisini sayfaya ekliyoruz. -->
-    <script crossorigin src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
-    
-    <!-- 2. Yandex API'sinin standart script'ini ekliyoruz. -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- 1. KRİTİK VE NİHAİ DEĞİŞİKLİK: API'yi, "paket yükleyici" modülüyle birlikte çağırıyoruz. -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR&modules=loader"></script>
 </head>
 <body>
 
     <div id="map"></div>
     <div class="info">
-        <strong>Masaüstü:</strong> Döndürmek için Ctrl + Sürükle<br>
-        <strong>Mobil:</strong> Döndürmek için iki parmağınızı veya pusulayı kullanın
+        Pusulayı veya Ctrl+Sürükle kullanarak haritayı döndürün.
     </div>
 
-    <!-- 3. Kodumuzu, Babel'in derleyebilmesi için "text/babel" tipinde bir script içine yazıyoruz. -->
-    <script type="text/babel">
+    <script type="text/javascript">
+        // API'nin hazır olmasını bekleyen en güvenilir yapı.
+        ymaps3.ready.then(init);
+
         async function init() {
             try {
-                // ymaps3.ready'i fonksiyonun başında beklemek en güvenli yöntem.
-                await ymaps3.ready;
-
                 const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
+
+                // 2. Artık çalışacak olan import komutu:
+                // `&modules=loader` sayesinde Yandex bu paketi bulup getirebilecek.
                 const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
                 
                 const map = new ymaps3.YMap(document.getElementById('map'), {
@@ -57,23 +55,22 @@
                         azimuth: 0,
                         tilt: 0
                     },
+                    // Bu davranışlar, pusula butonuyla birlikte standart jestleri de aktif tutar.
                     behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
                 });
 
                 map.addChild(new ymaps3.YMapDefaultSchemeLayer());
 
+                // 3. Haritaya Yandex'in kendi resmi Döndürme Kontrolü'nü (Pusula) ekliyoruz.
                 map.addChild(
                     new YMapControls({position: 'right'}, [
-                        new YMapRotateControl({})
+                        new YMapRotateControl({}) // Varsayılan ayarlarla bir pusula butonu oluşturur.
                     ])
                 );
             } catch (error) {
                 console.error('Harita başlatılırken bir hata oluştu:', error);
             }
         }
-
-        // Fonksiyonu çağırıyoruz.
-        init();
     </script>
 
 </body>
