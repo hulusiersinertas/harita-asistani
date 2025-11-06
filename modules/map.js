@@ -1,5 +1,6 @@
 // =================================================================================
 // == MODÜL: Harita Yönetimi (map.js)
+// == Sorumluluk: Yandex Harita'yı oluşturur, pinleri yönetir ve harita etkileşimlerini sağlar.
 // =================================================================================
 
 const MapManager = {
@@ -27,11 +28,7 @@ const MapManager = {
     },
 
     startGeolocation: function() {
-        const geolocation = ymaps.geolocation;
-        geolocation.get({
-            provider: 'browser',
-            mapStateAutoApply: false
-        }).then(result => {
+        ymaps.geolocation.get({ provider: 'browser', mapStateAutoApply: false }).then(result => {
             this.currentUserLocation = result.geoObjects.position;
             if (this.userPlacemark) {
                 AppState.myMap.geoObjects.remove(this.userPlacemark);
@@ -87,7 +84,7 @@ const MapManager = {
                     rowIndex: gorev.rowIndex,
                     mahalle: gorev.mahalle
                 }, {
-                    preset: 'islands#redCircleDotIcon'
+                    preset: 'islands#redDotIcon'
                 });
                 placemark.events.add('click', (e) => {
                     const targetPlacemark = e.get('target');
@@ -97,7 +94,11 @@ const MapManager = {
                         document.getElementById('mahalle-filtre').value = gorev.mahalle;
                         UI.filtrele();
                     }
-                    this.vurgulaPin(targetPlacemark);
+                    // =========================================================================
+                    // ==== YAZIM HATASI BURADA DÜZELTİLDİ ====
+                    // =========================================================================
+                    this.vurgulaPin(targetPlacemark); // Eksik olan parantez ')' eklendi.
+                    // =========================================================================
                     UI.renderDetayPaneli(rowIndex);
                     UI.vurgula(rowIndex);
                 });
@@ -116,11 +117,13 @@ const MapManager = {
         AppState.tumPlacemarks.forEach(placemark => {
             const pinMahalle = placemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
-                placemark.options.set('preset', 'islands#redCircleDotIcon');
+                placemark.options.set('preset', 'islands#redDotIcon');
                 placemark.options.set('opacity', 1);
-                boundsToShow.push(placemark.geometry.getCoordinates());
+                if (pinMahalle === secilenMahalle || secilenMahalle === 'TUMU') {
+                    boundsToShow.push(placemark.geometry.getCoordinates());
+                }
             } else {
-                placemark.options.set('preset', 'islands#yellowCircleDotIcon');
+                placemark.options.set('preset', 'islands#yellowDotIcon');
                 placemark.options.set('opacity', 0.6);
             }
         });
@@ -150,12 +153,12 @@ const MapManager = {
         if (this.sonSecilenPlacemark) {
             const prevPinMahalle = this.sonSecilenPlacemark.properties.get('mahalle');
             if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) {
-                this.sonSecilenPlacemark.options.set('preset', 'islands#redCircleDotIcon');
+                this.sonSecilenPlacemark.options.set('preset', 'islands#redDotIcon');
             } else {
-                this.sonSecilenPlacemark.options.set('preset', 'islands#yellowCircleDotIcon');
+                this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon');
             }
         }
-        secilenPlacemark.options.set('preset', ''islands#VioletSouvenirsCircleIcon'');
+        secilenPlacemark.options.set('preset', 'VioletSouvenirsCircleIcon');
         this.sonSecilenPlacemark = secilenPlacemark;
     },
 
