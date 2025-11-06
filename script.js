@@ -8,56 +8,60 @@ const AppState = {
     myMap: null,
     aracSheetName: null,
     tumGorevler: [],
-    tumPlacemarks: []
+    tumPlacemarks: [] // Bu, v3'te farklı yönetilecek.
 };
 
 // Olay Dinleyicileri
 document.addEventListener('DOMContentLoaded', () => {
-    // Arayüz modülündeki olay dinleyicilerini başlat
     UI.initEventListeners();
 });
 
 // =================================================================================
-// == UYGULAMA BAŞLATMA ZİNCİRİ
+// == UYGULAMA BAŞLATMA ZİNCİRİ (v3.0 İÇİN GÜNCELLENDİ)
 // =================================================================================
 
 // 1. Google API yüklendiğinde bu fonksiyon tetiklenir.
 function startApp() {
-    gapi.load('client', initClient);
+    gapi.load('client', initApp); // Fonksiyon adını daha genel hale getirdik
 }
 
-// 2. Google API istemcisini başlatır.
-function initClient() {
-    API.initGoogleClient()
-        .then(() => {
-            // Google hazır olduğunda, Yandex haritayı başlat.
-            ymaps.ready(initMapAndData);
-        })
-        .catch(err => console.error("Google API istemcisi başlatılamadı:", err));
+// 2. async fonksiyon ile hem Google'ı hem Yandex'i başlatır.
+async function initApp() {
+    try {
+        // Önce Google API istemcisini başlat ve bekle
+        await API.initGoogleClient();
+        console.log("Google API istemcisi hazır.");
+
+        // Sonra Yandex Harita'yı başlat ve bekle
+        await initMapAndData();
+        console.log("Yandex Harita ve veriler hazır.");
+
+    } catch (err) {
+        console.error("Uygulama başlatılamadı:", err);
+        UI.showError("Kritik bir hata oluştu. Lütfen konsolu kontrol edin.");
+    }
 }
 
-// 3. Yandex Harita'yı başlatır ve ilk veriyi çeker.
-function initMapAndData() {
+// 3. Haritayı ve veriyi başlatan async fonksiyon
+async function initMapAndData() {
     const params = new URLSearchParams(window.location.search);
     AppState.aracSheetName = params.get('arac');
 
     if (!AppState.aracSheetName) {
         UI.showError("URL'de araç belirtilmemiş! (Örn: ?arac=OP-1)");
-        return;
+        return; // Hata durumunda fonksiyonu durdur
     }
 
     UI.setAracBaslik(`${AppState.aracSheetName} Görevleri`);
-    MapManager.initMap("map"); // Harita modülünü başlat
+    
+    // MapManager.initMap artık async olduğu için await ile bekliyoruz.
+    await MapManager.initMap("map"); 
 
-    // API modülü aracılığıyla ilk görev verisini çek.
-    API.fetchSheetData(AppState.aracSheetName)
-        .then(gorevler => {
-            AppState.tumGorevler = gorevler;
-            UI.mahalleFiltresiniDoldur(AppState.tumGorevler);
-            UI.render(); // Arayüz modülündeki ana çizim fonksiyonunu çağır
-        })
-        .catch(err => {
-            console.error("Veri çekme hatası:", err);
-            UI.showError("Veri çekilemedi. İzinleri veya Spreadsheet ID'yi kontrol edin.");
-        });
+    // Veriyi çek
+    const gorevler = await API.fetchSheetData(AppState.aracSheetName);
+    AppState.tumGorevler = gorevler;
+    
+    // Veri çekildikten sonra arayüzü güncelle
+    UI.mahalleFiltresiniDoldur(AppState.tumGorevler);
+    UI.render();
 }
