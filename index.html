@@ -68,35 +68,33 @@
         const rotateRightButton = document.getElementById('rotate-right');
         const ROTATION_STEP = 20;
 
+        // 1. Açı için bir başlangıç değeri tanımlıyoruz. Bu değişken bizim için açıyı takip edecek.
+        let currentAzimuth = 0;
+
         rotateLeftButton.addEventListener('click', () => {
-            // DEBUG: Butonun çalıştığını kontrol edelim
-            console.log("Sola Döndür butonuna tıklandı!"); 
             rotateMap(-ROTATION_STEP);
         });
 
         rotateRightButton.addEventListener('click', () => {
-            // DEBUG: Butonun çalıştığını kontrol edelim
-            console.log("Sağa Döndür butonuna tıklandı!");
             rotateMap(ROTATION_STEP);
         });
 
         function rotateMap(angle) {
-            // DEBUG: Fonksiyonun içindeki değerleri kontrol edelim
-            console.log("rotateMap fonksiyonu çağrıldı. Mevcut azimuth:", map.azimuth, "Eklenecek açı:", angle);
+            // 2. Açıyı haritadan okumak yerine, kendi değişkenimizden okuyup güncelliyoruz.
+            currentAzimuth += angle;
 
             const currentCamera = {
                 center: map.center,
                 zoom: map.zoom,
-                azimuth: map.azimuth,
                 tilt: map.tilt
+                // azimuth değerini artık buradan almıyoruz.
             };
-            
-            const newAzimuth = currentCamera.azimuth + angle;
-            console.log("Hesaplanan yeni azimuth:", newAzimuth);
+
+            console.log("Yeni Açı Hesaplanıyor:", currentAzimuth);
 
             map.setLocation({
                 ...currentCamera,
-                azimuth: newAzimuth,
+                azimuth: currentAzimuth, // 3. Haritayı kendi takip ettiğimiz açıya göre güncelliyoruz.
                 duration: 300
             });
         }
@@ -105,4 +103,5 @@
 
 </body>
 </html>
+
 
