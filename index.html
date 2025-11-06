@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Düzgün Döndürme</title>
+    <title>Yandex Maps API - Düzgün Döndürme (Mobil Çözüm)</title>
     <style>
         body, html {
             width: 100%;
@@ -44,20 +44,21 @@
         ymaps3.ready.then(init);
 
         function init() {
-            // Yandex'in tüm standart ve yerleşik davranışlarını aktif ediyoruz.
             const defaultBehaviors = ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom'];
 
             const map = new ymaps3.YMap(document.getElementById('map'), {
-                // === EN ÖNEMLİ DEĞİŞİKLİK BURADA ===
                 location: {
                     center: [39.925533, 32.866287],
                     zoom: 12,
-                    // Haritayı "döndürülebilir" olarak başlatmak için
-                    // bir başlangıç açısı ve eğimi veriyoruz.
-                    azimuth: 0, // Başlangıç açısı (Kuzey)
-                    tilt: 0     // Başlangıç eğimi (Dik bakış)
+                    azimuth: 0,
+                    tilt: 0
                 },
-                behaviors: defaultBehaviors
+                behaviors: defaultBehaviors,
+                
+                // === EN ÖNEMLİ MOBİL ÇÖZÜMÜ ===
+                // Haritayı açıkça 3D modunda başlatarak mobil cihazlarda
+                // döndürme ve eğme gibi özelliklerin aktif olmasını zorluyoruz.
+                mode: '3d'
             });
 
             map.addChild(new ymaps3.YMapDefaultSchemeLayer());
@@ -66,4 +67,3 @@
 
 </body>
 </html>
-
