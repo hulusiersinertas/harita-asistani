@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dağıtım Görevleri</title>
     <link rel="stylesheet" href="style.css">
-  <script 
-    src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" 
-    type="text/javascript"
-    onload="onYandexApiReady()"
-    onerror="onYandexApiError()">
-</script>
+    <!-- Yandex script'i buradan kaldırıldı ve body'nin sonuna taşındı -->
+</head>
 <body class="harita-odakli">
 
     <div id="ust-panel">
@@ -34,20 +30,29 @@
         <div id="gorev-detay"></div>
     </div>
     
-    <!-- Modüler Yapı -->
+    <!-- ================================================================ -->
+    <!-- === YENİ VE DOĞRU SIRALAMA === -->
+    <!-- ================================================================ -->
+
+    <!-- 1. ÖNCE KENDİ SCRIPTLERİMİZİ YÜKLÜYORUZ -->
+    <!-- Bu sayede 'onYandexApiReady' fonksiyonu tarayıcı tarafından tanınmış olur. -->
     <script src="modules/config.js"></script>
     <script src="modules/ui.js"></script>
     <script src="modules/map.js"></script>
     <script src="modules/api.js"></script>
-    
-    <!-- Orkestra Şefi -->
     <script src="script.js"></script>
     
-    <!-- Google API Başlatıcı -->
-    <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
+    <!-- 2. SONRA YANDEX'İN SCRIPT'İNİ ÇAĞIRIYORUZ -->
+    <!-- Yüklendiğinde, artık var olan 'onYandexApiReady' fonksiyonunu çağırır. -->
+    <script 
+        src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" 
+        type="text/javascript"
+        onload="onYandexApiReady()"
+        onerror="onYandexApiError()">
+    </script>
+    
+    <!-- 3. Google API script'i en sonda olabilir, kendi içinde asenkron çalışır. -->
+    <script async defer src="https://apis.google.com/js/api.js"></script>
 
 </body>
 </html>
-
-
-
