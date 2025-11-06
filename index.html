@@ -2,46 +2,105 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dağıtım Görevleri</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR" type="text/javascript"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yandex Maps API - Harita Döndürme</title>
+    <style>
+        body, html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 10px;
+        }
+        .controls button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+    </style>
+    <!-- Yandex Maps API v3'ü kendi API anahtarınızla ekleyin -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=YOUR_API_KEY&lang=tr_TR"></script>
 </head>
-<body class="harita-odakli">
-
-    <div id="ust-panel">
-        <div class="panel-sol">
-            <h1 id="arac-baslik">Yükleniyor...</h1>
-            <div id="gorev-sayaci"></div>
-        </div>
-        <div class="panel-sag">
-            <select id="mahalle-filtre" class="filtre-kontrolu">
-                <option value="TUMU">Tüm Mahalleler</option>
-            </select>
-            <button id="gorunum-degistir-btn" class="filtre-kontrolu">Listeyi Göster</button>
-        </div>
-    </div>
+<body>
 
     <div id="map"></div>
 
-    <div id="alt-panel">
-        <div id="panel-tutamaci"></div>
-        <div id="gorev-listesi-tam"></div>
-        <div id="gorev-detay"></div>
+    <div class="controls">
+        <button id="rotate-left">Sola Döndür</button>
+        <button id="rotate-right">Sağa Döndür</button>
     </div>
-    
-    <!-- Modüler Yapı -->
-    <script src="modules/config.js"></script>
-    <script src="modules/ui.js"></script>
-    <script src="modules/map.js"></script>
-    <script src="modules/api.js"></script>
-    
-    <!-- Orkestra Şefi -->
-    <script src="script.js"></script>
-    
-    <!-- Google API Başlatıcı -->
-    <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
+
+    <script type="text/javascript">
+        // API'nin yüklenmesini bekleyin
+        ymaps3.ready.then(init);
+
+        function init() {
+            // Harita nesnesini oluşturun
+            const map = new ymaps3.YMap(document.getElementById('map'), {
+                location: {
+                    center: [39.925533, 32.866287], // Ankara koordinatları
+                    zoom: 12
+                }
+            });
+
+            // Haritaya varsayılan katmanı ekleyin
+            map.addChild(new ymaps3.YMapDefaultSchemeLayer());
+
+            // Butonları alın
+            const rotateLeftButton = document.getElementById('rotate-left');
+            const rotateRightButton = document.getElementById('rotate-right');
+
+            const ROTATION_STEP = 20; // Her tıklamada kaç derece döneceği
+
+            // Sola döndürme butonu için olay dinleyicisi
+            rotateLeftButton.addEventListener('click', () => {
+                rotateMap(-ROTATION_STEP);
+            });
+
+            // Sağa döndürme butonu için olay dinleyicisi
+            rotateRightButton.addEventListener('click', () => {
+                rotateMap(ROTATION_STEP);
+            });
+
+            // Haritayı döndüren fonksiyon
+            function rotateMap(angle) {
+                // Mevcut kamera bilgilerini alın
+                const currentCamera = {
+                    center: map.center,
+                    zoom: map.zoom,
+                    azimuth: map.azimuth, // Mevcut dönüş açısı
+                    tilt: map.tilt // Mevcut eğim açısı
+                };
+                
+                // Yeni dönüş açısını hesaplayın
+                const newAzimuth = currentCamera.azimuth + angle;
+
+                // Haritanın konumunu ve kamerasını güncelleyin
+                map.setLocation({
+                    ...currentCamera, // center, zoom ve tilt değerlerini koru
+                    azimuth: newAzimuth,
+                    duration: 300 // Animasyon süresi (milisaniye)
+                });
+            }
+        }
+    </script>
 
 </body>
 </html>
-
