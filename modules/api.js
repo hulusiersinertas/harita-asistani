@@ -10,7 +10,7 @@ const API = {
             'apiKey': AppConfig.GOOGLE_API_KEY,
             'discoveryDocs': ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
         });
-    }, // <-- BU VİRGÜL HAYATİ ÖNEMDE!
+    },
 
     // E-Tablodan görev verisini çeker ve işleyip döndürür.
     fetchSheetData: async function(sheetName) {
@@ -22,11 +22,11 @@ const API = {
             });
 
             return (response.result.values || []).map((row, index) => {
-                const hamEnlem = row[AppConfig.SUTUNLAR.ENLEM],
-                      hamBoylam = row[AppConfig.SUTUNLAR.BOYLAM];
+                const hamEnlem = row[AppConfig.SUTUNLAR.ENLEM];
+                const hamBoylam = row[AppConfig.SUTUNLAR.BOYLAM];
                 
-                const enlemStr = String(hamEnlem || '').replace(/,/g, ''),
-                      boylamStr = String(hamBoylam || '').replace(/,/g, '');
+                const enlemStr = String(hamEnlem || '').replace(/,/g, '');
+                const boylamStr = String(hamBoylam || '').replace(/,/g, '');
                 
                 const tamAdres = row[AppConfig.SUTUNLAR.TAM_ADRES] || '';
                 const mahalleMatch = tamAdres.match(/^.*?(MAH\.|MAHALLESİ)/i);
@@ -34,12 +34,12 @@ const API = {
                 return {
                     rowIndex: index + 4,
                     adSoyad: row[AppConfig.SUTUNLAR.AD_SOYAD] || 'İsim Yok',
-                    adresNotu: row[5] || '', // F Sütunu
-                    miktar: row[6] || '',    // G Sütunu
+                    adresNotu: row[AppConfig.SUTUNLAR.ADRES_NOTU] || '',
+                    miktar: row[AppConfig.SUTUNLAR.MIKTAR] || '',
                     durum: row[AppConfig.SUTUNLAR.DURUM] || '',
                     tamAdres: tamAdres,
                     mahalle: mahalleMatch ? mahalleMatch[0].trim().toUpperCase() : 'BİLİNMEYEN',
-                    telefon: row[9] || '', // J Sütunu
+                    telefon: row[AppConfig.SUTUNLAR.TELEFON] || '',
                     enlem: enlemStr.length > 2 ? parseFloat(enlemStr.slice(0, 2) + '.' + enlemStr.slice(2)) : null,
                     boylam: boylamStr.length > 2 ? parseFloat(boylamStr.slice(0, 2) + '.' + boylamStr.slice(2)) : null,
                     gizli: false
@@ -47,7 +47,7 @@ const API = {
             }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor');
         } catch (error) {
             console.error("API.fetchSheetData hatası:", error);
-            throw error;
+            throw error; // Hatayı yukarıya (script.js'e) fırlat
         }
     },
 
