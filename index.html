@@ -68,40 +68,37 @@
         const rotateRightButton = document.getElementById('rotate-right');
         const ROTATION_STEP = 20;
 
-        // 1. Açı için bir başlangıç değeri tanımlıyoruz. Bu değişken bizim için açıyı takip edecek.
+        // Haritanın mevcut açısını takip etmek için bir değişken kullanıyoruz.
+        // Bu mantığın doğru çalıştığını önceki denemelerde kanıtladık.
         let currentAzimuth = 0;
 
         rotateLeftButton.addEventListener('click', () => {
-            rotateMap(-ROTATION_STEP);
+            // Açıyı kendi değişkenimize göre güncelliyoruz.
+            currentAzimuth -= ROTATION_STEP;
+            updateCamera();
         });
 
         rotateRightButton.addEventListener('click', () => {
-            rotateMap(ROTATION_STEP);
+            // Açıyı kendi değişkenimize göre güncelliyoruz.
+            currentAzimuth += ROTATION_STEP;
+            updateCamera();
         });
 
-        function rotateMap(angle) {
-            // 2. Açıyı haritadan okumak yerine, kendi değişkenimizden okuyup güncelliyoruz.
-            currentAzimuth += angle;
+        function updateCamera() {
+            console.log("Kamera güncelleniyor, yeni azimuth:", currentAzimuth);
 
-            const currentCamera = {
-                center: map.center,
-                zoom: map.zoom,
-                tilt: map.tilt
-                // azimuth değerini artık buradan almıyoruz.
-            };
-
-            console.log("Yeni Açı Hesaplanıyor:", currentAzimuth);
-
-            map.setLocation({
-                ...currentCamera,
-                azimuth: currentAzimuth, // 3. Haritayı kendi takip ettiğimiz açıya göre güncelliyoruz.
-                duration: 300
+            // DOKÜMANLARDAN ÖĞRENDİĞİMİZ:
+            // setLocation yerine, özellikle kamerayı döndürmek için tasarlanmış
+            // setCamera metodunu kullanıyoruz.
+            map.setCamera({
+                azimuth: currentAzimuth,
+                duration: 400 // Animasyon süresi (milisaniye)
             });
         }
     }
 </script>
-
 </body>
 </html>
+
 
 
