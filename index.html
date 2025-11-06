@@ -73,35 +73,30 @@
             font-size: 14px;
         }
     </style>
-    <script src="https://api-maps.yandex.ru/v3/?apikey=YOUR_API_KEY&lang=tr_TR"></script>
-</head>
-<body>
-
-    <div id="map"></div>
-    <div class="info">Haritayı döndürmek için <strong>Ctrl</strong> tuşuna basılı tutun ve sürükleyin.</div>
-
     <script type="text/javascript">
         ymaps3.ready.then(init);
 
         function init() {
+            // Haritanın varsayılan davranışlarını bir değişkende saklayalım
+            const defaultBehaviors = ['drag', 'pinchZoom', 'mouseTilt', 'mouseRotate', 'scrollZoom'];
+
             const map = new ymaps3.YMap(document.getElementById('map'), {
                 location: {
                     center: [39.925533, 32.866287],
                     zoom: 12
-                }
+                },
+                // Haritayı varsayılan davranışlarla başlatıyoruz
+                behaviors: defaultBehaviors
             });
 
             map.addChild(new ymaps3.YMapDefaultSchemeLayer());
             
-            // --- Döndürme Mantığı Değişkenleri ---
             let isCtrlPressed = false;
             let isDragging = false;
             let startX = 0;
             let startAzimuth = 0;
             let currentAzimuth = 0;
             const SENSITIVITY = 0.5;
-
-            // --- Olay Dinleyicileri ---
 
             window.addEventListener('keydown', (event) => {
                 if (event.key === 'Control') isCtrlPressed = true;
@@ -110,14 +105,14 @@
                 if (event.key === 'Control') isCtrlPressed = false;
             });
 
-            // === DÜZELTİLEN KISIM BURASI ===
-            // 'map.domElement' yerine haritanın kendi div'ini doğrudan seçiyoruz.
             const mapElement = document.getElementById('map');
 
             mapElement.addEventListener('mousedown', (event) => {
                 if (isCtrlPressed) {
-                    // Haritanın kendi sürükleme davranışını geçici olarak devre dışı bırakıyoruz.
-                    map.behaviors.disable('drag');
+                    // === DÜZELTİLEN KISIM (API v3 YÖNTEMİ) ===
+                    // 'drag' dışındaki tüm davranışları alıp haritayı güncelliyoruz
+                    const behaviorsWithoutDrag = defaultBehaviors.filter(b => b !== 'drag');
+                    map.setBehaviors(behaviorsWithoutDrag);
                     
                     isDragging = true;
                     startX = event.clientX;
@@ -142,8 +137,10 @@
                 if (isDragging) {
                     isDragging = false;
                     mapElement.classList.remove('grabbing');
-                    // Döndürme bittiğinde haritanın sürükleme davranışını tekrar aktif ediyoruz.
-                    map.behaviors.enable('drag');
+                    
+                    // === DÜZELTİLEN KISIM (API v3 YÖNTEMİ) ===
+                    // Döndürme bitince varsayılan davranışları geri yüklüyoruz
+                    map.setBehaviors(defaultBehaviors);
                 }
             });
         }
@@ -154,4 +151,5 @@
 
 </body>
 </html>
+
 
