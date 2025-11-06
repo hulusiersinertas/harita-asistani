@@ -1,6 +1,6 @@
 // =================================================================================
 // == ANA DOSYA: Orkestra Şefi (script.js)
-// == Sorumluluk: Uygulama başlatma zincirini yönetir ve modüller arası iletişimi sağlar.
+// == Sorumluluk: Tüm uygulama başlatma zincirini yönetir.
 // =================================================================================
 
 // Global Durum (State) Yönetimi
@@ -8,33 +8,61 @@ const AppState = {
     myMap: null,
     aracSheetName: null,
     tumGorevler: [],
-    tumPlacemarks: [] // Bu, v3'te farklı yönetilecek.
+    tumPlacemarks: []
 };
 
-// Olay Dinleyicileri
+// =================================================================================
+// == UYGULAMA BAŞLATMA ZİNCİRİ (DOĞRU BEKLEME MANTIĞIYLA)
+// =================================================================================
+
+// 1. Tüm sayfa yüklendiğinde ana başlatıcıyı tetikle
 document.addEventListener('DOMContentLoaded', () => {
-    UI.initEventListeners();
+    main();
 });
 
-// =================================================================================
-// == UYGULAMA BAŞLATMA ZİNCİRİ (v3.0 İÇİN GÜNCELLENDİ)
-// =================================================================================
-
-// 1. Google API yüklendiğinde bu fonksiyon tetiklenir.
-function startApp() {
-    gapi.load('client', initApp); // Fonksiyon adını daha genel hale getirdik
-}
-
-// 2. async fonksiyon ile hem Google'ı hem Yandex'i başlatır.
-async function initApp() {
+// 2. Her şeyi doğru sırada başlatan ana async fonksiyon
+async function main() {
     try {
-        // Önce Google API istemcisini başlat ve bekle
-        await API.initGoogleClient();
+        // A. Google API script'inin "gapi" nesnesini oluşturmasını bekle.
+        await loadGoogleApiScript();
+        console.log("Google API (gapi) script'i yüklendi.");
+        
+        // B. Google API istemcisini başlat.
+        await gapi.client.init({
+            'apiKey': AppConfig.GOOGLE_API_KEY,
+            'discoveryDocs': ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+        });
         console.log("Google API istemcisi hazır.");
 
-        // Sonra Yandex Harita'yı başlat ve bekle
-        await initMapAndData();
-        console.log("Yandex Harita ve veriler hazır.");
+        // C. Yandex API script'inin "ymaps3" nesnesini oluşturmasını bekle.
+        // BU, "ymaps3 is not defined" HATASINI ÇÖZEN EN KRİTİK ADIMDIR.
+        await ymaps3.ready;
+        console.log("Yandex API (ymaps3) hazır.");
+
+        // D. Artık her şey hazır olduğuna göre, uygulama mantığını başlatabiliriz.
+        const params = new URLSearchParams(window.location.search);
+        AppState.aracSheetName = params.get('arac');
+
+        if (!AppState.aracSheetName) {
+            UI.showError("URL'de araç belirtilmemiş! (Örn: ?arac=OP-1)");
+            return;
+        }
+
+        UI.setAracBaslik(`${AppState.aracSheetName} Görevleri`);
+        
+        // Haritayı başlat
+        await MapManager.initMap("map"); 
+
+        // Veriyi çek
+        const gorevler = await API.fetchSheetData(AppState.aracSheetName);
+        AppState.tumGorevler = gorevler;
+        
+        // Arayüzü güncelle ve olay dinleyicilerini bağla
+        UI.initEventListeners();
+        UI.mahalleFiltresiniDoldur(AppState.tumGorevler);
+        UI.render();
+
+        console.log("Uygulama başarıyla başlatıldı!");
 
     } catch (err) {
         console.error("Uygulama başlatılamadı:", err);
@@ -42,26 +70,17 @@ async function initApp() {
     }
 }
 
-// 3. Haritayı ve veriyi başlatan async fonksiyon
-async function initMapAndData() {
-    const params = new URLSearchParams(window.location.search);
-    AppState.aracSheetName = params.get('arac');
-
-    if (!AppState.aracSheetName) {
-        UI.showError("URL'de araç belirtilmemiş! (Örn: ?arac=OP-1)");
-        return; // Hata durumunda fonksiyonu durdur
-    }
-
-    UI.setAracBaslik(`${AppState.aracSheetName} Görevleri`);
-    
-    // MapManager.initMap artık async olduğu için await ile bekliyoruz.
-    await MapManager.initMap("map"); 
-
-    // Veriyi çek
-    const gorevler = await API.fetchSheetData(AppState.aracSheetName);
-    AppState.tumGorevler = gorevler;
-    
-    // Veri çekildikten sonra arayüzü güncelle
-    UI.mahalleFiltresiniDoldur(AppState.tumGorevler);
-    UI.render();
+// Google API script'inin yüklenmesini beklemek için bir yardımcı fonksiyon
+function loadGoogleApiScript() {
+    return new Promise((resolve) => {
+        // gapi.load, Google'ın kendi içindeki asenkron yükleyiciyi kullanır.
+        const checkGapi = () => {
+            if (window.gapi && window.gapi.load) {
+                gapi.load('client', resolve);
+            } else {
+                setTimeout(checkGapi, 100);
+            }
+        };
+        checkGapi();
+    });
 }
