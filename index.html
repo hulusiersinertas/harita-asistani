@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Nihai Çözüm</title>
+    <title>Yandex Maps API - Stabil Sürüm</title>
     <style>
         body, html, #map {
             width: 100%;
@@ -26,47 +26,38 @@
             text-align: center;
         }
     </style>
-    <!-- 1. DOĞRU URL: "&mode=enterprise" olmadan, standart API script'ini yüklüyoruz. -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- Standart ve çalışan API URL'si -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=YOUR_API_KEY&lang=tr_TR"></script>
 </head>
 <body>
 
     <div id="map"></div>
     <div class="info">
-        <strong>Masaüstü:</strong> Döndürmek için Ctrl + Sürükle<br>
-        <strong>Mobil:</strong> Döndürmek için iki parmağınızı kullanın
+        <strong>Masaüstü:</strong> Döndürmek için Ctrl + Sürükle
     </div>
 
     <script type="text/javascript">
-        // 2. DOĞRU YAPI: "ymaps3 is not defined" hatasını önlemek için kodumuzu ymaps3.ready içine alıyoruz.
+        // API'nin hazır olmasını bekleyen en güvenilir yapı
         ymaps3.ready.then(init);
 
-        // 3. DOĞRU MANTIK: Gerekli UI modülünü import eden async fonksiyon.
-        async function init() {
+        function init() {
             try {
-                const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
-
-                // Bu satırın çalışması için standart API script'i yeterli olmalı.
-                // "no loader" hatası muhtemelen geçici bir sorundu.
-                const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
+                // 'mouseRotate' hem masaüstü Ctrl+Drag'ı hem de (eğer API destekleseydi) mobil döndürmeyi yönetir.
+                const defaultBehaviors = ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom'];
                 
                 const map = new ymaps3.YMap(document.getElementById('map'), {
                     location: {
                         center: [39.925533, 32.866287],
                         zoom: 12,
+                        // Döndürme özelliğini temelden aktif etmek için bu parametreler önemli.
                         azimuth: 0,
                         tilt: 0
                     },
-                    behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
+                    behaviors: defaultBehaviors
                 });
 
                 map.addChild(new ymaps3.YMapDefaultSchemeLayer());
 
-                map.addChild(
-                    new YMapControls({position: 'right'}, [
-                        new YMapRotateControl({})
-                    ])
-                );
             } catch (error) {
                 console.error('Harita başlatılırken bir hata oluştu:', error);
             }
