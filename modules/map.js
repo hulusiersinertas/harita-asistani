@@ -13,11 +13,15 @@ const MapManager = {
         AppState.myMap = new ymaps.Map(elementId, {
             center: [39.7667, 30.5256],
             zoom: 12,
-            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl']
+            // YENİ EKLENDİ: Haritaya pusula/döndürme butonu ekler.
+            controls: ['zoomControl', 'rulerControl', 'trafficControl', 'typeSelector', 'fullscreenControl', 'rotateControl']
         }, { 
             yandexMapAutoSwitch: true 
         });
         
+        // YENİ EKLENDİ: Mobilde iki parmakla döndürme ve zoom özelliğini aktif eder.
+        AppState.myMap.behaviors.enable('multiTouch');
+
         AppState.myMap.events.add('click', () => {
             if (document.body.classList.contains('liste-odakli')) {
                 UI.toggleGorunum();
@@ -94,11 +98,7 @@ const MapManager = {
                         document.getElementById('mahalle-filtre').value = gorev.mahalle;
                         UI.filtrele();
                     }
-                    // =========================================================================
-                    // ==== YAZIM HATASI BURADA DÜZELTİLDİ ====
-                    // =========================================================================
-                    this.vurgulaPin(targetPlacemark); // Eksik olan parantez ')' eklendi.
-                    // =========================================================================
+                    this.vurgulaPin(targetPlacemark);
                     UI.renderDetayPaneli(rowIndex);
                     UI.vurgula(rowIndex);
                 });
@@ -158,7 +158,7 @@ const MapManager = {
                 this.sonSecilenPlacemark.options.set('preset', 'islands#yellowDotIcon');
             }
         }
-        secilenPlacemark.options.set('preset', 'VioletSouvenirsCircleIcon');
+        secilenPlacemark.options.set('preset', 'islands#blueStretchyIcon'); // Daha belirgin bir ikon
         this.sonSecilenPlacemark = secilenPlacemark;
     },
 
