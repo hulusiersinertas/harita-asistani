@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Fare ve Dokunmatik Döndürme</title>
+    <title>Yandex Maps API - Düzgün Döndürme</title>
     <style>
         body, html {
             width: 100%;
@@ -16,10 +16,6 @@
         #map {
             width: 100%;
             height: 100%;
-            cursor: grab;
-        }
-        #map.grabbing {
-            cursor: grabbing;
         }
         .info {
             position: absolute;
@@ -34,7 +30,7 @@
             text-align: center;
         }
     </style>
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <script src="https://api-maps.yandex.ru/v3/?apikey=YOUR_API_KEY&lang=tr_TR"></script>
 </head>
 <body>
 
@@ -48,75 +44,23 @@
         ymaps3.ready.then(init);
 
         function init() {
-            // Haritanın varsayılan davranışlarını tanımlıyoruz.
-            // MOBİL DESTEĞİ İÇİN 'mouseRotate' ve 'pinchZoom' eklendi.
+            // Yandex'in tüm standart ve yerleşik davranışlarını aktif ediyoruz.
             const defaultBehaviors = ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom'];
 
             const map = new ymaps3.YMap(document.getElementById('map'), {
+                // === EN ÖNEMLİ DEĞİŞİKLİK BURADA ===
                 location: {
                     center: [39.925533, 32.866287],
-                    zoom: 12
+                    zoom: 12,
+                    // Haritayı "döndürülebilir" olarak başlatmak için
+                    // bir başlangıç açısı ve eğimi veriyoruz.
+                    azimuth: 0, // Başlangıç açısı (Kuzey)
+                    tilt: 0     // Başlangıç eğimi (Dik bakış)
                 },
                 behaviors: defaultBehaviors
             });
 
             map.addChild(new ymaps3.YMapDefaultSchemeLayer());
-            
-            let isCtrlPressed = false;
-            let isDragging = false;
-            let startX = 0;
-            let startAzimuth = 0;
-            let currentAzimuth = 0;
-            
-            // HASSASİYET DEĞERİ DÜŞÜRÜLDÜ.
-            // Bu değeri artırıp azaltarak hızı ayarlayabilirsiniz.
-            const SENSITIVITY = 0.3;
-
-            window.addEventListener('keydown', (event) => {
-                if (event.key === 'Control') isCtrlPressed = true;
-            });
-            window.addEventListener('keyup', (event) => {
-                if (event.key === 'Control') isCtrlPressed = false;
-            });
-
-            const mapElement = document.getElementById('map');
-
-            mapElement.addEventListener('mousedown', (event) => {
-                // Sadece Ctrl basılıyken masaüstü sürüklemesini aktif et
-                if (isCtrlPressed) {
-                    // Mobil ve diğer standart döndürme davranışlarını geçici olarak kapat
-                    const behaviorsWithoutRotate = defaultBehaviors.filter(b => b !== 'mouseRotate');
-                    map.setBehaviors(behaviorsWithoutRotate);
-                    
-                    isDragging = true;
-                    startX = event.clientX;
-                    // Haritanın mevcut açısından başla (mobil döndürmeden sonra güncel olması için)
-                    startAzimuth = map.azimuth;
-                    currentAzimuth = map.azimuth;
-                    mapElement.classList.add('grabbing');
-                }
-            });
-            
-            window.addEventListener('mousemove', (event) => {
-                if (isDragging) {
-                    const deltaX = event.clientX - startX;
-                    currentAzimuth = startAzimuth - (deltaX * SENSITIVITY);
-                    
-                    map.setCamera({
-                        azimuth: currentAzimuth,
-                        duration: 0 
-                    });
-                }
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    mapElement.classList.remove('grabbing');
-                    // Döndürme bitince varsayılan davranışları geri yükle
-                    map.setBehaviors(defaultBehaviors);
-                }
-            });
         }
     </script>
 
