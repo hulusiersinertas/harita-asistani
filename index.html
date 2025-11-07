@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita v3 - Nihai ve Doğru Çözüm</title>
+    <title>Yandex Harita v3 - Olay Güdümlü Doğru Çözüm</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
@@ -48,8 +48,12 @@
     </div>
 
     <script type="text/javascript">
-        let map;
-        let currentBearing = 0;
+        // 1. Haritanın tüm durumunu saklayacak olan "tek doğru kaynak" değişkenimiz.
+        let currentLocationState = {
+            center: [32.8597, 39.9334], // [boylam, enlem]
+            zoom: 12,
+            bearing: 0
+        };
 
         main();
         async function main() {
@@ -58,23 +62,28 @@
 
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
 
-            map = new YMap(
+            const map = new YMap(
                 document.getElementById('app'),
                 {
-                    location: {
-                        center: [32.8597, 39.9334],
-                        zoom: 12,
-                        bearing: currentBearing
-                    },
+                    location: currentLocationState, // Başlangıç durumunu değişkenimizden al
                     behaviors: BEHAVIORS
                 }
             );
 
             map.addChild(new YMapDefaultSchemeLayer({}));
-            setupControls();
+
+            // 2. KRİTİK ADIM: Harita her güncellendiğinde (kaydırma, zoom) 'update' olayı tetiklenir.
+            // Bu olaya abone olarak, haritanın yeni durumunu öğrenir ve kendi değişkenimizi güncelleriz.
+            map.subscribe('update', (event) => {
+                // event.location, haritanın o anki en güncel ve doğru durumunu içerir.
+                currentLocationState = event.location;
+            });
+
+            // Butonları ve olay dinleyicilerini harita ve abonelik hazır olduğunda ata
+            setupControls(map);
         }
 
-        function setupControls() {
+        function setupControls(map) {
             const rotateLeftBtn = document.getElementById('rotate-left');
             const rotateRightBtn = document.getElementById('rotate-right');
             const resetRotationBtn = document.getElementById('reset-rotation');
@@ -83,38 +92,33 @@
             const ANIMATION_DURATION = 200;
 
             rotateLeftBtn.addEventListener('click', function() {
-                currentBearing -= ROTATION_STEP;
-                // 1. O anki harita durumunu (merkez, zoom) al
-                const currentLocation = map.location;
-                // 2. Yeni açıyla birlikte tam durumu gönder
+                // 3. Döndürme için, her zaman güncel olan kendi durum değişkenimizi kullanırız.
+                const newBearing = currentLocationState.bearing - ROTATION_STEP;
                 map.update({
                     location: {
-                        ...currentLocation, // Mevcut merkez ve zoom'u koru
-                        bearing: currentBearing, // Sadece açıyı değiştir
+                        ...currentLocationState, // Mevcut ve doğru center/zoom değerlerini koru
+                        bearing: newBearing,      // Sadece açıyı değiştir
                         duration: ANIMATION_DURATION
                     }
                 });
             });
 
             rotateRightBtn.addEventListener('click', function() {
-                currentBearing += ROTATION_STEP;
-                const currentLocation = map.location;
+                const newBearing = currentLocationState.bearing + ROTATION_STEP;
                 map.update({
                     location: {
-                        ...currentLocation,
-                        bearing: currentBearing,
+                        ...currentLocationState,
+                        bearing: newBearing,
                         duration: ANIMATION_DURATION
                     }
                 });
             });
 
             resetRotationBtn.addEventListener('click', function() {
-                currentBearing = 0;
-                const currentLocation = map.location;
                 map.update({
                     location: {
-                        ...currentLocation,
-                        bearing: currentBearing,
+                        ...currentLocationState,
+                        bearing: 0,
                         duration: ANIMATION_DURATION
                     }
                 });
