@@ -2,10 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    
-    <!-- DEĞİŞİKLİK: Mobil cihazlarda dokunmatik hareketlerin doğru çalışması için viewport güncellendi -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <title>Yandex Harita Döndürme Kontrolleri</title>
 
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
@@ -18,6 +15,14 @@
             padding: 0;
             font-family: Arial, Helvetica, sans-serif;
             overflow: hidden;
+        }
+
+        /* YENİ EKLENEN KURAL */
+        #app {
+            /* Tarayıcının dokunmatik jestleri (kaydırma, yakınlaştırma vb.)
+               kendisi yönetmesini engeller. Bu sayede tüm dokunmatik olaylar
+               doğrudan Yandex Harita API'sine iletilir. */
+            touch-action: none;
         }
     </style>
 </head>
