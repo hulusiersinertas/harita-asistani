@@ -1,79 +1,109 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Resmi Döndürme Butonu (Nihai Çözüm)</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <title>Yandex Harita Döndürme Kontrolleri</title>
+
+    <!-- 1. Yandex Haritalar API'sini API anahtarınız ile birlikte ekleyin -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c>&lang=tr_TR"></script>
+
     <style>
-        body, html, #map {
+        /* Haritanın tüm sayfayı kaplaması için temel stiller */
+        html, body, #app {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
-            font-family: sans-serif;
-            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden; /* Sayfada kaydırma çubuğu oluşmasını engeller */
         }
-        .info {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+
+        /* Bilgilendirme metni için stil */
+        .tooltip {
+            padding: 8px 12px;
             font-size: 14px;
-            text-align: center;
+            line-height: 20px;
+            color: #f2f5fa;
+            border-radius: 8px;
+            background-color: #313133;
         }
     </style>
-    <!-- Standart API script'ini yüklüyoruz. -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 </head>
 <body>
-
-    <div id="map"></div>
-    <div class="info">
-        Pusulayı veya Ctrl+Sürükle kullanarak haritayı döndürün.
-    </div>
+    <div id="app"></div>
 
     <script type="text/javascript">
-        // API'nin hazır olmasını bekleyen en güvenilir yapı.
-        ymaps3.ready.then(init);
+        // Hata ayıklamayı kolaylaştırmak için global bir harita değişkeni
+        window.map = null;
 
-        async function init() {
+        // Ana fonksiyonu başlat
+        main();
+
+        async function main() {
             try {
-                // 1. KRİTİK VE DÜZELTİLMİŞ ADIM: Import komutuna doğru yol haritasını veriyoruz.
-                // URL şablonu, Yandex'in gerektirdiği gibi "{package}" yer tutucusunu içermelidir.
-                ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/{package}/dist/index.js', ['@yandex/ymaps3-default-ui-theme@0.0.1']);
-                
-                const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
+                // 2. Yandex Haritalar API'sinin yüklenmesini bekleyin
+                await ymaps3.ready;
 
-                // Artık çalışacak olan import komutu:
-                const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
-                
-                const map = new ymaps3.YMap(document.getElementById('map'), {
-                    location: {
-                        center: [39.925533, 32.866287],
-                        zoom: 12,
-                        azimuth: 0,
-                        tilt: 0
-                    },
-                    behaviors: ['drag', 'pinchZoom', 'mouseRotate', 'scrollZoom']
-                });
+                // 3. Kullanacağımız modülleri ymaps3 nesnesinden alın
+                const {
+                    YMap,
+                    YMapDefaultSchemeLayer,
+                    YMapDefaultFeaturesLayer,
+                    YMapControls
+                } = ymaps3;
 
-                map.addChild(new ymaps3.YMapDefaultSchemeLayer());
+                // 4. Arayüz (UI) paketini CDN üzerinden sisteme tanıtın
+                // Bu adım, kontrol butonları gibi hazır arayüz bileşenlerini kullanabilmemiz için kritik öneme sahiptir.
+                // '@0.0' gibi bir sürüm belirtmek, en son uyumlu sürümün kullanılmasını sağlar.
+                ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/{package}/dist/index.js', [
+                    '@yandex/ymaps3-default-ui-theme@0.0'
+                ]);
 
-                // Haritaya Yandex'in kendi resmi Döndürme Kontrolü'nü (Pusula) ekliyoruz.
-                map.addChild(
-                    new YMapControls({position: 'right'}, [
-                        new YMapRotateControl({})
-                    ])
+                // 5. Tanıttığımız paketten kontrol butonlarını import edin
+                const {
+                    YMapRotateControl,
+                    YMapTiltControl
+                } = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
+
+
+                // Haritanın başlangıç konumu ve zoom seviyesi
+                const LOCATION = {
+                    center: [32.8597, 39.9334], // Ankara'nın koordinatları [boylam, enlem]
+                    zoom: 12
+                };
+
+                // Etkinleştirilecek harita davranışları (sürükleme, yakınlaştırma vb.)
+                const ENABLED_BEHAVIORS = ['drag', 'scrollZoom', 'dblClick', 'mouseTilt', 'mouseRotate'];
+
+                // 6. Haritayı oluşturun
+                // `app` id'li div içerisine haritayı yerleştiriyoruz.
+                map = new YMap(
+                    document.getElementById('app'),
+                    {
+                        location: LOCATION,
+                        behaviors: ENABLED_BEHAVIORS
+                    }
                 );
+
+                // 7. Haritaya temel katmanları ekleyin
+                // Haritanın görünür olması için bu katmanlar gereklidir.
+                map.addChild(new YMapDefaultSchemeLayer({}));
+                map.addChild(new YMapDefaultFeaturesLayer({}));
+
+                // 8. Kontrol butonlarını bir kontrol paneline ekleyerek haritaya yerleştirin
+                // `YMapControls` ile butonları gruplayıp konumlandırabilirsiniz.
+                const controls = new YMapControls({ position: 'right' }, [
+                    new YMapRotateControl({}), // Döndürme butonu
+                    new YMapTiltControl({})      // Eğme (tilt) butonu
+                ]);
+
+                map.addChild(controls);
+
             } catch (error) {
-                console.error('Harita başlatılırken bir hata oluştu:', error);
+                console.error("Harita yüklenirken bir hata oluştu:", error);
             }
         }
     </script>
-
 </body>
 </html>
