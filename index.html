@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita v3 - Olay Güdümlü Doğru Çözüm</title>
+    <title>Yandex Harita v3 - Gözlemci (Observe) ile Nihai Çözüm</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
@@ -48,9 +48,8 @@
     </div>
 
     <script type="text/javascript">
-        // 1. Haritanın tüm durumunu saklayacak olan "tek doğru kaynak" değişkenimiz.
         let currentLocationState = {
-            center: [32.8597, 39.9334], // [boylam, enlem]
+            center: [32.8597, 39.9334],
             zoom: 12,
             bearing: 0
         };
@@ -65,21 +64,21 @@
             const map = new YMap(
                 document.getElementById('app'),
                 {
-                    location: currentLocationState, // Başlangıç durumunu değişkenimizden al
+                    location: currentLocationState,
                     behaviors: BEHAVIORS
                 }
             );
 
             map.addChild(new YMapDefaultSchemeLayer({}));
 
-            // 2. KRİTİK ADIM: Harita her güncellendiğinde (kaydırma, zoom) 'update' olayı tetiklenir.
-            // Bu olaya abone olarak, haritanın yeni durumunu öğrenir ve kendi değişkenimizi güncelleriz.
-            map.subscribe('update', (event) => {
-                // event.location, haritanın o anki en güncel ve doğru durumunu içerir.
-                currentLocationState = event.location;
+            // --- DEĞİŞİKLİK BURADA ---
+            // 'subscribe' yerine doğru yöntem olan 'observe' kullanılıyor.
+            // map.location özelliği her değiştiğinde bu fonksiyon çalışacak.
+            map.observe('location', (newLocation) => {
+                // Kendi durum değişkenimizi, haritadan gelen en güncel ve doğru bilgiyle güncelliyoruz.
+                currentLocationState = newLocation;
             });
 
-            // Butonları ve olay dinleyicilerini harita ve abonelik hazır olduğunda ata
             setupControls(map);
         }
 
@@ -92,12 +91,11 @@
             const ANIMATION_DURATION = 200;
 
             rotateLeftBtn.addEventListener('click', function() {
-                // 3. Döndürme için, her zaman güncel olan kendi durum değişkenimizi kullanırız.
                 const newBearing = currentLocationState.bearing - ROTATION_STEP;
                 map.update({
                     location: {
-                        ...currentLocationState, // Mevcut ve doğru center/zoom değerlerini koru
-                        bearing: newBearing,      // Sadece açıyı değiştir
+                        ...currentLocationState,
+                        bearing: newBearing,
                         duration: ANIMATION_DURATION
                     }
                 });
