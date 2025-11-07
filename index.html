@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - requestAnimationFrame ile Mükemmel Döndürme</title>
+    <title>Yandex v3 - Hassas Döndürme Kontrolü</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
@@ -23,11 +23,13 @@
     <button id="reset-rotation" title="Sıfırla">↑</button>
 
     <script type="text/javascript">
-        let map; // Global map değişkeni
+        let map;
         let currentCameraState = { tilt: 0, azimuth: 0 };
-        // --- YENİ MİMARİ ---
-        let rotationDirection = 0; // -1: Sola, 1: Sağa, 0: Dur
-        const ROTATION_SPEED = 0.5; // Her frame'de 0.5 derece döndür (daha hassas)
+        let rotationDirection = 0;
+        
+        // --- DEĞİŞİKLİK BURADA ---
+        // Hızı düşürerek daha hassas bir kontrol sağlıyoruz.
+        const ROTATION_SPEED = 0.2; // Her frame'de 0.2 derece döndür
 
         main();
         async function main() {
@@ -49,22 +51,16 @@
             map.addChild(mapListener);
 
             setupControls();
-            // Animasyon döngüsünü başlat
             animateRotation();
         }
 
-        // --- YENİ MİMARİ: Animasyon Döngüsü ---
         function animateRotation() {
-            // Eğer döndürme komutu yoksa, döngüyü durdur ve bir sonraki frame'i isteme.
             if (rotationDirection === 0) {
                 return;
             }
 
-            // Yeni açıyı hesapla
             const newAzimuth = currentCameraState.azimuth + (rotationDirection * ROTATION_SPEED);
 
-            // Haritayı güncelle. DİKKAT: 'duration' parametresi kaldırıldı!
-            // Animasyonu biz yönettiğimiz için API'nin kendi animasyonunu istemiyoruz.
             map.update({
                 camera: {
                     ...currentCameraState,
@@ -72,7 +68,6 @@
                 }
             });
             
-            // Bir sonraki animasyon karesini tarayıcıdan iste
             requestAnimationFrame(animateRotation);
         }
 
@@ -81,10 +76,8 @@
             const rotateRightBtn = document.getElementById('rotate-right');
             const resetRotationBtn = document.getElementById('reset-rotation');
 
-            // --- YENİ MİMARİ: Olay Dinleyicileri ---
-            // Basıldığında: Sadece yönü ayarla ve döngüyü (eğer durmuşsa) tetikle.
             const startRotation = (direction) => {
-                if (rotationDirection === 0) { // Sadece döngü durmuşsa yeniden başlat
+                if (rotationDirection === 0) {
                     rotationDirection = direction;
                     requestAnimationFrame(animateRotation);
                 } else {
@@ -92,7 +85,6 @@
                 }
             };
 
-            // Bırakıldığında: Sadece yönü sıfırla. Döngü kendi kendine duracak.
             const stopRotation = () => {
                 rotationDirection = 0;
             };
@@ -108,7 +100,7 @@
             document.addEventListener('touchcancel', stopRotation);
 
             resetRotationBtn.addEventListener('click', () => {
-                rotationDirection = 0; // Önce animasyonu durdur
+                rotationDirection = 0;
                 map.update({ camera: { ...currentCameraState, azimuth: 0, duration: 500 } });
             });
         }
