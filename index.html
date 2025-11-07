@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - GPS Navigasyon Asistanı</title>
+    <title>Yandex v3 - GPS Navigasyon (İşaretçi Düzeltildi)</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
@@ -21,6 +21,7 @@
         .user-marker {
             width: 22px; height: 22px; border-radius: 50%; background-color: #007bff;
             border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            /* İşaretçinin tam koordinat merkezinde durması için transform ekliyoruz */
             transform: translate(-50%, -50%);
         }
     </style>
@@ -45,13 +46,15 @@
         main();
         async function main() {
             await ymaps3.ready;
-            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker } = ymaps3;
+            // --- DEĞİŞİKLİK BURADA: YMapEntity'i de import ediyoruz ---
+            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker, YMapEntity } = ymaps3;
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
             map = new YMap(document.getElementById('app'), { location: { center: [32.8597, 39.9334], zoom: 12 } });
             map.addChild(new YMapDefaultSchemeLayer({}));
             const mapListener = new YMapListener({ onUpdate: ({ camera }) => { currentCameraState = camera; } });
             map.addChild(mapListener);
-            setupControls(YMapMarker);
+            // --- DEĞİŞİKLİK BURADA: YMapEntity'i setupControls'a iletiyoruz ---
+            setupControls(YMapMarker, YMapEntity);
             animateRotation();
         }
 
@@ -62,7 +65,8 @@
             requestAnimationFrame(animateRotation);
         }
 
-        function setupControls(YMapMarker) {
+        // --- DEĞİŞİKLİK BURADA: Fonksiyon artık YMapEntity'i de alıyor ---
+        function setupControls(YMapMarker, YMapEntity) {
             const rotateLeftBtn = document.getElementById('rotate-left');
             const rotateRightBtn = document.getElementById('rotate-right');
             const navigationBtn = document.getElementById('navigation-toggle-btn');
@@ -74,24 +78,32 @@
                         const { latitude, longitude, heading } = position.coords;
                         const userCoordinates = [longitude, latitude];
 
-                        // 1. İşaretçiyi (Marker) Güncelle
+                        // --- DEĞİŞİKLİK BURADA: İşaretçi oluşturma ve güncelleme mantığı düzeltildi ---
                         if (!userMarker) {
+                            // 1. Görsel element (mavi nokta) oluşturulur.
                             const markerElement = document.createElement('div');
                             markerElement.className = 'user-marker';
-                            userMarker = new YMapMarker({ coordinates: userCoordinates }, markerElement);
+
+                            // 2. Görünmez, sadece koordinatı olan ana Marker nesnesi (ebeveyn) oluşturulur.
+                            userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 10 });
+
+                            // 3. Görsel elementi içeren bir YMapEntity (çocuk) oluşturulur.
+                            const markerContent = new YMapEntity({}, markerElement);
+                            
+                            // 4. Görsel çocuk, koordinat ebeveynine eklenir.
+                            userMarker.addChild(markerContent);
+
+                            // 5. Tamamlanmış ve artık görünür olan işaretçi haritaya eklenir.
                             map.addChild(userMarker);
                         } else {
+                            // İşaretçi zaten varsa, sadece koordinatları güncellenir.
                             userMarker.update({ coordinates: userCoordinates });
                         }
 
-                        // 2. Sadece GPS İlerleme Yönünü Kullan
-                        // Eğer GPS ilerleme yönü veriyorsa (kullanıcı hareket halinde ise), haritayı o yöne çevir.
-                        // 'heading' değeri null veya 0'dan küçükse hiçbir şey yapma.
                         if (heading !== null && heading >= 0) {
                             map.update({ camera: { ...currentCameraState, azimuth: heading } });
                         }
-
-                        // 3. Haritayı Kullanıcının Konumuna Merkezle
+                        
                         map.update({ location: { center: userCoordinates, zoom: 17, duration: 1000 } });
                     },
                     (error) => { console.error("Konum hatası:", error); stopNavigation(); },
@@ -105,7 +117,6 @@
 
             const stopNavigation = () => {
                 if (locationWatcherId) navigator.geolocation.clearWatch(locationWatcherId);
-                // Pusula dinleyicisi artık olmadığı için kaldırmaya gerek yok.
                 isNavigationModeActive = false;
                 navigationBtn.classList.remove('active');
                 navigationBtn.innerHTML = '🛰️';
