@@ -1,97 +1,108 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita - Özel Döndürme Kontrolleri</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <title>Yandex Harita Döndürme Kontrolleri</title>
 
-    <!-- Kararlı API v2'yi kullanıyoruz -->
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- 1. Yandex Haritalar API'sini API anahtarınız ile birlikte ekleyin -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 
     <style>
-        html, body, #map {
-            width: 100%; height: 100%;
-            padding: 0; margin: 0;
-            overflow: hidden;
-        }
-        #map {
-            touch-action: none;
-        }
-
-        /* Kendi kontrol butonlarımız için CSS stilleri */
-        .custom-controls {
-            position: absolute;
-            z-index: 1000;
-            right: 10px;
-            bottom: 80px; /* Altta, sağ köşeye yakın konumlandırdık */
-            display: flex;
-            flex-direction: column;
+        /* Haritanın tüm sayfayı kaplaması için temel stiller */
+        html, body, #app {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden; /* Sayfada kaydırma çubuğu oluşmasını engeller */
         }
 
-        .custom-controls button {
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 40px;
-            height: 40px;
-            margin-top: 5px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .custom-controls button:active {
-            background-color: #f0f0f0;
+        /* Bilgilendirme metni için stil */
+        .tooltip {
+            padding: 8px 12px;
+            font-size: 14px;
+            line-height: 20px;
+            color: #f2f5fa;
+            border-radius: 8px;
+            background-color: #313133;
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-
-    <!-- 1. Kendi HTML butonlarımızı ekliyoruz -->
-    <div class="custom-controls">
-        <button id="rotate-left">↶</button>
-        <button id="rotate-right">↷</button>
-        <button id="reset-rotation">↑</button>
-    </div>
+    <div id="app"></div>
 
     <script type="text/javascript">
-        ymaps.ready(init);
+        // Hata ayıklamayı kolaylaştırmak için global bir harita değişkeni
+        window.map = null;
 
-        function init() {
-            var myMap = new ymaps.Map("map", {
-                center: [39.9334, 32.8597], // [enlem, boylam]
-                zoom: 12
-            });
+        // Ana fonksiyonu başlat
+        main();
 
-            // Yakınlaştırma çalışıyor, bu yüzden multiTouch'ı etkin bırakıyoruz.
-            myMap.behaviors.enable('multiTouch');
+        async function main() {
+            try {
+                // 2. Yandex Haritalar API'sinin yüklenmesini bekleyin
+                await ymaps3.ready;
 
-            // 2. Butonlarımızı Javascript'te seçiyoruz
-            const rotateLeftBtn = document.getElementById('rotate-left');
-            const rotateRightBtn = document.getElementById('rotate-right');
-            const resetRotationBtn = document.getElementById('reset-rotation');
+                // 3. Kullanacağımız modülleri ymaps3 nesnesinden alın
+                const {
+                    YMap,
+                    YMapDefaultSchemeLayer,
+                    YMapDefaultFeaturesLayer,
+                    YMapControls
+                } = ymaps3;
 
-            const ROTATION_STEP = 15; // Her tıklamada 15 derece döndür
-            const ANIMATION_DURATION = 200; // Animasyon süresi (milisaniye)
+                // 4. Arayüz (UI) paketini CDN üzerinden sisteme tanıtın
+                // Bu adım, kontrol butonları gibi hazır arayüz bileşenlerini kullanabilmemiz için kritik öneme sahiptir.
+                // '@0.0' gibi bir sürüm belirtmek, en son uyumlu sürümün kullanılmasını sağlar.
+                ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/{package}/dist/index.js', [
+                    '@yandex/ymaps3-default-ui-theme@0.0'
+                ]);
 
-            // 3. Butonlara tıklama olaylarını atıyoruz
-            rotateLeftBtn.addEventListener('click', function() {
-                // Mevcut açıyı al, 15 derece çıkar ve yeni açıyı ayarla
-                const currentBearing = myMap.getBearing();
-                myMap.setBearing(currentBearing - ROTATION_STEP, {duration: ANIMATION_DURATION});
-            });
+                // 5. Tanıttığımız paketten kontrol butonlarını import edin
+                const {
+                    YMapRotateControl,
+                    YMapTiltControl
+                } = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
 
-            rotateRightBtn.addEventListener('click', function() {
-                // Mevcut açıyı al, 15 derece ekle ve yeni açıyı ayarla
-                const currentBearing = myMap.getBearing();
-                myMap.setBearing(currentBearing + ROTATION_STEP, {duration: ANIMATION_DURATION});
-            });
 
-            resetRotationBtn.addEventListener('click', function() {
-                // Harita açısını kuzeye (0 derece) ayarla
-                myMap.setBearing(0, {duration: ANIMATION_DURATION});
-            });
+                // Haritanın başlangıç konumu ve zoom seviyesi
+                const LOCATION = {
+                    center: [32.8597, 39.9334], // Ankara'nın koordinatları [boylam, enlem]
+                    zoom: 12
+                };
+
+                // Etkinleştirilecek harita davranışları (sürükleme, yakınlaştırma vb.)
+                const ENABLED_BEHAVIORS = ['drag', 'scrollZoom', 'dblClick', 'mouseTilt', 'mouseRotate'];
+
+                // 6. Haritayı oluşturun
+                // `app` id'li div içerisine haritayı yerleştiriyoruz.
+                map = new YMap(
+                    document.getElementById('app'),
+                    {
+                        location: LOCATION,
+                        behaviors: ENABLED_BEHAVIORS
+                    }
+                );
+
+                // 7. Haritaya temel katmanları ekleyin
+                // Haritanın görünür olması için bu katmanlar gereklidir.
+                map.addChild(new YMapDefaultSchemeLayer({}));
+                map.addChild(new YMapDefaultFeaturesLayer({}));
+
+                // 8. Kontrol butonlarını bir kontrol paneline ekleyerek haritaya yerleştirin
+                // `YMapControls` ile butonları gruplayıp konumlandırabilirsiniz.
+                const controls = new YMapControls({ position: 'right' }, [
+                    new YMapRotateControl({}), // Döndürme butonu
+                    new YMapTiltControl({})      // Eğme (tilt) butonu
+                ]);
+
+                map.addChild(controls);
+
+            } catch (error) {
+                console.error("Harita yüklenirken bir hata oluştu:", error);
+            }
         }
     </script>
 </body>
