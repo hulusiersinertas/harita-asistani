@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Resmi Döndürme Butonu (Doğru Yükleyici ile)</title>
+    <title>Yandex Maps API - Resmi Döndürme Butonu</title>
     <style>
         body, html, #map {
             width: 100%;
@@ -26,7 +26,7 @@
             text-align: center;
         }
     </style>
-    <!-- 1. Standart API script'ini yüklüyoruz. Başka hiçbir parametreye gerek yok. -->
+    <!-- Standart API script'ini yüklüyoruz. -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 </head>
 <body>
@@ -42,13 +42,13 @@
 
         async function init() {
             try {
-                // 2. KRİTİK VE NİHAİ ADIM: Import komutuna yol haritasını veriyoruz.
+                // KRİTİK ADIM: Import komutuna yol haritasını veriyoruz.
                 // Bu komut, API'ye ek modülleri nereden bulacağını söyler.
                 ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/', ['@yandex/ymaps3-default-ui-theme@0.0.1']);
                 
                 const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
 
-                // 3. Artık çalışacak olan import komutu:
+                // Artık çalışacak olan import komutu:
                 const {YMapRotateControl} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
                 
                 const map = new ymaps3.YMap(document.getElementById('map'), {
@@ -63,7 +63,7 @@
 
                 map.addChild(new ymaps3.YMapDefaultSchemeLayer());
 
-                // 4. Haritaya Yandex'in kendi resmi Döndürme Kontrolü'nü (Pusula) ekliyoruz.
+                // Haritaya Yandex'in kendi resmi Döndürme Kontrolü'nü (Pusula) ekliyoruz.
                 map.addChild(
                     new YMapControls({position: 'right'}, [
                         new YMapRotateControl({})
@@ -77,4 +77,3 @@
 
 </body>
 </html>
-
