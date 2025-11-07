@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - Nihai ve Çalışan Çözüm</title>
+    <title>Yandex v3 - Kapsamlı Hata Ayıklama</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <!-- Lütfen API anahtarınızı dikkatlice girin -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <script src="https://api-maps.yandex.ru/v3/?apikey=<SİZİN_API_ANAHTARINIZ>&lang=tr_TR"></script>
     <style>
         html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
         #app { touch-action: none; }
@@ -29,7 +28,6 @@
     </div>
 
     <script type="text/javascript">
-        // 1. Haritanın tüm durumunu saklayacak olan "tek doğru kaynak" değişkenimiz.
         let currentLocationState = {
             center: [32.8597, 39.9334],
             zoom: 12,
@@ -41,23 +39,25 @@
             await ymaps3.ready;
             const { YMap, YMapDefaultSchemeLayer, YMapListener } = ymaps3;
 
+            // Mobil davranışlarını şimdilik çıkarıp sadece masaüstüne odaklanalım
+            const BEHAVIORS = ['drag', 'scrollZoom', 'dblClick'];
+
             const map = new YMap(document.getElementById('app'), {
-                location: currentLocationState
+                location: currentLocationState,
+                behaviors: BEHAVIORS
             });
 
             map.addChild(new YMapDefaultSchemeLayer({}));
 
-            // 2. ÇALIŞTIĞI KANITLANMIŞ OLAN OLAY DİNLEYİCİSİ
-            // Bu dinleyicinin TEK GÖREVİ, kullanıcı haritayı hareket ettirdiğinde
-            // bizim durum değişkenimizi güncel tutmaktır.
             const mapUpdateHandler = ({ location }) => {
+                // Olay dinleyicisinin çalıştığından emin olmak için log
+                console.log('%cListener: Harita güncellendi. Yeni durum:', 'color: green;', location);
                 currentLocationState = location;
             };
 
             const mapListener = new YMapListener({ onUpdate: mapUpdateHandler });
             map.addChild(mapListener);
 
-            // 3. Butonları bu sağlam temel üzerine kuruyoruz.
             setupControls(map);
         }
 
@@ -67,27 +67,53 @@
             const resetRotationBtn = document.getElementById('reset-rotation');
 
             const ROTATION_STEP = 15;
-            const ANIMATION_DURATION = 200;
+            const ANIMATION_DURATION = 300;
 
-            // Butonlara tıklandığında, her zaman güncel olan `currentLocationState` değişkenimizi okuruz.
             rotateLeftBtn.addEventListener('click', function() {
-                const newBearing = currentLocationState.bearing - ROTATION_STEP;
-                map.update({
-                    location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }
-                });
-            });
+                console.log('%c--------------------', 'color: blue;');
+                console.log('%cSola Döndür Butonuna Tıklandı.', 'color: blue; font-weight: bold;');
+                console.log('Tıklama anındaki mevcut durum:', currentLocationState);
 
+                const newBearing = currentLocationState.bearing - ROTATION_STEP;
+                console.log('Hesaplanan yeni açı:', newBearing);
+
+                const updateObject = {
+                    location: {
+                        ...currentLocationState,
+                        bearing: newBearing,
+                        duration: ANIMATION_DURATION
+                    }
+                };
+                // EN ÖNEMLİ LOG: map.update'e tam olarak ne gönderiyoruz?
+                console.log('%cmap.update fonksiyonuna gönderilen nesne:', 'font-weight: bold;', updateObject);
+
+                map.update(updateObject);
+                console.log('map.update komutu gönderildi.');
+                console.log('%c--------------------', 'color: blue;');
+            });
+            
+            // Diğer butonlar için de aynı log yapısı geçerli
             rotateRightBtn.addEventListener('click', function() {
+                console.log('%c--------------------', 'color: blue;');
+                console.log('%cSağa Döndür Butonuna Tıklandı.', 'color: blue; font-weight: bold;');
+                console.log('Tıklama anındaki mevcut durum:', currentLocationState);
                 const newBearing = currentLocationState.bearing + ROTATION_STEP;
-                map.update({
-                    location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }
-                });
+                const updateObject = { location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }};
+                console.log('%cmap.update fonksiyonuna gönderilen nesne:', 'font-weight: bold;', updateObject);
+                map.update(updateObject);
+                console.log('map.update komutu gönderildi.');
+                console.log('%c--------------------', 'color: blue;');
             });
 
             resetRotationBtn.addEventListener('click', function() {
-                map.update({
-                    location: { ...currentLocationState, bearing: 0, duration: ANIMATION_DURATION }
-                });
+                console.log('%c--------------------', 'color: blue;');
+                console.log('%cSıfırla Butonuna Tıklandı.', 'color: blue; font-weight: bold;');
+                console.log('Tıklama anındaki mevcut durum:', currentLocationState);
+                const updateObject = { location: { ...currentLocationState, bearing: 0, duration: ANIMATION_DURATION }};
+                console.log('%cmap.update fonksiyonuna gönderilen nesne:', 'font-weight: bold;', updateObject);
+                map.update(updateObject);
+                console.log('map.update komutu gönderildi.');
+                console.log('%c--------------------', 'color: blue;');
             });
         }
     </script>
