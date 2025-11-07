@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita v3 - Doğru Döndürme Kontrolleri</title>
+    <title>Yandex Harita v3 - Nihai Döndürme Kontrolleri</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <!-- Yandex Haritalar API v3'ü çağırıyoruz -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 
     <style>
@@ -49,33 +48,31 @@
     </div>
 
     <script type="text/javascript">
-        // Global harita değişkeni
+        // Global değişkenler
         let map;
+        // 1. Haritanın dönüş açısını takip etmek için kendi değişkenimizi oluşturuyoruz.
+        let currentBearing = 0;
 
         main();
         async function main() {
-            // API'nin yüklenmesini bekle
             await ymaps3.ready;
             const { YMap, YMapDefaultSchemeLayer } = ymaps3;
 
-            // Parmakla yakınlaştırmayı etkinleştiren davranışlar listesi
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
 
             map = new YMap(
                 document.getElementById('app'),
                 {
                     location: {
-                        center: [32.8597, 39.9334], // v3'te [boylam, enlem]
+                        center: [32.8597, 39.9334], // [boylam, enlem]
                         zoom: 12,
-                        bearing: 0 // Başlangıç dönüş açısı
+                        bearing: currentBearing // Başlangıç açısını değişkenimizden al
                     },
                     behaviors: BEHAVIORS
                 }
             );
 
             map.addChild(new YMapDefaultSchemeLayer({}));
-
-            // Butonları ve olay dinleyicilerini harita hazır olduğunda ata
             setupControls();
         }
 
@@ -84,23 +81,24 @@
             const rotateRightBtn = document.getElementById('rotate-right');
             const resetRotationBtn = document.getElementById('reset-rotation');
 
-            const ROTATION_STEP = 15; // Her tıklamada 15 derece
-            const ANIMATION_DURATION = 200; // Animasyon süresi (ms)
+            const ROTATION_STEP = 15;
+            const ANIMATION_DURATION = 200;
 
             rotateLeftBtn.addEventListener('click', function() {
-                // v3'te mevcut açıyı map.location'dan alıyoruz
-                const currentBearing = map.location.bearing;
-                // v3'te haritayı map.update ile güncelliyoruz
-                map.update({ location: { bearing: currentBearing - ROTATION_STEP, duration: ANIMATION_DURATION } });
+                // 2. Haritanın durumunu okumak yerine kendi değişkenimizi güncelliyoruz.
+                currentBearing -= ROTATION_STEP;
+                // 3. Haritayı, kendi değişkenimizdeki yeni açıya göre güncelliyoruz.
+                map.update({ location: { bearing: currentBearing, duration: ANIMATION_DURATION } });
             });
 
             rotateRightBtn.addEventListener('click', function() {
-                const currentBearing = map.location.bearing;
-                map.update({ location: { bearing: currentBearing + ROTATION_STEP, duration: ANIMATION_DURATION } });
+                currentBearing += ROTATION_STEP;
+                map.update({ location: { bearing: currentBearing, duration: ANIMATION_DURATION } });
             });
 
             resetRotationBtn.addEventListener('click', function() {
-                map.update({ location: { bearing: 0, duration: ANIMATION_DURATION } });
+                currentBearing = 0;
+                map.update({ location: { bearing: currentBearing, duration: ANIMATION_DURATION } });
             });
         }
     </script>
