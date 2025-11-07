@@ -1,64 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <title>Yandex Harita Minimal Dokunmatik Test</title>
+    <title>Yandex Haritalar API v2 - Dokunmatik Test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <!-- 1. Mobil cihazlar için kritik viewport ayarı -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 1. Mobil cihazlar için viewport ayarı. Bu v2 için de geçerlidir. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <!-- Kendi API Anahtarınızı eklemeyi unutmayın -->
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- 2. Yandex Haritalar API v2'yi çağırıyoruz. URL'nin farklı olduğuna dikkat edin. -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 
     <style>
-        /* Sayfanın tamamını kaplayan temel stiller */
-        html, body, #app {
+        html, body, #map {
             width: 100%;
             height: 100%;
-            margin: 0;
             padding: 0;
+            margin: 0;
             overflow: hidden;
         }
-
-        /* 2. Tarayıcının dokunmatik olaylara müdahalesini engelleyen kritik CSS kuralı */
-        #app {
+        #map {
+            /* v3'teki gibi, dokunmatik çakışmalarını önlemek için bu kuralı ekliyoruz. */
             touch-action: none;
         }
     </style>
 </head>
 <body>
-    <div id="app"></div>
+    <div id="map"></div>
 
     <script type="text/javascript">
-        main();
+        // 3. API yüklendiğinde 'init' fonksiyonunu çalıştırır.
+        ymaps.ready(init);
 
-        async function main() {
-            try {
-                // API'nin yüklenmesini bekle
-                await ymaps3.ready;
-                const { YMap, YMapDefaultSchemeLayer } = ymaps3;
+        function init() {
+            var myMap = new ymaps.Map("map", {
+                // Haritanın başlangıç merkezi ve zoom seviyesi
+                center: [39.9334, 32.8597], // DİKKAT: v2'de sıralama [enlem, boylam] şeklindedir!
+                zoom: 12
+            }, {
+                // Harita ayarları
+                // Arama kutusunu haritadan kaldırır
+                searchControlProvider: 'yandex#search'
+            });
 
-                // 3. Dokunmatik davranışlar dahil tüm temel davranışları etkinleştir
-                const BEHAVIORS = ['drag', 'scrollZoom', 'dblClick', 'mouseTilt', 'mouseRotate', 'touchTilt', 'touchRotate'];
-
-                // Haritayı oluştur
-                const map = new YMap(
-                    document.getElementById('app'),
-                    {
-                        location: {
-                            center: [32.8597, 39.9334], // Ankara
-                            zoom: 12
-                        },
-                        behaviors: BEHAVIORS // Davranışları haritaya uygula
-                    }
-                );
-
-                // Haritanın görünmesi için temel katmanı ekle
-                map.addChild(new YMapDefaultSchemeLayer({}));
-
-            } catch (error) {
-                console.error("Minimal harita yüklenirken hata oluştu:", error);
-            }
+            // 4. Mobil cihazlarda parmakla döndürmeyi etkinleştiren en önemli ayar!
+            myMap.behaviors.enable('multiTouch');
         }
     </script>
 </body>
