@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - GPS Navigasyon (İşaretçi Düzeltildi)</title>
+    <title>Yandex v3 - İşaretçi Sorunu Çözüldü</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <script src="https://api-maps.yandex.ru/v3/?apikey=<SİZİN_API_ANAHTARINIZ>&lang=tr_TR"></script>
     <style>
         html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
         #app { touch-action: none; }
@@ -21,7 +21,6 @@
         .user-marker {
             width: 22px; height: 22px; border-radius: 50%; background-color: #007bff;
             border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);
-            /* İşaretçinin tam koordinat merkezinde durması için transform ekliyoruz */
             transform: translate(-50%, -50%);
         }
     </style>
@@ -46,15 +45,15 @@
         main();
         async function main() {
             await ymaps3.ready;
-            // --- DEĞİŞİKLİK BURADA: YMapEntity'i de import ediyoruz ---
-            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker, YMapEntity } = ymaps3;
+            // DOKÜMANDAN: Gerekli tüm modülleri alıyoruz.
+            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker } = ymaps3;
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
             map = new YMap(document.getElementById('app'), { location: { center: [32.8597, 39.9334], zoom: 12 } });
             map.addChild(new YMapDefaultSchemeLayer({}));
             const mapListener = new YMapListener({ onUpdate: ({ camera }) => { currentCameraState = camera; } });
             map.addChild(mapListener);
-            // --- DEĞİŞİKLİK BURADA: YMapEntity'i setupControls'a iletiyoruz ---
-            setupControls(YMapMarker, YMapEntity);
+            // Sadece YMapMarker'ı iletiyoruz.
+            setupControls(YMapMarker);
             animateRotation();
         }
 
@@ -65,8 +64,7 @@
             requestAnimationFrame(animateRotation);
         }
 
-        // --- DEĞİŞİKLİK BURADA: Fonksiyon artık YMapEntity'i de alıyor ---
-        function setupControls(YMapMarker, YMapEntity) {
+        function setupControls(YMapMarker) {
             const rotateLeftBtn = document.getElementById('rotate-left');
             const rotateRightBtn = document.getElementById('rotate-right');
             const navigationBtn = document.getElementById('navigation-toggle-btn');
@@ -78,22 +76,22 @@
                         const { latitude, longitude, heading } = position.coords;
                         const userCoordinates = [longitude, latitude];
 
-                        // --- DEĞİŞİKLİK BURADA: İşaretçi oluşturma ve güncelleme mantığı düzeltildi ---
+                        // --- DOKÜMANA GÖRE DÜZELTİLMİŞ İŞARETÇİ MANTIĞI ---
                         if (!userMarker) {
-                            // 1. Görsel element (mavi nokta) oluşturulur.
+                            // 1. Önce DOM elementini (mavi nokta) oluştur.
                             const markerElement = document.createElement('div');
                             markerElement.className = 'user-marker';
 
-                            // 2. Görünmez, sadece koordinatı olan ana Marker nesnesi (ebeveyn) oluşturulur.
-                            userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 10 });
-
-                            // 3. Görsel elementi içeren bir YMapEntity (çocuk) oluşturulur.
-                            const markerContent = new YMapEntity({}, markerElement);
+                            // 2. YMapMarker'ı DOKÜMANDA GÖSTERİLDİĞİ GİBİ iki parametreyle başlat.
+                            userMarker = new YMapMarker(
+                                {
+                                    coordinates: userCoordinates,
+                                    zIndex: 10
+                                },
+                                markerElement // İkinci parametre olarak DOM elementinin kendisi.
+                            );
                             
-                            // 4. Görsel çocuk, koordinat ebeveynine eklenir.
-                            userMarker.addChild(markerContent);
-
-                            // 5. Tamamlanmış ve artık görünür olan işaretçi haritaya eklenir.
+                            // 3. Oluşturulan işaretçiyi doğrudan haritaya ekle.
                             map.addChild(userMarker);
                         } else {
                             // İşaretçi zaten varsa, sadece koordinatları güncellenir.
