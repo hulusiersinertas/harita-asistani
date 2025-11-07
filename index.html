@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yandex Maps API - Resmi Döndürme Butonu</title>
+    <title>Yandex Maps API - Resmi Döndürme Butonu (Nihai Çözüm)</title>
     <style>
         body, html, #map {
             width: 100%;
@@ -42,9 +42,9 @@
 
         async function init() {
             try {
-                // KRİTİK ADIM: Import komutuna yol haritasını veriyoruz.
-                // Bu komut, API'ye ek modülleri nereden bulacağını söyler.
-                ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/', ['@yandex/ymaps3-default-ui-theme@0.0.1']);
+                // 1. KRİTİK VE DÜZELTİLMİŞ ADIM: Import komutuna doğru yol haritasını veriyoruz.
+                // URL şablonu, Yandex'in gerektirdiği gibi "{package}" yer tutucusunu içermelidir.
+                ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/{package}/dist/index.js', ['@yandex/ymaps3-default-ui-theme@0.0.1']);
                 
                 const {YMap, YMapDefaultSchemeLayer, YMapControls} = ymaps3;
 
