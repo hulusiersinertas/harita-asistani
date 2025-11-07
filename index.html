@@ -2,10 +2,12 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    
+    <!-- DEĞİŞİKLİK: Mobil cihazlarda dokunmatik hareketlerin doğru çalışması için viewport güncellendi -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <title>Yandex Harita Döndürme Kontrolleri</title>
 
-    <!-- Kendi API Anahtarınızı eklemeyi unutmayın -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 
     <style>
@@ -50,8 +52,6 @@
                     zoom: 12
                 };
 
-                // --- DEĞİŞİKLİK BU SATIRDA ---
-                // Dokunmatik davranışlar eklendi
                 const ENABLED_BEHAVIORS = ['drag', 'scrollZoom', 'dblClick', 'mouseTilt', 'mouseRotate', 'touchTilt', 'touchRotate'];
 
                 map = new YMap(
