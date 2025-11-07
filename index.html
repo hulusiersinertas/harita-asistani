@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita v3 - Nihai Döndürme Kontrolleri</title>
+    <title>Yandex Harita v3 - Nihai ve Doğru Çözüm</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
@@ -48,9 +48,7 @@
     </div>
 
     <script type="text/javascript">
-        // Global değişkenler
         let map;
-        // 1. Haritanın dönüş açısını takip etmek için kendi değişkenimizi oluşturuyoruz.
         let currentBearing = 0;
 
         main();
@@ -64,9 +62,9 @@
                 document.getElementById('app'),
                 {
                     location: {
-                        center: [32.8597, 39.9334], // [boylam, enlem]
+                        center: [32.8597, 39.9334],
                         zoom: 12,
-                        bearing: currentBearing // Başlangıç açısını değişkenimizden al
+                        bearing: currentBearing
                     },
                     behaviors: BEHAVIORS
                 }
@@ -85,20 +83,41 @@
             const ANIMATION_DURATION = 200;
 
             rotateLeftBtn.addEventListener('click', function() {
-                // 2. Haritanın durumunu okumak yerine kendi değişkenimizi güncelliyoruz.
                 currentBearing -= ROTATION_STEP;
-                // 3. Haritayı, kendi değişkenimizdeki yeni açıya göre güncelliyoruz.
-                map.update({ location: { bearing: currentBearing, duration: ANIMATION_DURATION } });
+                // 1. O anki harita durumunu (merkez, zoom) al
+                const currentLocation = map.location;
+                // 2. Yeni açıyla birlikte tam durumu gönder
+                map.update({
+                    location: {
+                        ...currentLocation, // Mevcut merkez ve zoom'u koru
+                        bearing: currentBearing, // Sadece açıyı değiştir
+                        duration: ANIMATION_DURATION
+                    }
+                });
             });
 
             rotateRightBtn.addEventListener('click', function() {
                 currentBearing += ROTATION_STEP;
-                map.update({ location: { bearing: currentBearing, duration: ANIMATION_DURATION } });
+                const currentLocation = map.location;
+                map.update({
+                    location: {
+                        ...currentLocation,
+                        bearing: currentBearing,
+                        duration: ANIMATION_DURATION
+                    }
+                });
             });
 
             resetRotationBtn.addEventListener('click', function() {
                 currentBearing = 0;
-                map.update({ location: { bearing: currentBearing, duration: ANIMATION_DURATION } });
+                const currentLocation = map.location;
+                map.update({
+                    location: {
+                        ...currentLocation,
+                        bearing: currentBearing,
+                        duration: ANIMATION_DURATION
+                    }
+                });
             });
         }
     </script>
