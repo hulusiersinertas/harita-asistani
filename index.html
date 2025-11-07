@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - Hassas Döndürme Kontrolü</title>
+    <title>Yandex v3 - Navigasyon Asistanı</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
@@ -10,26 +10,49 @@
         #app { touch-action: none; }
         .custom-controls { position: absolute; z-index: 1000; top: 50%; transform: translateY(-50%); display: flex; width: 100%; justify-content: space-between; pointer-events: none; }
         .control-group { pointer-events: all; display: flex; flex-direction: column; margin: 0 10px; }
-        .control-group button { background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; margin: 5px 0; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
-        #reset-rotation { position: absolute; z-index: 1000; bottom: 20px; right: 20px; background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+        .control-group button, #navigation-toggle-btn {
+            background-color: white; border: 1px solid #ccc; border-radius: 50%;
+            width: 50px; height: 50px; font-size: 24px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.3s, color 0.3s; /* Renk değişimi için animasyon */
+        }
+        /* Navigasyon butonu sağ alta konumlandırıldı */
+        #navigation-toggle-btn {
+            position: absolute; z-index: 1000; bottom: 20px; right: 20px;
+        }
+        /* Navigasyon modu aktifken butonun rengini değiştiriyoruz */
+        #navigation-toggle-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div id="app"></div>
     <div class="custom-controls">
-        <div class="control-group"><button id="rotate-left" title="Basılı Tut">↶</button></div>
-        <div class="control-group"><button id="rotate-right" title="Basılı Tut">↷</button></div>
+        <div class="control-group"><button id="rotate-left" title="Sola Döndür (Basılı Tut)">↶</button></div>
+        <div class="control-group"><button id="rotate-right" title="Sağa Döndür (Basılı Tut)">↷</button></div>
     </div>
-    <button id="reset-rotation" title="Sıfırla">↑</button>
+    <!-- Üçüncü butonumuz artık bir aç/kapat butonu -->
+    <button id="navigation-toggle-btn" title="Navigasyon Modu">🛰️</button>
 
     <script type="text/javascript">
         let map;
         let currentCameraState = { tilt: 0, azimuth: 0 };
         let rotationDirection = 0;
-        
-        // --- DEĞİŞİKLİK BURADA ---
-        // Hızı düşürerek daha hassas bir kontrol sağlıyoruz.
-        const ROTATION_SPEED = 0.2; // Her frame'de 0.2 derece döndür
+        const ROTATION_SPEED = 0.2;
+
+        // --- NAVİGASYON MODU İÇİN YENİ DEĞİŞKENLER ---
+        let isNavigationModeActive = false;
+        let locationWatcherId = null;
+        const deviceOrientationHandler = (event) => {
+            if (isNavigationModeActive && event.alpha !== null) {
+                // event.alpha, cihazın pusula yönünü (0-360) verir.
+                // Haritayı, cihazın baktığı yöne anlık olarak çeviriyoruz.
+                const newAzimuth = event.alpha;
+                map.update({ camera: { ...currentCameraState, azimuth: newAzimuth } });
+            }
+        };
 
         main();
         async function main() {
@@ -55,43 +78,67 @@
         }
 
         function animateRotation() {
-            if (rotationDirection === 0) {
+            // Eğer döndürme komutu yoksa VEYA navigasyon modu aktifse, manuel döndürmeyi durdur.
+            if (rotationDirection === 0 || isNavigationModeActive) {
                 return;
             }
-
             const newAzimuth = currentCameraState.azimuth + (rotationDirection * ROTATION_SPEED);
-
-            map.update({
-                camera: {
-                    ...currentCameraState,
-                    azimuth: newAzimuth
-                }
-            });
-            
+            map.update({ camera: { ...currentCameraState, azimuth: newAzimuth } });
             requestAnimationFrame(animateRotation);
         }
 
         function setupControls() {
             const rotateLeftBtn = document.getElementById('rotate-left');
             const rotateRightBtn = document.getElementById('rotate-right');
-            const resetRotationBtn = document.getElementById('reset-rotation');
+            const navigationBtn = document.getElementById('navigation-toggle-btn');
 
+            // Manuel Döndürme Başlatma
             const startRotation = (direction) => {
+                if (isNavigationModeActive) return; // Navigasyon modundaysa manuel döndürme yapma
                 if (rotationDirection === 0) {
                     rotationDirection = direction;
                     requestAnimationFrame(animateRotation);
-                } else {
-                    rotationDirection = direction;
+                } else { rotationDirection = direction; }
+            };
+            const stopRotation = () => { rotationDirection = 0; };
+
+            // Navigasyon Modu Başlatma
+            const startNavigation = () => {
+                if (!navigator.geolocation || !window.DeviceOrientationEvent) {
+                    alert("Tarayıcınız veya cihazınız navigasyon modunu desteklemiyor.");
+                    return;
                 }
+                // 1. Konum Takibini Başlat
+                locationWatcherId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        // Haritanın merkezini kullanıcının mevcut konumuna kaydır
+                        map.update({ location: { center: [longitude, latitude], zoom: 17, duration: 1000 } });
+                    },
+                    (error) => { console.error("Konum alınamadı:", error); stopNavigation(); },
+                    { enableHighAccuracy: true } // Yüksek doğrulukta konum iste
+                );
+                // 2. Cihaz Yönü Takibini Başlat
+                window.addEventListener('deviceorientation', deviceOrientationHandler, true);
+
+                isNavigationModeActive = true;
+                navigationBtn.classList.add('active'); // Buton stilini aktif yap
+                navigationBtn.innerHTML = '🧭'; // İkonu pusulaya çevir
             };
 
-            const stopRotation = () => {
-                rotationDirection = 0;
+            // Navigasyon Modu Durdurma
+            const stopNavigation = () => {
+                if (locationWatcherId) navigator.geolocation.clearWatch(locationWatcherId);
+                window.removeEventListener('deviceorientation', deviceOrientationHandler, true);
+
+                isNavigationModeActive = false;
+                navigationBtn.classList.remove('active'); // Buton stilini normale döndür
+                navigationBtn.innerHTML = '🛰️'; // İkonu uyduya çevir
             };
 
+            // Buton Olayları
             rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
             rotateLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(-1); });
-
             rotateRightBtn.addEventListener('mousedown', () => startRotation(1));
             rotateRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(1); });
 
@@ -99,9 +146,12 @@
             document.addEventListener('touchend', stopRotation);
             document.addEventListener('touchcancel', stopRotation);
 
-            resetRotationBtn.addEventListener('click', () => {
-                rotationDirection = 0;
-                map.update({ camera: { ...currentCameraState, azimuth: 0, duration: 500 } });
+            navigationBtn.addEventListener('click', () => {
+                if (isNavigationModeActive) {
+                    stopNavigation();
+                } else {
+                    startNavigation();
+                }
             });
         }
     </script>
