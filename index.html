@@ -1,183 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - Basılı Tutma ile Nihai Çözüm</title>
+    <title>Yandex v3 - requestAnimationFrame ile Mükemmel Döndürme</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
-
     <style>
         html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
         #app { touch-action: none; }
-        /* Kontrolleri ekranın sol ve sağ tarafına, dikey olarak hizalıyoruz */
-        .custom-controls {
-            position: absolute;
-            z-index: 1000;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            width: 100%; /* Butonların yanlara hizalanması için */
-            justify-content: space-between; /* Butonları iki yana aç */
-            pointer-events: none; /* Harita etkileşimini engellememek için */
-        }
-        .control-group {
-             pointer-events: all; /* Butonların tekrar etkileşime girmesi için */
-             display: flex;
-             flex-direction: column;
-             margin: 0 10px;
-        }
-        .control-group button {
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 50%; /* Daire butonlar */
-            width: 50px;
-            height: 50px;
-            margin: 5px 0;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        /* Basılı tutma özelliği için sadece döndürme butonlarını bırakıyoruz */
-        #reset-rotation {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-        }
+        .custom-controls { position: absolute; z-index: 1000; top: 50%; transform: translateY(-50%); display: flex; width: 100%; justify-content: space-between; pointer-events: none; }
+        .control-group { pointer-events: all; display: flex; flex-direction: column; margin: 0 10px; }
+        .control-group button { background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; margin: 5px 0; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+        #reset-rotation { position: absolute; z-index: 1000; bottom: 20px; right: 20px; background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
     <div id="app"></div>
-    
     <div class="custom-controls">
-        <div class="control-group">
-            <button id="rotate-left" title="Basılı Tut">↶</button>
-        </div>
-        <div class="control-group">
-            <button id="rotate-right" title="Basılı Tut">↷</button>
-        </div>
+        <div class="control-group"><button id="rotate-left" title="Basılı Tut">↶</button></div>
+        <div class="control-group"><button id="rotate-right" title="Basılı Tut">↷</button></div>
     </div>
-    <!-- Sıfırlama butonu sağ alta taşındı -->
     <button id="reset-rotation" title="Sıfırla">↑</button>
 
     <script type="text/javascript">
-        let currentLocationState = {
-            center: [32.8597, 39.9334],
-            zoom: 12,
-            bearing: 0
-        };
+        let map; // Global map değişkeni
+        let currentCameraState = { tilt: 0, azimuth: 0 };
+        // --- YENİ MİMARİ ---
+        let rotationDirection = 0; // -1: Sola, 1: Sağa, 0: Dur
+        const ROTATION_SPEED = 0.5; // Her frame'de 0.5 derece döndür (daha hassas)
 
         main();
         async function main() {
             await ymaps3.ready;
             const { YMap, YMapDefaultSchemeLayer, YMapListener } = ymaps3;
-
-            // PinchRotate özelliğini kapattık, çünkü basılı tutma alternatifi ekliyoruz.
-            // Bu, cihazların hala çalışmayan parmak hareketlerini denemesini engeller.
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
 
-            const map = new YMap(
-                document.getElementById('app'),
-                {
-                    location: currentLocationState,
-                    behaviors: BEHAVIORS
-                }
-            );
+            map = new YMap(document.getElementById('app'), {
+                location: { center: [32.8597, 39.9334], zoom: 12 }
+            });
 
             map.addChild(new YMapDefaultSchemeLayer({}));
 
             const mapListener = new YMapListener({
                 onUpdate: ({ camera }) => {
-                    currentLocationState.tilt = camera.tilt;
-                    currentLocationState.azimuth = camera.azimuth;
+                    currentCameraState = camera;
                 }
             });
             map.addChild(mapListener);
 
-            setupControls(map);
+            setupControls();
+            // Animasyon döngüsünü başlat
+            animateRotation();
         }
 
-        function setupControls(map) {
+        // --- YENİ MİMARİ: Animasyon Döngüsü ---
+        function animateRotation() {
+            // Eğer döndürme komutu yoksa, döngüyü durdur ve bir sonraki frame'i isteme.
+            if (rotationDirection === 0) {
+                return;
+            }
+
+            // Yeni açıyı hesapla
+            const newAzimuth = currentCameraState.azimuth + (rotationDirection * ROTATION_SPEED);
+
+            // Haritayı güncelle. DİKKAT: 'duration' parametresi kaldırıldı!
+            // Animasyonu biz yönettiğimiz için API'nin kendi animasyonunu istemiyoruz.
+            map.update({
+                camera: {
+                    ...currentCameraState,
+                    azimuth: newAzimuth
+                }
+            });
+            
+            // Bir sonraki animasyon karesini tarayıcıdan iste
+            requestAnimationFrame(animateRotation);
+        }
+
+        function setupControls() {
             const rotateLeftBtn = document.getElementById('rotate-left');
             const rotateRightBtn = document.getElementById('rotate-right');
             const resetRotationBtn = document.getElementById('reset-rotation');
 
-            let rotationInterval; // Interval ID'sini saklamak için
-            const ROTATION_STEP = 1; // Her adımda 1 derece döndür
-            const INTERVAL_TIME = 30; // 30 milisaniyede bir güncelle (Çok akıcı)
-
-            // Haritayı sürekli döndürme fonksiyonu
+            // --- YENİ MİMARİ: Olay Dinleyicileri ---
+            // Basıldığında: Sadece yönü ayarla ve döngüyü (eğer durmuşsa) tetikle.
             const startRotation = (direction) => {
-                // Eğer interval zaten çalışıyorsa tekrar başlatma
-                if (rotationInterval) clearInterval(rotationInterval);
-
-                rotationInterval = setInterval(() => {
-                    // Mevcut açıyı al
-                    const currentAzimuth = currentLocationState.azimuth;
-                    
-                    // Yeni açıyı hesapla
-                    const newAzimuth = currentAzimuth + (direction * ROTATION_STEP);
-                    
-                    // Haritayı güncelle
-                    map.update({
-                        camera: {
-                            ...currentLocationState, // Tilt ve diğer ayarları koru
-                            azimuth: newAzimuth,
-                            duration: INTERVAL_TIME // Hızlı güncelleme için süre kısa
-                        }
-                    });
-                    
-                    // Kendi durumumuzu da hemen güncelle (Akıcılık için önemli)
-                    currentLocationState.azimuth = newAzimuth; 
-
-                }, INTERVAL_TIME);
-            };
-
-            // Döndürmeyi durdurma fonksiyonu
-            const stopRotation = () => {
-                if (rotationInterval) {
-                    clearInterval(rotationInterval);
-                    rotationInterval = null;
+                if (rotationDirection === 0) { // Sadece döngü durmuşsa yeniden başlat
+                    rotationDirection = direction;
+                    requestAnimationFrame(animateRotation);
+                } else {
+                    rotationDirection = direction;
                 }
             };
-            
-            // ----------------------------------------------------
-            // 1. Olay Dinleyicileri: Basılı Tutma Başlatma (mousedown/touchstart)
-            // ----------------------------------------------------
 
-            // Sola döndürme
+            // Bırakıldığında: Sadece yönü sıfırla. Döngü kendi kendine duracak.
+            const stopRotation = () => {
+                rotationDirection = 0;
+            };
+
             rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
             rotateLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(-1); });
 
-            // Sağa döndürme
             rotateRightBtn.addEventListener('mousedown', () => startRotation(1));
             rotateRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(1); });
 
-            // ----------------------------------------------------
-            // 2. Olay Dinleyicileri: Basılı Tutma Durdurma (mouseup/touchend)
-            // ----------------------------------------------------
-
-            // Mouse veya parmağın serbest bırakılması durumlarında döndürmeyi durdur
             document.addEventListener('mouseup', stopRotation);
             document.addEventListener('touchend', stopRotation);
-            document.addEventListener('touchcancel', stopRotation); // Dokunma iptal edilirse de durdur
+            document.addEventListener('touchcancel', stopRotation);
 
-            // ----------------------------------------------------
-            // 3. Sıfırlama Butonu (Tek Tıklama)
-            // ----------------------------------------------------
-            resetRotationBtn.addEventListener('click', function() {
-                // Sadece sıfırlama, basılı tutma özelliği yok
-                currentLocationState.azimuth = 0;
-                map.update({
-                    camera: {
-                        ...currentLocationState,
-                        azimuth: 0,
-                        duration: 500 // Akıcı sıfırlama animasyonu
-                    }
-                });
+            resetRotationBtn.addEventListener('click', () => {
+                rotationDirection = 0; // Önce animasyonu durdur
+                map.update({ camera: { ...currentCameraState, azimuth: 0, duration: 500 } });
             });
         }
     </script>
