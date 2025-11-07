@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita v3 - Gözlemci (Observe) ile Nihai Çözüm</title>
+    <title>Yandex Harita v3 - Dokümantasyona Dayalı Nihai Çözüm</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
@@ -48,6 +48,7 @@
     </div>
 
     <script type="text/javascript">
+        // Haritanın tüm durumunu saklayacak olan "tek doğru kaynak" değişkenimiz.
         let currentLocationState = {
             center: [32.8597, 39.9334],
             zoom: 12,
@@ -57,7 +58,8 @@
         main();
         async function main() {
             await ymaps3.ready;
-            const { YMap, YMapDefaultSchemeLayer } = ymaps3;
+            // DOKÜMANDAN: Olay dinleyicisi için YMapListener'ı da import ediyoruz.
+            const { YMap, YMapDefaultSchemeLayer, YMapListener } = ymaps3;
 
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
 
@@ -71,13 +73,19 @@
 
             map.addChild(new YMapDefaultSchemeLayer({}));
 
-            // --- DEĞİŞİKLİK BURADA ---
-            // 'subscribe' yerine doğru yöntem olan 'observe' kullanılıyor.
-            // map.location özelliği her değiştiğinde bu fonksiyon çalışacak.
-            map.observe('location', (newLocation) => {
+            // DOKÜMANDAN: Harita durumu her değiştiğinde çalışacak olan handler fonksiyonu.
+            const updateHandler = ({ location }) => {
                 // Kendi durum değişkenimizi, haritadan gelen en güncel ve doğru bilgiyle güncelliyoruz.
-                currentLocationState = newLocation;
+                currentLocationState = location;
+            };
+
+            // DOKÜMANDAN: YMapListener nesnesini onUpdate handler'ı ile birlikte oluşturuyoruz.
+            const mapListener = new YMapListener({
+                onUpdate: updateHandler
             });
+
+            // DOKÜMANDAN: Oluşturduğumuz dinleyiciyi haritaya bir çocuk olarak ekliyoruz.
+            map.addChild(mapListener);
 
             setupControls(map);
         }
@@ -90,35 +98,24 @@
             const ROTATION_STEP = 15;
             const ANIMATION_DURATION = 200;
 
+            // Bu kısımdaki mantık zaten doğruydu ve artık çalışacak.
             rotateLeftBtn.addEventListener('click', function() {
                 const newBearing = currentLocationState.bearing - ROTATION_STEP;
                 map.update({
-                    location: {
-                        ...currentLocationState,
-                        bearing: newBearing,
-                        duration: ANIMATION_DURATION
-                    }
+                    location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }
                 });
             });
 
             rotateRightBtn.addEventListener('click', function() {
                 const newBearing = currentLocationState.bearing + ROTATION_STEP;
                 map.update({
-                    location: {
-                        ...currentLocationState,
-                        bearing: newBearing,
-                        duration: ANIMATION_DURATION
-                    }
+                    location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }
                 });
             });
 
             resetRotationBtn.addEventListener('click', function() {
                 map.update({
-                    location: {
-                        ...currentLocationState,
-                        bearing: 0,
-                        duration: ANIMATION_DURATION
-                    }
+                    location: { ...currentLocationState, bearing: 0, duration: ANIMATION_DURATION }
                 });
             });
         }
