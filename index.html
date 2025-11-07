@@ -1,51 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - Temel Olay Dinleme Testi</title>
+    <title>Yandex v3 - Nihai ve Çalışan Çözüm</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <!-- Lütfen bu URL'i dikkatlice kendi API anahtarınızla güncelleyin -->
+    <!-- Lütfen API anahtarınızı dikkatlice girin -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
     <style>
-        html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; }
+        html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
+        #app { touch-action: none; }
+        .custom-controls {
+            position: absolute; z-index: 1000; right: 10px; bottom: 80px;
+            display: flex; flex-direction: column;
+        }
+        .custom-controls button {
+            background-color: white; border: 1px solid #ccc; border-radius: 4px;
+            width: 40px; height: 40px; margin-top: 5px; font-size: 20px;
+            font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
     <div id="app"></div>
+    <div class="custom-controls">
+        <button id="rotate-left">↶</button>
+        <button id="rotate-right">↷</button>
+        <button id="reset-rotation">↑</button>
+    </div>
+
     <script type="text/javascript">
+        // 1. Haritanın tüm durumunu saklayacak olan "tek doğru kaynak" değişkenimiz.
+        let currentLocationState = {
+            center: [32.8597, 39.9334],
+            zoom: 12,
+            bearing: 0
+        };
+
         main();
         async function main() {
-            try {
-                await ymaps3.ready;
-                const { YMap, YMapDefaultSchemeLayer, YMapListener } = ymaps3;
+            await ymaps3.ready;
+            const { YMap, YMapDefaultSchemeLayer, YMapListener } = ymaps3;
 
-                console.log("Harita API'si hazır.");
+            const map = new YMap(document.getElementById('app'), {
+                location: currentLocationState
+            });
 
-                const map = new YMap(document.getElementById('app'), {
-                    location: { center: [32.8597, 39.9334], zoom: 12 }
+            map.addChild(new YMapDefaultSchemeLayer({}));
+
+            // 2. ÇALIŞTIĞI KANITLANMIŞ OLAN OLAY DİNLEYİCİSİ
+            // Bu dinleyicinin TEK GÖREVİ, kullanıcı haritayı hareket ettirdiğinde
+            // bizim durum değişkenimizi güncel tutmaktır.
+            const mapUpdateHandler = ({ location }) => {
+                currentLocationState = location;
+            };
+
+            const mapListener = new YMapListener({ onUpdate: mapUpdateHandler });
+            map.addChild(mapListener);
+
+            // 3. Butonları bu sağlam temel üzerine kuruyoruz.
+            setupControls(map);
+        }
+
+        function setupControls(map) {
+            const rotateLeftBtn = document.getElementById('rotate-left');
+            const rotateRightBtn = document.getElementById('rotate-right');
+            const resetRotationBtn = document.getElementById('reset-rotation');
+
+            const ROTATION_STEP = 15;
+            const ANIMATION_DURATION = 200;
+
+            // Butonlara tıklandığında, her zaman güncel olan `currentLocationState` değişkenimizi okuruz.
+            rotateLeftBtn.addEventListener('click', function() {
+                const newBearing = currentLocationState.bearing - ROTATION_STEP;
+                map.update({
+                    location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }
                 });
+            });
 
-                map.addChild(new YMapDefaultSchemeLayer({}));
-
-                // Harita durumu her değiştiğinde (kaydırma, zoom vb.) çalışacak fonksiyon.
-                const mapUpdateHandler = (eventObject) => {
-                    // Bu log, bu yöntemin çalışıp çalışmadığını bize gösterecek en önemli kanıttır.
-                    console.log("Harita güncellendi! Yeni merkez:", eventObject.location.center);
-                };
-
-                // Dokümanda bulduğumuz YMapListener yöntemini uyguluyoruz.
-                const mapListener = new YMapListener({
-                    onUpdate: mapUpdateHandler
+            rotateRightBtn.addEventListener('click', function() {
+                const newBearing = currentLocationState.bearing + ROTATION_STEP;
+                map.update({
+                    location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }
                 });
+            });
 
-                map.addChild(mapListener);
-
-                console.log("Olay dinleyici (YMapListener) haritaya eklendi.");
-                console.log("Lütfen haritayı kaydırarak veya yakınlaştırarak konsolu test edin.");
-
-            } catch (error) {
-                console.error("Harita yüklenirken bir hata oluştu:", error);
-            }
+            resetRotationBtn.addEventListener('click', function() {
+                map.update({
+                    location: { ...currentLocationState, bearing: 0, duration: ANIMATION_DURATION }
+                });
+            });
         }
     </script>
 </body>
