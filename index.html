@@ -1,22 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - Kapsamlı Hata Ayıklama</title>
+    <title>Yandex v3 - Kamera Kontrolü ile Nihai Çözüm</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+
     <style>
         html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
         #app { touch-action: none; }
-        .custom-controls {
-            position: absolute; z-index: 1000; right: 10px; bottom: 80px;
-            display: flex; flex-direction: column;
-        }
-        .custom-controls button {
-            background-color: white; border: 1px solid #ccc; border-radius: 4px;
-            width: 40px; height: 40px; margin-top: 5px; font-size: 20px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .custom-controls { position: absolute; z-index: 1000; right: 10px; bottom: 80px; display: flex; flex-direction: column; }
+        .custom-controls button { background-color: white; border: 1px solid #ccc; border-radius: 4px; width: 40px; height: 40px; margin-top: 5px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -28,10 +22,10 @@
     </div>
 
     <script type="text/javascript">
-        let currentLocationState = {
-            center: [32.8597, 39.9334],
-            zoom: 12,
-            bearing: 0
+        // 1. Sadece haritanın "kamerasının" durumunu saklayacak bir değişken.
+        let currentCameraState = {
+            tilt: 0,
+            azimuth: 0 // 'bearing' için teknik terim 'azimuth'tur.
         };
 
         main();
@@ -39,23 +33,19 @@
             await ymaps3.ready;
             const { YMap, YMapDefaultSchemeLayer, YMapListener } = ymaps3;
 
-            // Mobil davranışlarını şimdilik çıkarıp sadece masaüstüne odaklanalım
-            const BEHAVIORS = ['drag', 'scrollZoom', 'dblClick'];
-
             const map = new YMap(document.getElementById('app'), {
-                location: currentLocationState,
-                behaviors: BEHAVIORS
+                location: { center: [32.8597, 39.9334], zoom: 12 }
             });
 
             map.addChild(new YMapDefaultSchemeLayer({}));
 
-            const mapUpdateHandler = ({ location }) => {
-                // Olay dinleyicisinin çalıştığından emin olmak için log
-                console.log('%cListener: Harita güncellendi. Yeni durum:', 'color: green;', location);
-                currentLocationState = location;
-            };
-
-            const mapListener = new YMapListener({ onUpdate: mapUpdateHandler });
+            // 2. Olay dinleyicimiz, haritanın kamera durumu her değiştiğinde kendi değişkenimizi güncelliyor.
+            const mapListener = new YMapListener({
+                onUpdate: ({ camera }) => {
+                    // Haritadan gelen en güncel ve doğru kamera bilgisiyle kendi durumumuzu güncelliyoruz.
+                    currentCameraState = camera;
+                }
+            });
             map.addChild(mapListener);
 
             setupControls(map);
@@ -67,56 +57,34 @@
             const resetRotationBtn = document.getElementById('reset-rotation');
 
             const ROTATION_STEP = 15;
-            const ANIMATION_DURATION = 300;
+            const ANIMATION_DURATION = 200;
 
             rotateLeftBtn.addEventListener('click', function() {
-                console.log('%c--------------------', 'color: blue;');
-                console.log('%cSola Döndür Butonuna Tıklandı.', 'color: blue; font-weight: bold;');
-                console.log('Tıklama anındaki mevcut durum:', currentLocationState);
-
-                const newBearing = currentLocationState.bearing - ROTATION_STEP;
-                console.log('Hesaplanan yeni açı:', newBearing);
-
-                const updateObject = {
-                    location: {
-                        ...currentLocationState,
-                        bearing: newBearing,
+                // 3. Yeni dönüş açısını (azimuth) hesaplıyoruz.
+                const newAzimuth = currentCameraState.azimuth - ROTATION_STEP;
+                // 4. map.update'i 'camera' nesnesiyle çağırıyoruz.
+                map.update({
+                    camera: {
+                        ...currentCameraState, // Mevcut eğim (tilt) gibi diğer kamera ayarlarını koru
+                        azimuth: newAzimuth,  // Sadece dönüş açısını değiştir
                         duration: ANIMATION_DURATION
                     }
-                };
-                // EN ÖNEMLİ LOG: map.update'e tam olarak ne gönderiyoruz?
-                console.log('%cmap.update fonksiyonuna gönderilen nesne:', 'font-weight: bold;', updateObject);
-
-                map.update(updateObject);
-                console.log('map.update komutu gönderildi.');
-                console.log('%c--------------------', 'color: blue;');
+                });
             });
-            
-            // Diğer butonlar için de aynı log yapısı geçerli
+
             rotateRightBtn.addEventListener('click', function() {
-                console.log('%c--------------------', 'color: blue;');
-                console.log('%cSağa Döndür Butonuna Tıklandı.', 'color: blue; font-weight: bold;');
-                console.log('Tıklama anındaki mevcut durum:', currentLocationState);
-                const newBearing = currentLocationState.bearing + ROTATION_STEP;
-                const updateObject = { location: { ...currentLocationState, bearing: newBearing, duration: ANIMATION_DURATION }};
-                console.log('%cmap.update fonksiyonuna gönderilen nesne:', 'font-weight: bold;', updateObject);
-                map.update(updateObject);
-                console.log('map.update komutu gönderildi.');
-                console.log('%c--------------------', 'color: blue;');
+                const newAzimuth = currentCameraState.azimuth + ROTATION_STEP;
+                map.update({
+                    camera: { ...currentCameraState, azimuth: newAzimuth, duration: ANIMATION_DURATION }
+                });
             });
 
             resetRotationBtn.addEventListener('click', function() {
-                console.log('%c--------------------', 'color: blue;');
-                console.log('%cSıfırla Butonuna Tıklandı.', 'color: blue; font-weight: bold;');
-                console.log('Tıklama anındaki mevcut durum:', currentLocationState);
-                const updateObject = { location: { ...currentLocationState, bearing: 0, duration: ANIMATION_DURATION }};
-                console.log('%cmap.update fonksiyonuna gönderilen nesne:', 'font-weight: bold;', updateObject);
-                map.update(updateObject);
-                console.log('map.update komutu gönderildi.');
-                console.log('%c--------------------', 'color: blue;');
+                map.update({
+                    camera: { ...currentCameraState, azimuth: 0, duration: ANIMATION_DURATION }
+                });
             });
         }
     </script>
 </body>
 </html>
-
