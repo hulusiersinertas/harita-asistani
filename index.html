@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Harita - CSS ile Döndürme Kontrolleri</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Yandex Harita v3 - Doğru Döndürme Kontrolleri</title>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- Yandex Haritalar API v3'ü çağırıyoruz -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
 
     <style>
-        html, body, #map {
+        html, body, #app {
             width: 100%; height: 100%;
             padding: 0; margin: 0;
             overflow: hidden;
         }
-        #map {
+        #app {
             touch-action: none;
-            transition: transform 0.3s ease-out;
         }
-
         .custom-controls {
             position: absolute;
             z-index: 1000;
@@ -26,7 +25,6 @@
             display: flex;
             flex-direction: column;
         }
-
         .custom-controls button {
             background-color: white;
             border: 1px solid #ccc;
@@ -39,13 +37,10 @@
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .custom-controls button:active {
-            background-color: #f0f0f0;
-        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div id="app"></div>
 
     <div class="custom-controls">
         <button id="rotate-left">↶</button>
@@ -54,42 +49,58 @@
     </div>
 
     <script type="text/javascript">
-        ymaps.ready(init);
+        // Global harita değişkeni
+        let map;
 
-        function init() {
-            var myMap = new ymaps.Map("map", {
-                center: [39.9334, 32.8597], // [enlem, boylam]
-                zoom: 12
-            });
+        main();
+        async function main() {
+            // API'nin yüklenmesini bekle
+            await ymaps3.ready;
+            const { YMap, YMapDefaultSchemeLayer } = ymaps3;
 
-            myMap.behaviors.enable('multiTouch');
+            // Parmakla yakınlaştırmayı etkinleştiren davranışlar listesi
+            const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
 
-            const mapContainer = document.getElementById('map');
+            map = new YMap(
+                document.getElementById('app'),
+                {
+                    location: {
+                        center: [32.8597, 39.9334], // v3'te [boylam, enlem]
+                        zoom: 12,
+                        bearing: 0 // Başlangıç dönüş açısı
+                    },
+                    behaviors: BEHAVIORS
+                }
+            );
+
+            map.addChild(new YMapDefaultSchemeLayer({}));
+
+            // Butonları ve olay dinleyicilerini harita hazır olduğunda ata
+            setupControls();
+        }
+
+        function setupControls() {
             const rotateLeftBtn = document.getElementById('rotate-left');
             const rotateRightBtn = document.getElementById('rotate-right');
             const resetRotationBtn = document.getElementById('reset-rotation');
 
-            let currentRotationAngle = 0;
-            const ROTATION_STEP = 15;
-
-            function rotateMap(degree) {
-                mapContainer.style.transform = `rotate(${degree}deg)`;
-                myMap.container.fitToViewport();
-            }
+            const ROTATION_STEP = 15; // Her tıklamada 15 derece
+            const ANIMATION_DURATION = 200; // Animasyon süresi (ms)
 
             rotateLeftBtn.addEventListener('click', function() {
-                currentRotationAngle -= ROTATION_STEP;
-                rotateMap(currentRotationAngle);
+                // v3'te mevcut açıyı map.location'dan alıyoruz
+                const currentBearing = map.location.bearing;
+                // v3'te haritayı map.update ile güncelliyoruz
+                map.update({ location: { bearing: currentBearing - ROTATION_STEP, duration: ANIMATION_DURATION } });
             });
 
             rotateRightBtn.addEventListener('click', function() {
-                currentRotationAngle += ROTATION_STEP;
-                rotateMap(currentRotationAngle);
+                const currentBearing = map.location.bearing;
+                map.update({ location: { bearing: currentBearing + ROTATION_STEP, duration: ANIMATION_DURATION } });
             });
 
             resetRotationBtn.addEventListener('click', function() {
-                currentRotationAngle = 0;
-                rotateMap(currentRotationAngle);
+                map.update({ location: { bearing: 0, duration: ANIMATION_DURATION } });
             });
         }
     </script>
