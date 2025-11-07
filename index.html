@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - İşaretçi Sorunu Çözüldü</title>
+    <title>Yandex v3 - Nihai Çözüm (İşaretçi Eklendi)</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
@@ -46,13 +46,18 @@
         async function main() {
             await ymaps3.ready;
             // DOKÜMANDAN: Gerekli tüm modülleri alıyoruz.
-            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker } = ymaps3;
+            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker, YMapDefaultFeaturesLayer } = ymaps3;
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
             map = new YMap(document.getElementById('app'), { location: { center: [32.8597, 39.9334], zoom: 12 } });
+
+            // 1. Arka plan katmanını (yollar, binalar) ekle.
             map.addChild(new YMapDefaultSchemeLayer({}));
+            
+            // 2. KRİTİK ADIM: İşaretçilerin üzerine çizileceği şeffaf katmanı ekle.
+            map.addChild(new YMapDefaultFeaturesLayer({ zIndex: 18 })); // zIndex ile şeffaf katmanın en üstte olmasını garantiliyoruz.
+
             const mapListener = new YMapListener({ onUpdate: ({ camera }) => { currentCameraState = camera; } });
             map.addChild(mapListener);
-            // Sadece YMapMarker'ı iletiyoruz.
             setupControls(YMapMarker);
             animateRotation();
         }
@@ -76,25 +81,12 @@
                         const { latitude, longitude, heading } = position.coords;
                         const userCoordinates = [longitude, latitude];
 
-                        // --- DOKÜMANA GÖRE DÜZELTİLMİŞ İŞARETÇİ MANTIĞI ---
                         if (!userMarker) {
-                            // 1. Önce DOM elementini (mavi nokta) oluştur.
                             const markerElement = document.createElement('div');
                             markerElement.className = 'user-marker';
-
-                            // 2. YMapMarker'ı DOKÜMANDA GÖSTERİLDİĞİ GİBİ iki parametreyle başlat.
-                            userMarker = new YMapMarker(
-                                {
-                                    coordinates: userCoordinates,
-                                    zIndex: 10
-                                },
-                                markerElement // İkinci parametre olarak DOM elementinin kendisi.
-                            );
-                            
-                            // 3. Oluşturulan işaretçiyi doğrudan haritaya ekle.
+                            userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 19 }, markerElement);
                             map.addChild(userMarker);
                         } else {
-                            // İşaretçi zaten varsa, sadece koordinatları güncellenir.
                             userMarker.update({ coordinates: userCoordinates });
                         }
 
@@ -120,7 +112,6 @@
                 navigationBtn.innerHTML = '🛰️';
             };
             
-            // ... (manuel döndürme olay dinleyicileri aynı kalır) ...
             const startRotation = (direction) => { if (isNavigationModeActive) return; if (rotationDirection === 0) { rotationDirection = direction; requestAnimationFrame(animateRotation); } else { rotationDirection = direction; } };
             const stopRotation = () => { rotationDirection = 0; };
             rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
