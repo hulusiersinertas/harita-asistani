@@ -1,0 +1,97 @@
+:root {
+    --panel-background: rgba(255, 255, 255, 0.8);
+    --panel-border-radius: 12px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+html, body, #app {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+#app {
+    touch-action: none; /* Mobil cihazlarda daha akıcı harita deneyimi için */
+}
+
+.panel {
+    position: absolute;
+    z-index: 10;
+    background-color: var(--panel-background);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--panel-border-radius);
+    box-shadow: var(--box-shadow);
+    transition: all 0.4s ease-in-out;
+}
+
+.top-panel {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.top-panel h1 {
+    font-size: 1.2em;
+    margin: 0;
+}
+
+.top-panel span {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.panel-right {
+    display: flex;
+    gap: 10px;
+}
+
+.bottom-panel {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 15px;
+    max-height: 90%;
+    overflow-y: auto;
+}
+
+/* Alt panelin liste görünümüne geçtiğindeki stili */
+.bottom-panel.liste-acik {
+    height: 60%;
+}
+
+.hidden {
+    display: none;
+}
+
+#gorev-detay .placeholder {
+    margin: 0;
+    color: #666;
+    text-align: center;
+}
+
+/* Diğer elemanlar için temel stiller */
+button, select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+button:hover {
+    background-color: #f0f0f0;
+}
+
+select:disabled {
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}

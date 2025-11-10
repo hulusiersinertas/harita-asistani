@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dağıtım Asistanı v3</title>
+    <!-- Yandex Maps API v3 -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- Stil Dosyası -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Haritanın render edileceği ana container -->
+    <div id="app"></div>
+
+    <!-- Üst Panel -->
+    <header class="panel top-panel">
+        <div class="panel-left">
+            <h1 id="gorev-baslik">Yükleniyor...</h1>
+            <span id="kalan-gorev-sayaci"></span>
+        </div>
+        <div class="panel-right">
+            <select id="mahalle-filtresi" disabled>
+                <option value="TÜMÜ">Tüm Mahalleler</option>
+            </select>
+            <button id="gorunum-degistir-btn">Listeyi Göster</button>
+        </div>
+    </header>
+
+    <!-- Alt Panel -->
+    <footer id="alt-panel" class="panel bottom-panel">
+        <!-- Görev Detayları (Harita Modunda Görünür) -->
+        <div id="gorev-detay">
+            <p class="placeholder">Detayları görmek için haritadan bir nokta seçin.</p>
+        </div>
+        <!-- Görev Listesi (Liste Modunda Görünür) -->
+        <div id="gorev-listesi" class="hidden">
+            <!-- Görev kartları buraya eklenecek -->
+        </div>
+    </footer>
+
+    <!-- Modüler JavaScript Dosyaları -->
+    <script src="./modules/config.js" type="module"></script>
+    <script src="./modules/api.js" type="module"></script>
+    <script src="./modules/map.js" type="module"></script>
+    <script src="./modules/ui.js" type="module"></script>
+    <script src="./script.js" type="module"></script>
+</body>
+</html>
