@@ -1,3 +1,5 @@
+// script.js (Güncellenmiş Hali)
+
 import { fetchSheetData } from './modules/api.js';
 
 // Uygulama başladığında çalışacak ana fonksiyon
@@ -19,8 +21,10 @@ async function main() {
 
     // 3. (TEST AŞAMASI) Gelen verileri konsola yazdır
     if (gorevler.length > 0) {
-        console.log("Başarıyla çekilen ve işlenen görevler:", gorevler);
-        alert(`${gorevler.length} adet görev başarıyla yüklendi. Detaylar için F12 ile konsolu kontrol edebilirsiniz.`);
+        console.log("Başarıyla çekilen ve işlenen görevler:", gorevler); // BU SATIRIN ÇIKTISINI ARIYORUZ
+        
+        // alert(`${gorevler.length} adet görev başarıyla yüklendi. Detaylar için F12 ile konsolu kontrol edebilirsiniz.`); // Bu satırı geçici olarak devre dışı bıraktık
+        
         document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
         document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
     } else {
