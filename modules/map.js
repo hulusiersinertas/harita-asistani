@@ -36,7 +36,7 @@ export async function initMap(gorevler) {
             const marker = new YMapMarker(
                 {
                     coordinates: [gorev.boylam, gorev.enlem],
-                    zIndex: 10
+                    zIndex: 1000
                 },
                 placemarkElement
             );
