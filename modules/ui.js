@@ -50,39 +50,36 @@ function populateMahalleFiltresi(gorevler) {
  * @param {YMap} map 
  */
 function setupEventListeners(map) {
-    // Tüm harita olaylarını dinlemek için tek bir YMapListener oluşturuyoruz.
     const mapListener = new ymaps3.YMapListener({
-        layer: 'any', // Hem harita zeminini hem de özellikleri dinle
+        layer: 'any', 
 
-        // Fare/parmak bir marker'ın üzerine geldiğinde (isteğe bağlı, imleci değiştirebilir)
         onMouseEnter: (object) => {
-            if (object.entity?.element?.classList.contains('placemark')) {
+            // --- HATA DÜZELTME 1 ---
+            // Önce 'object' var mı diye kontrol et, sonra devam et.
+            if (object && object.entity?.element?.classList.contains('placemark')) {
                 map.setCursor('pointer');
             }
         },
 
-        // Fare/parmak bir marker'ın üzerinden ayrıldığında (isteğe bağlı)
         onMouseLeave: (object) => {
-            if (object.entity?.element?.classList.contains('placemark')) {
+            // --- HATA DÜZELTME 2 ---
+            // Burada da 'object' var mı diye kontrol et.
+            if (object && object.entity?.element?.classList.contains('placemark')) {
                 map.setCursor('grab');
             }
         },
 
-        // Haritanın herhangi bir yerine tıklandığında/dokunulduğunda
         onPointerDown: (event) => {
-            // Eğer bir marker'a tıklandıysa (event.entity doluysa)
             if (event.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 handlePinClick(gorevId);
             } 
-            // Eğer bir marker'a tıklanmadıysa (yani event.entity boşsa) seçimi temizle
             else {
                 clearSelection();
             }
         }
     });
-
-    // Oluşturduğumuz dinleyiciyi haritaya ekliyoruz.
+    
     map.addChild(mapListener);
 }
 
