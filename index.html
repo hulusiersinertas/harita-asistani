@@ -2,20 +2,18 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <!-- Mobil cihazlarda harita etkileşimleri için kritik viewport ayarı -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dağıtım Görevleri v3</title>
-    
-    <!-- v3'e göre güncellenmiş stil dosyası -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- YANDEX API v3 SCRIPT'İ -->
-    <!-- API anahtarı olmadan yüklenir, script.js tarafından dinamik olarak eklenecektir. -->
-    <script id="yandex-maps-script" src="https://api-maps.yandex.ru/v3/?lang=tr_TR"></script>
+    <!-- YANDEX API v3 SCRIPT'İ - NİHAİ VE DOĞRU YÖNTEM -->
+    <!-- API anahtarı doğrudan buraya eklenir. Lütfen kendi anahtarınızla değiştirin. -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    
 </head>
 <body class="harita-odakli">
 
-    <!-- Arayüz elemanları (HTML yapısında değişiklik yok) -->
+    <!-- Arayüz elemanları aynı kalır -->
     <div id="ust-panel">
         <div class="panel-sol">
             <h1 id="arac-baslik">Yükleniyor...</h1>
@@ -28,32 +26,20 @@
             <button id="gorunum-degistir-btn" class="filtre-kontrolu">Listeyi Göster</button>
         </div>
     </div>
-
     <div id="map"></div>
-
     <div id="alt-panel">
-        <!-- Bu tutamaç gelecekte panelin boyutunu değiştirmek için kullanılabilir -->
-        <!-- <div id="panel-tutamaci"></div> -->
         <div id="gorev-listesi-tam"></div>
         <div id="gorev-detay"></div>
     </div>
     
-    <!-- =================================================================================
-    // == YENİDEN DÜZENLENMİŞ SCRIPT YÜKLEME SIRASI
-    // ================================================================================= -->
-
-    <!-- 1. Önce yapılandırma dosyası yüklenir -->
+    <!-- Script Yükleme Sırası -->
     <script src="modules/config.js"></script>
-    
-    <!-- 2. Ardından arayüz ve harita gibi ana modüller yüklenir -->
     <script src="modules/ui.js"></script>
     <script src="modules/map.js"></script>
-    
-    <!-- 3. Son olarak, bu modülleri kullanan API ve ana orkestra şefi yüklenir -->
     <script src="modules/api.js"></script>
     <script src="script.js"></script>
     
-    <!-- 4. Google API'si en son yüklenir ve 'startApp' fonksiyonu ile tüm başlatma zincirini tetikler -->
+    <!-- Google API başlatıcısı aynı kalır -->
     <script async defer src="https://apis.google.com/js/api.js?onload=startApp"></script>
 
 </body>
