@@ -31,7 +31,12 @@ export async function initMap(gorevler) {
 
     // Harita katmanlarını ekle
     map.addChild(new YMapDefaultSchemeLayer()); // Standart harita görünümü
-    map.addChild(new YMapDefaultFeaturesLayer()); // Marker gibi nesneler için
+
+    // --- DEĞİŞİKLİK BAŞLANGIÇ ---
+    // Marker gibi özellikleri ekleyeceğimiz katmanı bir değişkende saklıyoruz.
+    const featuresLayer = new YMapDefaultFeaturesLayer();
+    map.addChild(featuresLayer);
+    // --- DEĞİŞİKLİK SON ---
 
     // Koordinatı olan her görev için bir marker oluştur ve haritaya ekle
     gorevler.forEach(gorev => {
@@ -46,7 +51,10 @@ export async function initMap(gorevler) {
                 placemarkElement
             );
 
-            map.addChild(marker);
+            // --- DEĞİŞİKLİK ---
+            // Marker'ı doğrudan haritaya değil, özellik katmanına ekliyoruz.
+            featuresLayer.addChild(marker);
+
             placemarks.set(gorev.id, { marker, element: placemarkElement }); // Marker'ı ve elementini sakla
         }
     });
