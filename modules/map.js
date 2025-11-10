@@ -8,14 +8,11 @@ const MapManager = {
     sonSecilenMarker: null,
     
     initMap: async function(elementId) {
-        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, YMapListener } = ymaps3;
+        // --- DEĞİŞİKLİK BURADA: YMapControls'u da import ediyoruz ---
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, YMapListener, YMapControls } = ymaps3;
 
-        // --- UNUTULAN KRİTİK ADIM BURADA EKLENDİ ---
-        // Yandex API'sine, dış arayüz paketini nereden indireceğini söylüyoruz.
-        // Bu komut, YMapZoomControl gibi kontrolleri kullanabilmek için ZORUNLUDUR.
         await ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/{package}/dist/index.js', ['@yandex/ymaps3-default-ui-theme@0.0']);
         
-        // Artık paketi güvenle import edebiliriz.
         const { YMapZoomControl } = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
         
         AppState.myMap = new YMap(document.getElementById(elementId), {
@@ -24,7 +21,17 @@ const MapManager = {
 
         AppState.myMap.addChild(new YMapDefaultSchemeLayer({}));
         AppState.myMap.addChild(new YMapDefaultFeaturesLayer({}));
-        AppState.myMap.addChild(new YMapZoomControl({}));
+
+        // --- DEĞİŞİKLİK BURADA: Zoom kontrolünü bir panel içine yerleştiriyoruz ---
+        // 1. Bir kontrol paneli oluşturuyoruz ve konumunu 'sağ' olarak ayarlıyoruz.
+        const controls = new YMapControls({position: 'right'});
+        
+        // 2. Zoom butonunu bu panelin içine bir dizi elemanı olarak ekliyoruz.
+        controls.addChild(new YMapZoomControl({}));
+        
+        // 3. Panelin kendisini haritaya ekliyoruz.
+        AppState.myMap.addChild(controls);
+        // --- DÜZELTME SONU ---
 
         AppState.myMap.addChild(new YMapListener({
             onClick: () => {
