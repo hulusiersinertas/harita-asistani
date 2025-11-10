@@ -9,18 +9,12 @@ const placemarks = new Map(); // Oluşturulan marker'ları saklamak için
 export async function initMap(gorevler) {
     await ymaps3.ready;
 
-    // --- DEĞİŞİKLİK: Varsayılan özellikleri ve UI'ı import ediyoruz ---
     const {
         YMap,
         YMapDefaultSchemeLayer,
         YMapDefaultFeaturesLayer,
-        YMapMarker,
-        YMapControls, // Kontroller için (zoom vb.)
-        YMapDefaultMarker // Varsayılan marker davranışı için
+        YMapMarker
     } = ymaps3;
-
-    // --- DEĞİŞİKLİK: Zoom kontrolünü import ediyoruz ---
-    const {YMapZoomControl} = await ymaps3.import('@yandex/ymaps3-controls@0.0.1');
 
     const centerCoordinates = calculateCenter(gorevler);
 
@@ -31,32 +25,28 @@ export async function initMap(gorevler) {
         }
     });
 
-    // Standart harita katmanını ekle
+    // 1. Haritanın zeminini (yollar, binalar) ekliyoruz. Bu standart bir adım.
     map.addChild(new YMapDefaultSchemeLayer());
-    
-    // --- YENİ ve KRİTİK ADIM: Varsayılan özellikleri haritaya ekliyoruz ---
-    // Bu, marker gibi özelliklerin düzgün çalışması için gereklidir.
-    map.addChild(new YMapDefaultFeaturesLayer({id: 'features'}));
 
-    // Zoom kontrollerini ekleyelim (isteğe bağlı ama faydalı)
-    const controls = new YMapControls({position: 'right'});
-    controls.addChild(new YMapZoomControl({}));
-    map.addChild(controls);
+    // 2. EN ÖNEMLİ ADIM: İşaretçi (marker) gibi "özellikleri" çizecek olan
+    // standart katmanı haritaya ekliyoruz. Bu katman olmadan marker'lar render edilemez.
+    map.addChild(new YMapDefaultFeaturesLayer({}));
 
 
     gorevler.forEach(gorev => {
         if (gorev.hasCoords) {
             const placemarkElement = createPlacemarkElement(gorev.id);
             
-            // Not: Artık source özelliğine ihtiyacımız kalmadı, çünkü
-            // varsayılan 'features' katmanını kullanıyoruz.
             const marker = new YMapMarker(
                 {
-                    coordinates: [gorev.boylam, gorev.enlem],
+                    // Sadece en temel özellik olan koordinatları veriyoruz.
+                    coordinates: [gorev.boylam, gorev.enlem]
                 },
                 placemarkElement
             );
             
+            // 3. İşaretçiyi, özellik katmanına değil, doğrudan haritanın kendisine ekliyoruz.
+            // API, bu marker'ı otomatik olarak YMapDefaultFeaturesLayer üzerinde çizeceğini anlar.
             map.addChild(marker);
             
             placemarks.set(gorev.id, { marker, element: placemarkElement });
