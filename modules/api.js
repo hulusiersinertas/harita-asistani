@@ -6,7 +6,7 @@ import { config } from './config.js';
  * @returns {Promise<Array>} - İşlenmiş görev nesnelerinden oluşan bir dizi.
  */
 export async function fetchSheetData(sheetName) {
-    const range = `${sheetName}!A4:P`; // Veri aralığı
+    const range = `${sheetName}!A4:P`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
 
     try {
@@ -16,14 +16,11 @@ export async function fetchSheetData(sheetName) {
         }
         const data = await response.json();
         const values = data.values || [];
-
-        // Gelen ham veriyi daha kullanışlı nesnelere dönüştürelim.
         return processSheetData(values);
-
     } catch (error) {
         console.error("Veri çekme sırasında bir hata oluştu:", error);
         alert("Görev verileri yüklenemedi. Lütfen internet bağlantınızı kontrol edin ve sayfayı yenileyin.");
-        return []; // Hata durumunda boş bir dizi döndür.
+        return [];
     }
 }
 
@@ -34,45 +31,43 @@ export async function fetchSheetData(sheetName) {
  */
 function processSheetData(rows) {
     const processedData = [];
-    const CM = config.COLUMN_MAPPING; // Sütun eşleştirmeleri için kısa yol
+    const CM = config.COLUMN_MAPPING;
 
     rows.forEach((row, index) => {
-        // Sadece durumu "bekliyor" olan görevleri alıyoruz.
         if (row[CM.DURUM] && row[CM.DURUM].toLowerCase() === 'bekliyor') {
-
-            // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
-            // Koordinatları temizleme ve normalleştirme fonksiyonu
             const formatCoordinate = (coord) => {
                 if (!coord) return null;
-
-                // 1. Gelen veriyi string'e çevir ve tüm virgülleri (binlik ayraçları) kaldır.
-                //    Örn: "39,798,579" -> "39798579"
-                //    Örn: "39,92077" -> "3992077"
                 let str = String(coord).replace(/,/g, '').trim();
-                
-                // 2. Eğer sonuçta hala nokta yoksa (yani "39798579" formatındaysa),
-                //    doğru yere noktayı ekle.
                 if (!str.includes('.')) {
-                    // Türkiye koordinatları genellikle 2 haneli derece ile başlar.
                     str = str.slice(0, 2) + '.' + str.slice(2);
                 }
-                
                 const result = parseFloat(str);
                 return isNaN(result) ? null : result;
             };
-            // --- DEĞİŞİKLİK BURADA BİTİYOR ---
 
             const enlem = formatCoordinate(row[CM.ENLEM]);
             const boylam = formatCoordinate(row[CM.BOYLAM]);
+            const tamAdres = row[CM.TAM_ADRES] || 'Adres Yok';
+
+            // --- DEĞİŞİKLİK BURADA ---
+            // Adresi virgüllerden bölüp bir dizi oluşturuyoruz.
+            // Örn: ["KIRMIZITOPRAK MAH. ...", " ODUNPAZARI", " ESKİŞEHİR"]
+            const adresParcalari = tamAdres.split(',');
+            
+            // Mahalle genellikle adresin ilk parçasıdır.
+            let mahalle = adresParcalari[0].trim();
+            
+            // "MAH." kelimesini daha temiz bir görünüm için "Mah." ile değiştirelim (isteğe bağlı)
+            mahalle = mahalle.replace('MAH.', 'Mah.');
 
             processedData.push({
-                id: index + 4, 
+                id: index + 4,
                 adSoyad: row[CM.AD_SOYAD] || 'İsim Yok',
                 adresNotu: row[CM.ADRES_NOTU] || '',
                 miktar: row[CM.MIKTAR] || '',
                 telefon: row[CM.TELEFON] || '',
-                tamAdres: row[CM.TAM_ADRES] || 'Adres Yok',
-                mahalle: (row[CM.TAM_ADRES] || '').split('/').pop().trim(),
+                tamAdres: tamAdres,
+                mahalle: mahalle, // Yeni ve doğru alınmış mahalle
                 enlem: enlem,
                 boylam: boylam,
                 hasCoords: (enlem && boylam) ? true : false,
