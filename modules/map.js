@@ -1,6 +1,5 @@
 // =================================================================================
 // == MODÜL: Harita Yönetimi (map.js) - NİHAİ DÜZELTİLMİŞ VERSİYON
-// == Sorumluluk: Yandex Harita v3'ü oluşturur, marker'ları yönetir ve harita etkileşimlerini sağlar.
 // =================================================================================
 
 const MapManager = {
@@ -8,47 +7,25 @@ const MapManager = {
     sonSecilenMarker: null,
     
     initMap: async function(elementId) {
-        // --- DEĞİŞİKLİK BURADA: YMapControls'u da import ediyoruz ---
         const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, YMapListener, YMapControls } = ymaps3;
-
         await ymaps3.import.registerCdn('https://cdn.jsdelivr.net/npm/{package}/dist/index.js', ['@yandex/ymaps3-default-ui-theme@0.0']);
-        
         const { YMapZoomControl } = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
         
-        AppState.myMap = new YMap(document.getElementById(elementId), {
-            location: AppConfig.MAP_DEFAULTS
-        });
-
+        AppState.myMap = new YMap(document.getElementById(elementId), { location: AppConfig.MAP_DEFAULTS });
         AppState.myMap.addChild(new YMapDefaultSchemeLayer({}));
         AppState.myMap.addChild(new YMapDefaultFeaturesLayer({}));
-
-        // --- DEĞİŞİKLİK BURADA: Zoom kontrolünü bir panel içine yerleştiriyoruz ---
-        // 1. Bir kontrol paneli oluşturuyoruz ve konumunu 'sağ' olarak ayarlıyoruz.
         const controls = new YMapControls({position: 'right'});
-        
-        // 2. Zoom butonunu bu panelin içine bir dizi elemanı olarak ekliyoruz.
         controls.addChild(new YMapZoomControl({}));
-        
-        // 3. Panelin kendisini haritaya ekliyoruz.
         AppState.myMap.addChild(controls);
-        // --- DÜZELTME SONU ---
 
         AppState.myMap.addChild(new YMapListener({
-            onClick: () => {
-                if (document.body.classList.contains('liste-odakli')) {
-                    UI.toggleGorunum();
-                }
-            }
+            onClick: () => { if (document.body.classList.contains('liste-odakli')) { UI.toggleGorunum(); } }
         }));
-
         this.startGeolocation(YMapMarker);
     },
 
     startGeolocation: function(YMapMarker) {
-        if (!navigator.geolocation) {
-            console.warn("Bu tarayıcı Geolocation'ı desteklemiyor.");
-            return;
-        }
+        if (!navigator.geolocation) { console.warn("Bu tarayıcı Geolocation'ı desteklemiyor."); return; }
         navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
@@ -56,15 +33,10 @@ const MapManager = {
                 if (!this.userMarker) {
                     const markerElement = document.createElement('div');
                     markerElement.className = 'user-marker';
-                    this.userMarker = new YMapMarker({
-                        coordinates: userCoordinates,
-                        zIndex: 9999
-                    }, markerElement);
+                    this.userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 9999 }, markerElement);
                     AppState.myMap.addChild(this.userMarker);
                     console.log("Kullanıcı konumu haritaya eklendi.");
-                } else {
-                    this.userMarker.update({ coordinates: userCoordinates });
-                }
+                } else { this.userMarker.update({ coordinates: userCoordinates }); }
             },
             () => { console.warn("Konum izni alınamadı veya konum bulunamadı."); },
             { enableHighAccuracy: true }
@@ -110,29 +82,40 @@ const MapManager = {
     },
 
     filtrele: function(secilenMahalle) {
-        let boundsToShow = [];
+        let visibleMarkerCoordinates = [];
         this.sonSecilenMarker = null;
+
         AppState.gorevMarkers.forEach(marker => {
             const pinMahalle = marker.properties.mahalle;
             const markerElement = marker.element;
             if (secilenMahalle === 'TUMU' || pinMahalle === secilenMahalle) {
                 markerElement.className = 'gorev-marker';
                 markerElement.style.opacity = '1';
-                boundsToShow.push(marker.coordinates);
+                visibleMarkerCoordinates.push(marker.coordinates);
             } else {
                 markerElement.className = 'gorev-marker filtered-out';
                 markerElement.style.opacity = '0.5';
             }
         });
-        if (boundsToShow.length > 0) {
-            AppState.myMap.update({ location: { bounds: boundsToShow, duration: 500 } });
+
+        if (visibleMarkerCoordinates.length > 0) {
+            // v3'te 'bounds' özelliğinin daha stabil çalışması için bu yapıyı kullanıyoruz.
+            // Bu, haritayı verilen tüm noktaları içerecek şekilde ayarlar.
+             AppState.myMap.update({
+                location: {
+                    bounds: visibleMarkerCoordinates,
+                    duration: 500
+                }
+            });
         }
     },
 
     odaklan: function(rowIndex) {
         const gorev = AppState.tumGorevler.find(g => g.rowIndex === rowIndex);
         if (gorev && gorev.coordinates) {
-            AppState.myMap.update({ location: { center: gorev.coordinates, zoom: 17, duration: 500 } });
+            AppState.myMap.update({
+                location: { center: gorev.coordinates, zoom: 17, duration: 500 }
+            });
             const markerToSelect = AppState.gorevMarkers.find(m => m.properties.rowIndex === rowIndex);
             if (markerToSelect) {
                 this.vurgulaPin(markerToSelect);
@@ -141,7 +124,7 @@ const MapManager = {
     },
 
     vurgulaPin: function(secilenMarker) {
-        if (this.sonSecilenMarker) {
+        if (this.sonSecilenMarker && this.sonSecilenMarker.element) {
             const prevPinMahalle = this.sonSecilenMarker.properties.mahalle;
             const secilenMahalle = document.getElementById('mahalle-filtre').value;
             if (secilenMahalle === 'TUMU' || prevPinMahalle === secilenMahalle) {
@@ -150,7 +133,9 @@ const MapManager = {
                 this.sonSecilenMarker.element.className = 'gorev-marker filtered-out';
             }
         }
-        secilenMarker.element.className = 'gorev-marker selected';
+        if (secilenMarker && secilenMarker.element) {
+            secilenMarker.element.className = 'gorev-marker selected';
+        }
         this.sonSecilenMarker = secilenMarker;
     },
 
