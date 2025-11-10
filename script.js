@@ -9,7 +9,10 @@ const AppState = {
     tumGorevler: [],
     gorevMarkers: []
 };
-document.addEventListener('DOMContentLoaded', () => { UI.initEventListeners(); });
+
+document.addEventListener('DOMContentLoaded', () => {
+    UI.initEventListeners();
+});
 
 // =================================================================================
 // == UYGULAMA BAŞLATMA ZİNCİRİ
@@ -57,4 +60,3 @@ async function initApplication() {
         UI.showError(`Uygulama başlatılırken bir hata oluştu: ${err.message || err.details || 'Bilinmeyen Hata'}`);
     }
 }
-
