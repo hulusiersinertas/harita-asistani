@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - GPS Navigasyon Asistanı (İmleç Düzeltmesi)</title>
+    <title>Yandex v3 - GPS Navigasyon Asistanı (URL Düzeltmesi)</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <script src="https://api-maps-yandex-ru.translate.goog/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR&_x_tr_sl=en&_x_tr_tl=tr&_x_tr_hl=tr&_x_tr_pto=wapp"></script>
+    <!-- DOĞRU URL İLE DEĞİŞTİRİLDİ -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
     <style>
         html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
         #app { touch-action: none; }
@@ -77,15 +78,7 @@
                         if (!userMarker) {
                             const markerElement = document.createElement('div');
                             markerElement.className = 'user-marker';
-                            
-                            // --- DEĞİŞİKLİK BURADA ---
-                            // İmlece, haritanın diğer tüm katmanlarının üzerinde olmasını söyleyen
-                            // bir zIndex değeri ekliyoruz.
-                            userMarker = new YMapMarker({ 
-                                coordinates: userCoordinates, 
-                                zIndex: 10 
-                            }, markerElement);
-
+                            userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 10 }, markerElement);
                             map.addChild(userMarker);
                         } else {
                             userMarker.update({ coordinates: userCoordinates });
@@ -123,7 +116,9 @@
             document.addEventListener('mouseup', stopRotation);
             document.addEventListener('touchend', stopRotation);
             document.addEventListener('touchcancel', stopRotation);
-            navigationBtn.addEventListener('click', () => { isNavigationModeActive ? stopNavigation() : startRotation(); });
+            
+            // SON BİR DÜZELTME: Önceki kodda burada bir hata vardı, startRotation'ı çağırıyordu.
+            navigationBtn.addEventListener('click', () => { isNavigationModeActive ? stopNavigation() : startNavigation(); });
         }
     </script>
 </body>
