@@ -1,9 +1,10 @@
 import { fetchSheetData } from './modules/api.js';
-import { initMap } from './modules/map.js'; // map.js'i import et
+import { initMap } from './modules/map.js';
+import { initUI } from './modules/ui.js'; // ui.js'i import et
 
 // Uygulama başladığında çalışacak ana fonksiyon
 async function main() {
-    // 1. URL'den 'arac' parametresini al
+    // 1. URL'den 'arac' parametresini al (Bu kısım aynı kalıyor)
     const params = new URLSearchParams(window.location.search);
     const aracAdi = params.get('arac');
 
@@ -15,26 +16,25 @@ async function main() {
     
     document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri Yükleniyor...`;
 
-    // 2. Google E-Tablosu'ndan verileri çek
+    // 2. Google E-Tablosu'ndan verileri çek (Bu kısım aynı kalıyor)
     const gorevler = await fetchSheetData(aracAdi);
     
     if (gorevler.length === 0) {
-        console.log("Gösterilecek 'bekliyor' durumunda görev bulunamadı veya veri çekilemedi.");
         document.getElementById('gorev-baslik').textContent = `Görev Yok`;
         document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: 0`;
-        return; // Görev yoksa devam etme
+        return;
     }
     
     document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
     document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
     console.log("Başarıyla çekilen ve işlenen görevler:", gorevler);
 
-    // --- YENİ ADIM ---
-    // 3. Haritayı başlat ve pinleri ekle
+    // 3. Haritayı başlat ve pinleri ekle (Bu kısım aynı kalıyor)
     const { map, placemarks } = await initMap(gorevler);
     
-    // --- Sonraki adımlar buraya eklenecek ---
-    // initUI(gorevler, map, placemarks);
+    // --- YENİ ADIM ---
+    // 4. Arayüzü başlat ve etkileşimleri ayarla
+    initUI(gorevler, map, placemarks);
 }
 
 // Uygulamayı başlat
