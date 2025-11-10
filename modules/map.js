@@ -9,38 +9,59 @@ const placemarks = new Map(); // Oluşturulan marker'ları saklamak için
 export async function initMap(gorevler) {
     await ymaps3.ready;
 
+    // --- DEĞİŞİKLİK: YMapFeatureDataSource modülünü de import ediyoruz ---
     const {
         YMap,
         YMapDefaultSchemeLayer,
         YMapDefaultFeaturesLayer,
-        YMapMarker
+        YMapMarker,
+        YMapFeatureDataSource // Yeni eklenen modül
     } = ymaps3;
 
-    // --- YENİLİK: Haritanın merkezini hesapla ---
     const centerCoordinates = calculateCenter(gorevler);
 
     map = new YMap(document.getElementById('app'), {
         location: {
-            center: centerCoordinates, // Otomatik hesaplanan merkez
-            zoom: 12 // Daha yakın bir zoom seviyesi
+            center: centerCoordinates,
+            zoom: 12
         }
     });
 
     map.addChild(new YMapDefaultSchemeLayer());
-    const featuresLayer = new YMapDefaultFeaturesLayer();
+
+    // --- DEĞİŞİKLİK ADIM 1: Marker'larımız için bir veri kaynağı oluşturuyoruz ---
+    // Bu kaynağa 'myMarkers' adını veriyoruz.
+    const markerSource = new YMapFeatureDataSource({
+        id: 'myMarkers'
+    });
+    map.addChild(markerSource);
+
+    // --- DEĞİŞİKLİK ADIM 2: Katmana hangi kaynaktan veri çizeceğini söylüyoruz ---
+    // Diyoruz ki: "Sen, 'myMarkers' kaynağından gelen özellikleri çiz."
+    const featuresLayer = new YMapDefaultFeaturesLayer({
+        source: 'myMarkers'
+    });
     map.addChild(featuresLayer);
+
 
     gorevler.forEach(gorev => {
         if (gorev.hasCoords) {
             const placemarkElement = createPlacemarkElement(gorev.id);
+            
             const marker = new YMapMarker(
                 {
+                    // --- DEĞİŞİKLİK ADIM 3: Her marker'a hangi kaynağa ait olduğunu söylüyoruz ---
+                    source: 'myMarkers', // Bu marker 'myMarkers' kaynağına aittir.
                     coordinates: [gorev.boylam, gorev.enlem],
-                    zIndex: 1000
+                    zIndex: 10 // zIndex artık çalışacaktır çünkü marker render ediliyor.
                 },
                 placemarkElement
             );
-            featuresLayer.addChild(marker);
+            
+            // Marker'ları artık doğrudan katmana değil, veri kaynağına ekliyoruz.
+            // Katman, kaynaktaki değişiklikleri otomatik olarak algılayıp çizecektir.
+            markerSource.add(marker);
+            
             placemarks.set(gorev.id, { marker, element: placemarkElement });
         }
     });
@@ -80,10 +101,7 @@ function calculateCenter(gorevler) {
     });
 
     if (count > 0) {
-        // [boylam, enlem] formatında döndür
         return [totalLng / count, totalLat / count];
     }
-
-    // Görev yoksa varsayılan merkez (Ankara)
     return [32.8597, 39.9334];
 }
