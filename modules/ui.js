@@ -1,1 +1,179 @@
+// Global değişkenler ve seçiciler
+const gorevDetayPanel = document.getElementById('gorev-detay');
+const mahalleFiltresi = document.getElementById('mahalle-filtresi');
 
+let gorevlerData = [];
+let placemarksMap = new Map();
+let currentSelectedPin = null;
+
+/**
+ * Kullanıcı arayüzünü (UI) başlatır ve olay dinleyicilerini ayarlar.
+ * @param {Array} gorevler - Tüm görevlerin verileri.
+ * @param {YMap} map - Yandex harita nesnesi.
+ * @param {Map} placemarks - Görev ID'lerini marker'lara eşleyen Map nesnesi.
+ */
+export function initUI(gorevler, map, placemarks) {
+    gorevlerData = gorevler;
+    placemarksMap = placemarks;
+
+    populateMahalleFiltresi(gorevler);
+    setupEventListeners(map);
+}
+
+/**
+ * Benzersiz mahalle isimlerini toplayıp filtre menüsünü doldurur.
+ * @param {Array} gorevler 
+ */
+function populateMahalleFiltresi(gorevler) {
+    const mahalleler = new Set(); // Set, otomatik olarak benzersiz değerler tutar.
+    gorevler.forEach(gorev => {
+        if (gorev.mahalle) {
+            mahalleler.add(gorev.mahalle);
+        }
+    });
+
+    // Set'i alfabetik olarak sıralanmış bir diziye dönüştür
+    const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
+
+    sortedMahalleler.forEach(mahalle => {
+        const option = document.createElement('option');
+        option.value = mahalle;
+        option.textContent = mahalle;
+        mahalleFiltresi.appendChild(option);
+    });
+
+    mahalleFiltresi.disabled = false; // Filtreyi aktif et
+}
+
+/**
+ * Harita ve pinler için tıklama olaylarını ayarlar.
+ * @param {YMap} map 
+ */
+function setupEventListeners(map) {
+    // Haritadaki pinlere tıklandığında ne olacağını belirle
+    map.listen({
+        // Tıklanan şey bir 'feature' (bizim marker'ımız gibi) ise çalışır
+        onEntityClick: (object, event) => {
+            // Tıklanan şeyin özel HTML elementi var mı ve bu bir placemark mı?
+            if (object.entity.element && object.entity.element.classList.contains('placemark')) {
+                const gorevId = parseInt(object.entity.element.dataset.id, 10);
+                handlePinClick(gorevId);
+            }
+        }
+    });
+
+    // Haritanın boş bir yerine tıklandığında seçimi temizle
+    const mapListener = new ymaps3.YMapListener({
+        layer: 'any',
+        onPointerDown: (event, point) => {
+            // Eğer bir marker'a tıklanmadıysa (yani event.entity boşsa) seçimi temizle
+            if (!event.entity) {
+                clearSelection();
+            }
+        }
+    });
+    map.addChild(mapListener);
+}
+
+/**
+ * Bir pine tıklandığında çalışacak fonksiyon.
+ * @param {number} gorevId 
+ */
+function handlePinClick(gorevId) {
+    // Önceki seçimi temizle
+    clearSelection();
+
+    // Yeni pini seçili olarak işaretle
+    const pin = placemarksMap.get(gorevId);
+    if (pin && pin.element) {
+        pin.element.classList.add('selected');
+        currentSelectedPin = pin;
+    }
+
+    // Alt panelde görev detaylarını göster
+    const gorev = gorevlerData.find(g => g.id === gorevId);
+    if (gorev) {
+        showGorevDetay(gorev);
+    }
+}
+
+/**
+ * Alt panelde seçilen görevin detaylarını gösterir.
+ * @param {Object} gorev 
+ */
+function showGorevDetay(gorev) {
+    gorevDetayPanel.innerHTML = `
+        <h3>${gorev.adSoyad} (${gorev.miktar} Adet)</h3>
+        ${gorev.adresNotu ? `<p class="adres-notu">${gorev.adresNotu}</p>` : ''}
+        <p>${gorev.tamAdres}</p>
+        <div class="action-buttons">
+            <!-- Butonlar bir sonraki adımda eklenecek -->
+            <button>Navigasyon</button>
+            <button>Rota Çiz</button>
+            <button>Verildi</button>
+            <button>Evde Yok</button>
+            ${gorev.telefon ? `<button>Ara</button>` : ''}
+        </div>
+    `;
+}
+
+/**
+ * Seçili olan pini ve detay panelini temizler.
+ */
+function clearSelection() {
+    if (currentSelectedPin && currentSelectedPin.element) {
+        currentSelectedPin.element.classList.remove('selected');
+    }
+    currentSelectedPin = null;
+
+    gorevDetayPanel.innerHTML = '<p class="placeholder">Detayları görmek için haritadan bir nokta seçin.</p>';
+}```
+
+#### **3. `script.js` Dosyasını Güncelleyin**
+
+Son olarak, ana "orkestra şefi" dosyamıza, arayüzü başlatması gerektiğini söyleyelim.
+
+`script.js` dosyasını açın ve aşağıdaki gibi düzenleyin:
+
+```javascript
+import { fetchSheetData } from './modules/api.js';
+import { initMap } from './modules/map.js';
+import { initUI } from './modules/ui.js'; // ui.js'i import et
+
+// Uygulama başladığında çalışacak ana fonksiyon
+async function main() {
+    // 1. URL'den 'arac' parametresini al (Bu kısım aynı kalıyor)
+    const params = new URLSearchParams(window.location.search);
+    const aracAdi = params.get('arac');
+
+    if (!aracAdi) {
+        document.getElementById('gorev-baslik').textContent = "HATA";
+        alert("Lütfen geçerli bir araç parametresi ile giriş yapın. (Örn: ?arac=OP-1)");
+        return;
+    }
+    
+    document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri Yükleniyor...`;
+
+    // 2. Google E-Tablosu'ndan verileri çek (Bu kısım aynı kalıyor)
+    const gorevler = await fetchSheetData(aracAdi);
+    
+    if (gorevler.length === 0) {
+        document.getElementById('gorev-baslik').textContent = `Görev Yok`;
+        document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: 0`;
+        return;
+    }
+    
+    document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
+    document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
+    console.log("Başarıyla çekilen ve işlenen görevler:", gorevler);
+
+    // 3. Haritayı başlat ve pinleri ekle (Bu kısım aynı kalıyor)
+    const { map, placemarks } = await initMap(gorevler);
+    
+    // --- YENİ ADIM ---
+    // 4. Arayüzü başlat ve etkileşimleri ayarla
+    initUI(gorevler, map, placemarks);
+}
+
+// Uygulamayı başlat
+main();
