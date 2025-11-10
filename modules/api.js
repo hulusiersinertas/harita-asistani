@@ -1,5 +1,5 @@
 // =================================================================================
-// == MODÜL: API İşlemleri (api.js) - YAZIM HATASI DÜZELTİLDİ
+// == MODÜL: API İşlemleri (api.js) - NİHAİ DÜZELTİLMİŞ VERSİYON
 // =================================================================================
 
 const API = {
@@ -18,13 +18,14 @@ const API = {
                 range: range
             });
 
-            return (response.result.values || []).map((row, index) => {
+            // Gelen veri boşsa bile her zaman boş bir dizi döndür
+            const data = response.result.values || [];
+
+            return data.map((row, index) => {
                 const hamEnlem = row[AppConfig.SUTUNLAR.ENLEM];
                 const hamBoylam = row[AppConfig.SUTUNLAR.BOYLAM];
-                
                 const enlemStr = String(hamEnlem || '').replace(/,/g, '');
                 const boylamStr = String(hamBoylam || '').replace(/,/g, '');
-                
                 const enlem = enlemStr.length > 2 ? parseFloat(enlemStr.slice(0, 2) + '.' + enlemStr.slice(2)) : null;
                 const boylam = boylamStr.length > 2 ? parseFloat(boylamStr.slice(0, 2) + '.' + boylamStr.slice(2)) : null;
 
@@ -39,20 +40,20 @@ const API = {
                     durum: row[AppConfig.SUTUNLAR.DURUM] || '',
                     tamAdres: tamAdres,
                     mahalle: mahalleMatch ? mahalleMatch[0].trim().toUpperCase() : 'BİLİNMEYEN',
-
+                    
                     // --- YAZIM HATASI BURADA DÜZELTİLDİ ---
                     telefon: row[AppConfig.SUTUNLAR.TELEFON] || '', // App-Config -> AppConfig
                     
                     coordinates: (boylam && enlem) ? [boylam, enlem] : null,
-                    
                     gizli: false
                 };
             }).filter(g => g.durum.trim().toLowerCase() === 'bekliyor');
         } catch (error) {
-            // Hata yakalama bloğuna daha fazla detay ekleyelim
             console.error("API.fetchSheetData hatası:", error);
-            // Orijinal hatayı tekrar fırlatarak initApplication'ın catch bloğunun da çalışmasını sağlıyoruz.
-            throw error; 
+            // Hata durumunda da boş bir dizi döndürerek uygulamanın çökmesini engelle
+            // ve UI modülünün bu durumu yönetmesine izin ver.
+            UI.showError(`Veri çekilemedi: ${error.message || 'Google Sheets API hatası'}`);
+            return []; 
         }
     },
 
