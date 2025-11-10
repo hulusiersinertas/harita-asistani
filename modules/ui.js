@@ -18,7 +18,7 @@ export function initUI(gorevler, map, placemarks) {
 
     populateMahalleFiltresi(gorevler);
     setupEventListeners(map);
-}
+};
 
 /**
  * Benzersiz mahalle isimlerini toplayıp filtre menüsünü doldurur.
