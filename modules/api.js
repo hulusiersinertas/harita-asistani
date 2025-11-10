@@ -29,6 +29,11 @@ export async function fetchSheetData(sheetName) {
  * @param {Array<Array<string>>} rows - E-Tablo'dan gelen satır verileri.
  * @returns {Array}
  */
+/**
+ * Ham E-Tablo verisini işleyerek temiz bir nesne dizisine dönüştürür.
+ * @param {Array<Array<string>>} rows - E-Tablo'dan gelen satır verileri.
+ * @returns {Array}
+ */
 function processSheetData(rows) {
     const processedData = [];
     const CM = config.COLUMN_MAPPING;
@@ -48,17 +53,22 @@ function processSheetData(rows) {
             const enlem = formatCoordinate(row[CM.ENLEM]);
             const boylam = formatCoordinate(row[CM.BOYLAM]);
             const tamAdres = row[CM.TAM_ADRES] || 'Adres Yok';
-
+            
             // --- DEĞİŞİKLİK BURADA ---
-            // Adresi virgüllerden bölüp bir dizi oluşturuyoruz.
-            // Örn: ["KIRMIZITOPRAK MAH. ...", " ODUNPAZARI", " ESKİŞEHİR"]
-            const adresParcalari = tamAdres.split(',');
-            
-            // Mahalle genellikle adresin ilk parçasıdır.
-            let mahalle = adresParcalari[0].trim();
-            
-            // "MAH." kelimesini daha temiz bir görünüm için "Mah." ile değiştirelim (isteğe bağlı)
-            mahalle = mahalle.replace('MAH.', 'Mah.');
+            let mahalle = 'Diğer'; // Varsayılan değer
+            // Adres içinde "MAH." kelimesi geçiyor mu diye kontrol et
+            const mahIndex = tamAdres.toUpperCase().indexOf('MAH.');
+            if (mahIndex !== -1) {
+                // Eğer "MAH." bulunduysa, adresin başından o noktaya kadar olan kısmı al.
+                // mahIndex + 4 -> "MAH." kelimesini de dahil etmek için.
+                mahalle = tamAdres.substring(0, mahIndex + 4).trim();
+            } else {
+                // Eğer "MAH." yoksa, ilk virgüle kadar olan kısmı almayı dene
+                const adresParcalari = tamAdres.split(',');
+                if (adresParcalari[0]) {
+                    mahalle = adresParcalari[0].trim();
+                }
+            }
 
             processedData.push({
                 id: index + 4,
@@ -67,7 +77,7 @@ function processSheetData(rows) {
                 miktar: row[CM.MIKTAR] || '',
                 telefon: row[CM.TELEFON] || '',
                 tamAdres: tamAdres,
-                mahalle: mahalle, // Yeni ve doğru alınmış mahalle
+                mahalle: mahalle, // Yeni ve daha doğru alınmış mahalle
                 enlem: enlem,
                 boylam: boylam,
                 hasCoords: (enlem && boylam) ? true : false,
@@ -78,3 +88,4 @@ function processSheetData(rows) {
 
     return processedData;
 }
+
