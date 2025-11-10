@@ -54,13 +54,13 @@ function setupEventListeners(map) {
 
         onMouseEnter: (object) => {
             if (object && object.entity?.element?.classList.contains('placemark')) {
-                map.setCursor('pointer');
+                 mapContainer.style.cursor = 'pointer';
             }
         },
 
         onMouseLeave: (object) => {
             if (object && object.entity?.element?.classList.contains('placemark')) {
-                map.setCursor('grab');
+                mapContainer.style.cursor = 'grab';
             }
         },
 
