@@ -3,7 +3,12 @@
 // =================================================================================
 
 // Global Durum (State) Yönetimi
-const AppState = { /* ... aynı kalır ... */ };
+const AppState = {
+    myMap: null,
+    aracSheetName: null,
+    tumGorevler: [],
+    gorevMarkers: []
+};
 document.addEventListener('DOMContentLoaded', () => { UI.initEventListeners(); });
 
 // =================================================================================
@@ -52,3 +57,4 @@ async function initApplication() {
         UI.showError(`Uygulama başlatılırken bir hata oluştu: ${err.message || err.details || 'Bilinmeyen Hata'}`);
     }
 }
+
