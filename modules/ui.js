@@ -123,16 +123,4 @@ function clearSelection() {
     }
     currentSelectedPin = null;
     gorevDetayPanel.innerHTML = '<p class="placeholder">Detayları görmek için haritadan bir nokta seçin.</p>';
-}```
-
-### **Test Zamanı**
-
-1.  Bu iki dosyayı (`api.js` ve `ui.js`) güncelleyip kaydedin.
-2.  Tarayıcıda sayfayı yenileyin.
-
-Şimdi olması gerekenler:
-
-1.  Konsolda artık `onMouseEnter` / `onMouseLeave` hatalarını **görmeyeceksiniz**.
-2.  Üst paneldeki açılır menüye tıkladığınızda, adreslerinizin ilk kısmından doğru bir şekilde alınmış olan **mahallelerin listesini** göreceksiniz (örn: "KIRMIZITOPRAK Mah.").
-
-Bu iki sorun çözüldükten sonra, uygulamanın en önemli işlevlerinden biri olan "mahalle seçildiğinde haritayı ve listeyi filtreleme" özelliğini eklemeye hazır olacağız.
+}
