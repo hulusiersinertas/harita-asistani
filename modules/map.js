@@ -1,82 +1,71 @@
-// Global değişkenler harita ve işaretçileri saklamak için
+// Global değişkenler bu modül içinde saklanacak
 let map;
-const gorevMarkers = [];
+const placemarks = new Map(); // Oluşturulan marker'ları saklamak için
 
 /**
- * Yandex Haritasını başlatır ve verilen görevleri haritada işaretçi olarak gösterir.
- * @param {Array} gorevler - Gösterilecek görev nesnelerinin dizisi.
+ * Yandex Haritasını başlatır ve görev noktalarını (pinleri) ekler.
+ * @param {Array} gorevler - İşlenmiş görev nesnelerinden oluşan dizi.
  */
 export async function initMap(gorevler) {
-    // ymaps3 kütüphanesinin hazır olmasını bekle
+    // ymaps3 kütüphanesi hazır olana kadar bekle
     await ymaps3.ready;
 
     // Gerekli Yandex Maps modüllerini import et
-    const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker } = ymaps3;
+    const {
+        YMap,
+        YMapDefaultSchemeLayer,
+        YMapDefaultFeaturesLayer,
+        YMapMarker
+    } = ymaps3;
 
     // Haritayı #app div'i içinde başlat
-    map = new YMap(document.getElementById('app'), {
-        location: {
-            center: [32.8597, 39.9334], // Başlangıç merkezi: Ankara
-            zoom: 11
+    map = new YMap(
+        document.getElementById('app'),
+        {
+            location: {
+                center: [32.8597, 39.9334], // Başlangıç merkezi: Ankara
+                zoom: 11
+            }
+        }
+    );
+
+    // Harita katmanlarını ekle
+    map.addChild(new YMapDefaultSchemeLayer()); // Standart harita görünümü
+    map.addChild(new YMapDefaultFeaturesLayer()); // Marker gibi nesneler için
+
+    // Koordinatı olan her görev için bir marker oluştur ve haritaya ekle
+    gorevler.forEach(gorev => {
+        if (gorev.hasCoords) {
+            const placemarkElement = createPlacemarkElement(gorev.id);
+            
+            const marker = new YMapMarker(
+                {
+                    coordinates: [gorev.boylam, gorev.enlem], // [longitude, latitude]
+                    zIndex: 10
+                },
+                placemarkElement
+            );
+
+            map.addChild(marker);
+            placemarks.set(gorev.id, { marker, element: placemarkElement }); // Marker'ı ve elementini sakla
         }
     });
 
-    // Haritanın temel katmanını (sokaklar, binalar vb.) ekle
-    map.addChild(new YMapDefaultSchemeLayer());
-    // İşaretçi gibi özellikleri ekleyeceğimiz katmanı ekle
-    map.addChild(new YMapDefaultFeaturesLayer());
-
-    // Sadece koordinatı olan görevleri al
-    const gorevlerWithCoords = gorevler.filter(g => g.hasCoords);
-
-    // Her görev için bir işaretçi (marker) oluştur ve haritaya ekle
-    gorevlerWithCoords.forEach(goreve => {
-        const markerElement = createMarkerElement('red'); // Kırmızı pinler oluştur
-        
-        const marker = new YMapMarker(
-            {
-                coordinates: [goreve.boylam, goreve.enlem],
-                // Bu custom özellikler, pine tıkladığımızda hangi göreve ait olduğunu bilmemizi sağlar
-                properties: {
-                    gorevId: goreve.id 
-                }
-            },
-            markerElement
-        );
-
-        map.addChild(marker);
-        gorevMarkers.push(marker); // Daha sonra erişebilmek için marker'ı diziye ekle
-    });
+    console.log(`${placemarks.size} adet görev haritaya eklendi.`);
     
-    // Eğer haritada en az bir görev varsa, haritanın görünümünü tüm görevleri içerecek şekilde ayarla
-    if (gorevlerWithCoords.length > 0) {
-        // Tüm görevlerin koordinatlarını bir diziye topla
-        const allCoordinates = gorevlerWithCoords.map(g => [g.boylam, g.enlem]);
-        // Yandex'in `bounds` (sınırlar) özelliğini kullanarak haritayı tüm noktalara odakla
-        map.setLocation({
-            bounds: ymaps3.common.bounds.fromPoints(allCoordinates),
-            padding: { top: 100, bottom: 150, left: 50, right: 50 } // Paneller için boşluk bırak
-        });
-    }
-
-    console.log("Harita başarıyla başlatıldı ve pinler eklendi.");
+    // Uygulamanın diğer bölümlerinin haritaya erişebilmesi için map nesnesini döndür
+    return { map, placemarks };
 }
 
 /**
- * İşaretçiler için özel bir HTML elementi oluşturan yardımcı fonksiyon.
- * @param {string} color - Pin'in rengi.
+ * Her bir görev için tıklanabilir bir HTML elementi oluşturur.
+ * @param {number} gorevId - Görevin benzersiz kimliği.
  * @returns {HTMLElement}
  */
-function createMarkerElement(color) {
+function createPlacemarkElement(gorevId) {
     const element = document.createElement('div');
-    element.style.width = '14px';
-    element.style.height = '14px';
-    element.style.backgroundColor = color;
-    element.style.borderRadius = '50%';
-    element.style.border = '2px solid white';
-    element.style.boxShadow = '0 2px 5px rgba(0,0,0,0.5)';
-    element.style.cursor = 'pointer';
-    // Merkezi doğru ayarlamak için transform kullanıyoruz
-    element.style.transform = 'translate(-50%, -50%)';
+    element.className = 'placemark';
+    // Tıklama olaylarını yönetebilmek için görevin ID'sini element üzerinde saklıyoruz.
+    element.dataset.id = gorevId;
     return element;
 }
