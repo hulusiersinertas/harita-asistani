@@ -1,5 +1,5 @@
 // =================================================================================
-// == ANA DOSYA: Orkestra Şefi (script.js) - HATA AYIKLAMA VERSİYONU
+// == ANA DOSYA: Orkestra Şefi (script.js) - NİHAİ DÜZELTİLMİŞ VERSİYON
 // =================================================================================
 
 // Global Durum (State) Yönetimi
@@ -34,23 +34,23 @@ async function initApplication() {
         }
         UI.setAracBaslik(`${AppState.aracSheetName} Görevleri`);
         
-        // --- HATA AYIKLAMA ADIMLARI ---
-        // Promise.all'ı ayırarak hangi adımda takıldığını bulacağız.
-
-        console.log("Adım 1: Google API istemcisi bekleniyor...");
-        await API.initGoogleClient();
-        console.log("✓ Adım 1 TAMAM: Google API istemcisi hazır.");
-
-        console.log("Adım 2: Yandex API'sinin hazır olması bekleniyor...");
-        await ymaps3.ready;
-        console.log("✓ Adım 2 TAMAM: Yandex API hazır.");
-
-        console.log("Tüm API'ler başarıyla yüklendi. Harita oluşturuluyor...");
+        await Promise.all([
+            API.initGoogleClient(),
+            ymaps3.ready
+        ]);
+        console.log("Google ve Yandex API'leri tamamen hazır.");
         
-        MapManager.initMap("map"); 
+        // --- DEĞİŞİKLİK BURADA ---
+        // initMap bir async fonksiyon olduğu için, onun tamamen bitmesini
+        // ve AppState.myMap'i doldurmasını 'await' ile bekliyoruz.
+        console.log("Harita başlatılıyor...");
+        await MapManager.initMap("map"); 
+        console.log("✓ Harita başarıyla başlatıldı.");
 
+        console.log("Görev verileri çekiliyor...");
         const gorevler = await API.fetchSheetData(AppState.aracSheetName);
         AppState.tumGorevler = gorevler;
+        console.log(`${gorevler.length} görev başarıyla çekildi.`);
         
         UI.mahalleFiltresiniDoldur(AppState.tumGorevler);
         UI.render();
