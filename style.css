@@ -149,8 +149,46 @@ select:disabled {
     gap: 10px;
 }
 
+/* style.css'in sonuna ekleyin */
+
+/* Görev Listesi Paneli */
+#gorev-listesi {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.gorev-karti {
+    padding: 10px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-left: 5px solid #007bff; /* Mavi - Normal görev */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.gorev-karti:hover {
+    background-color: rgba(230, 240, 255, 0.9);
+}
+
+.gorev-karti.no-coords {
+    border-left-color: #dc3545; /* Kırmızı - Koordinatı olmayan görev */
+}
+
+.gorev-karti h4 {
+    margin: 0 0 5px 0;
+    font-size: 1em;
+}
+
+.gorev-karti p {
+    margin: 2px 0;
+    font-size: 0.85em;
+    color: #444;
+}
 /* Önemli Not: .ymaps3x0--marker sınıf adı gelecekte Yandex API güncellemeleri ile değişebilir.
    Eğer pinler tekrar kaybolursa, Tarayıcı > Elements panelinden bu sınıfın
    yeni adını kontrol edip burayı güncellemek gerekebilir. */
+
 
 
