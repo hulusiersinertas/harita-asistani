@@ -18,7 +18,7 @@ export function initUI(gorevler, map, placemarks) {
 
     populateMahalleFiltresi(gorevler);
     setupEventListeners(map);
-};
+}
 
 /**
  * Benzersiz mahalle isimlerini toplayıp filtre menüsünü doldurur.
@@ -43,7 +43,7 @@ function populateMahalleFiltresi(gorevler) {
     });
 
     mahalleFiltresi.disabled = false; // Filtreyi aktif et
-}
+};
 
 /**
  * Harita ve pinler için tıklama olaylarını ayarlar.
@@ -97,7 +97,7 @@ function setupEventListeners(map) {
         }
     });
     map.addChild(mapListener);
-}
+};
 
 /**
  * Bir pine tıklandığında çalışacak fonksiyon.
