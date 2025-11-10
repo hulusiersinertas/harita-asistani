@@ -40,31 +40,42 @@ function processSheetData(rows) {
         // Sadece durumu "bekliyor" olan görevleri alıyoruz.
         if (row[CM.DURUM] && row[CM.DURUM].toLowerCase() === 'bekliyor') {
 
+            // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
             // Koordinatları temizleme ve normalleştirme fonksiyonu
             const formatCoordinate = (coord) => {
                 if (!coord) return null;
-                let str = String(coord).replace(',', '.').trim();
-                // Eğer koordinat "3912345" gibi noktası olmayan bir formattaysa, noktayı ekle
-                if (!str.includes('.') && str.length > 2) {
+
+                // 1. Gelen veriyi string'e çevir ve tüm virgülleri (binlik ayraçları) kaldır.
+                //    Örn: "39,798,579" -> "39798579"
+                //    Örn: "39,92077" -> "3992077"
+                let str = String(coord).replace(/,/g, '').trim();
+                
+                // 2. Eğer sonuçta hala nokta yoksa (yani "39798579" formatındaysa),
+                //    doğru yere noktayı ekle.
+                if (!str.includes('.')) {
+                    // Türkiye koordinatları genellikle 2 haneli derece ile başlar.
                     str = str.slice(0, 2) + '.' + str.slice(2);
                 }
-                return parseFloat(str);
+                
+                const result = parseFloat(str);
+                return isNaN(result) ? null : result;
             };
+            // --- DEĞİŞİKLİK BURADA BİTİYOR ---
 
             const enlem = formatCoordinate(row[CM.ENLEM]);
             const boylam = formatCoordinate(row[CM.BOYLAM]);
 
             processedData.push({
-                id: index + 4, // Benzersiz bir kimlik olması için satır numarasını kullanabiliriz.
+                id: index + 4, 
                 adSoyad: row[CM.AD_SOYAD] || 'İsim Yok',
                 adresNotu: row[CM.ADRES_NOTU] || '',
                 miktar: row[CM.MIKTAR] || '',
                 telefon: row[CM.TELEFON] || '',
                 tamAdres: row[CM.TAM_ADRES] || 'Adres Yok',
-                mahalle: (row[CM.TAM_ADRES] || '').split('/').pop().trim(), // Adresin sonundaki mahalleyi al
+                mahalle: (row[CM.TAM_ADRES] || '').split('/').pop().trim(),
                 enlem: enlem,
                 boylam: boylam,
-                hasCoords: (enlem && boylam) ? true : false, // Koordinat var mı kontrolü
+                hasCoords: (enlem && boylam) ? true : false,
                 durum: row[CM.DURUM]
             });
         }
