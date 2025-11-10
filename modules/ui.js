@@ -25,14 +25,13 @@ export function initUI(gorevler, map, placemarks) {
  * @param {Array} gorevler 
  */
 function populateMahalleFiltresi(gorevler) {
-    const mahalleler = new Set(); // Set, otomatik olarak benzersiz değerler tutar.
+    const mahalleler = new Set();
     gorevler.forEach(gorev => {
         if (gorev.mahalle) {
             mahalleler.add(gorev.mahalle);
         }
     });
 
-    // Set'i alfabetik olarak sıralanmış bir diziye dönüştür
     const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
 
     sortedMahalleler.forEach(mahalle => {
@@ -42,7 +41,7 @@ function populateMahalleFiltresi(gorevler) {
         mahalleFiltresi.appendChild(option);
     });
 
-    mahalleFiltresi.disabled = false; // Filtreyi aktif et
+    mahalleFiltresi.disabled = false;
 }
 
 /**
@@ -51,19 +50,15 @@ function populateMahalleFiltresi(gorevler) {
  */
 function setupEventListeners(map) {
     const mapListener = new ymaps3.YMapListener({
-        layer: 'any', 
+        layer: 'any',
 
         onMouseEnter: (object) => {
-            // --- HATA DÜZELTME 1 ---
-            // Önce 'object' var mı diye kontrol et, sonra devam et.
             if (object && object.entity?.element?.classList.contains('placemark')) {
                 map.setCursor('pointer');
             }
         },
 
         onMouseLeave: (object) => {
-            // --- HATA DÜZELTME 2 ---
-            // Burada da 'object' var mı diye kontrol et.
             if (object && object.entity?.element?.classList.contains('placemark')) {
                 map.setCursor('grab');
             }
@@ -79,27 +74,21 @@ function setupEventListeners(map) {
             }
         }
     });
-    
+
     map.addChild(mapListener);
 }
-
 
 /**
  * Bir pine tıklandığında çalışacak fonksiyon.
  * @param {number} gorevId 
  */
 function handlePinClick(gorevId) {
-    // Önceki seçimi temizle
     clearSelection();
-
-    // Yeni pini seçili olarak işaretle
     const pin = placemarksMap.get(gorevId);
     if (pin && pin.element) {
         pin.element.classList.add('selected');
         currentSelectedPin = pin;
     }
-
-    // Alt panelde görev detaylarını göster
     const gorev = gorevlerData.find(g => g.id === gorevId);
     if (gorev) {
         showGorevDetay(gorev);
@@ -116,7 +105,6 @@ function showGorevDetay(gorev) {
         ${gorev.adresNotu ? `<p class="adres-notu">${gorev.adresNotu}</p>` : ''}
         <p>${gorev.tamAdres}</p>
         <div class="action-buttons">
-            <!-- Butonlar bir sonraki adımda eklenecek -->
             <button>Navigasyon</button>
             <button>Rota Çiz</button>
             <button>Verildi</button>
@@ -134,6 +122,17 @@ function clearSelection() {
         currentSelectedPin.element.classList.remove('selected');
     }
     currentSelectedPin = null;
-
     gorevDetayPanel.innerHTML = '<p class="placeholder">Detayları görmek için haritadan bir nokta seçin.</p>';
-}
+}```
+
+### **Test Zamanı**
+
+1.  Bu iki dosyayı (`api.js` ve `ui.js`) güncelleyip kaydedin.
+2.  Tarayıcıda sayfayı yenileyin.
+
+Şimdi olması gerekenler:
+
+1.  Konsolda artık `onMouseEnter` / `onMouseLeave` hatalarını **görmeyeceksiniz**.
+2.  Üst paneldeki açılır menüye tıkladığınızda, adreslerinizin ilk kısmından doğru bir şekilde alınmış olan **mahallelerin listesini** göreceksiniz (örn: "KIRMIZITOPRAK Mah.").
+
+Bu iki sorun çözüldükten sonra, uygulamanın en önemli işlevlerinden biri olan "mahalle seçildiğinde haritayı ve listeyi filtreleme" özelliğini eklemeye hazır olacağız.
