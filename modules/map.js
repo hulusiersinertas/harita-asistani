@@ -9,12 +9,18 @@ const placemarks = new Map(); // Oluşturulan marker'ları saklamak için
 export async function initMap(gorevler) {
     await ymaps3.ready;
 
+    // --- DEĞİŞİKLİK: Varsayılan özellikleri ve UI'ı import ediyoruz ---
     const {
         YMap,
         YMapDefaultSchemeLayer,
         YMapDefaultFeaturesLayer,
-        YMapMarker
+        YMapMarker,
+        YMapControls, // Kontroller için (zoom vb.)
+        YMapDefaultMarker // Varsayılan marker davranışı için
     } = ymaps3;
+
+    // --- DEĞİŞİKLİK: Zoom kontrolünü import ediyoruz ---
+    const {YMapZoomControl} = await ymaps3.import('@yandex/ymaps3-controls@0.0.1');
 
     const centerCoordinates = calculateCenter(gorevler);
 
@@ -25,30 +31,32 @@ export async function initMap(gorevler) {
         }
     });
 
+    // Standart harita katmanını ekle
     map.addChild(new YMapDefaultSchemeLayer());
+    
+    // --- YENİ ve KRİTİK ADIM: Varsayılan özellikleri haritaya ekliyoruz ---
+    // Bu, marker gibi özelliklerin düzgün çalışması için gereklidir.
+    map.addChild(new YMapDefaultFeaturesLayer({id: 'features'}));
 
-    // Adım 1: Özellikleri çizecek olan katmanı oluştur ve ona bir kaynak adı ver.
-    const featuresLayer = new YMapDefaultFeaturesLayer({
-        source: 'myMarkers'
-    });
-    map.addChild(featuresLayer);
+    // Zoom kontrollerini ekleyelim (isteğe bağlı ama faydalı)
+    const controls = new YMapControls({position: 'right'});
+    controls.addChild(new YMapZoomControl({}));
+    map.addChild(controls);
 
 
     gorevler.forEach(gorev => {
         if (gorev.hasCoords) {
             const placemarkElement = createPlacemarkElement(gorev.id);
             
+            // Not: Artık source özelliğine ihtiyacımız kalmadı, çünkü
+            // varsayılan 'features' katmanını kullanıyoruz.
             const marker = new YMapMarker(
                 {
-                    // Adım 2: Her marker'a hangi kaynağa ait olduğunu söyle.
-                    source: 'myMarkers', 
                     coordinates: [gorev.boylam, gorev.enlem],
-                    zIndex: 10
                 },
                 placemarkElement
             );
             
-            // Adım 3: Marker'ı doğrudan ana harita nesnesine ekle.
             map.addChild(marker);
             
             placemarks.set(gorev.id, { marker, element: placemarkElement });
