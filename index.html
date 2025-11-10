@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex v3 - GPS Navigasyon Asistanı (URL Düzeltmesi)</title>
+    <title>Yandex v3 - Tamamlanmış Navigasyon Asistanı</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <!-- DOĞRU URL İLE DEĞİŞTİRİLDİ -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
     <style>
         html, body, #app { width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; }
@@ -46,12 +45,22 @@
         main();
         async function main() {
             await ymaps3.ready;
-            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker } = ymaps3;
+            // YMapDefaultFeaturesLayer'ı da import ediyoruz
+            const { YMap, YMapDefaultSchemeLayer, YMapListener, YMapMarker, YMapDefaultFeaturesLayer } = ymaps3;
             const BEHAVIORS = ['drag', 'pinchZoom', 'scrollZoom', 'dblClick'];
+            
             map = new YMap(document.getElementById('app'), { location: { center: [32.8597, 39.9334], zoom: 12 } });
+
+            // Önce temel harita katmanını ekliyoruz
             map.addChild(new YMapDefaultSchemeLayer({}));
+            
+            // --- DEĞİŞİKLİK BURADA ---
+            // Marker gibi özellikleri çizebilmek için özellikler (features) katmanını ekliyoruz.
+            map.addChild(new YMapDefaultFeaturesLayer({}));
+            
             const mapListener = new YMapListener({ onUpdate: ({ camera }) => { currentCameraState = camera; } });
             map.addChild(mapListener);
+
             setupControls(YMapMarker);
             animateRotation();
         }
@@ -106,7 +115,6 @@
                 navigationBtn.innerHTML = '🛰️';
             };
             
-            // ... (manuel döndürme olay dinleyicileri aynı kalır) ...
             const startRotation = (direction) => { if (isNavigationModeActive) return; if (rotationDirection === 0) { rotationDirection = direction; requestAnimationFrame(animateRotation); } else { rotationDirection = direction; } };
             const stopRotation = () => { rotationDirection = 0; };
             rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
@@ -116,8 +124,6 @@
             document.addEventListener('mouseup', stopRotation);
             document.addEventListener('touchend', stopRotation);
             document.addEventListener('touchcancel', stopRotation);
-            
-            // SON BİR DÜZELTME: Önceki kodda burada bir hata vardı, startRotation'ı çağırıyordu.
             navigationBtn.addEventListener('click', () => { isNavigationModeActive ? stopNavigation() : startNavigation(); });
         }
     </script>
