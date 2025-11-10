@@ -1,4 +1,4 @@
-// Global değişkenler ve seçiciler
+// Global değişkenler ve DOM elementleri
 const gorevDetayPanel = document.getElementById('gorev-detay');
 const mahalleFiltresi = document.getElementById('mahalle-filtresi');
 
@@ -43,7 +43,7 @@ function populateMahalleFiltresi(gorevler) {
     });
 
     mahalleFiltresi.disabled = false; // Filtreyi aktif et
-};
+}
 
 /**
  * Harita ve pinler için tıklama olaylarını ayarlar.
@@ -69,7 +69,7 @@ function setupEventListeners(map) {
         },
 
         // Haritanın herhangi bir yerine tıklandığında/dokunulduğunda
-        onPointerDown: (event, point) => {
+        onPointerDown: (event) => {
             // Eğer bir marker'a tıklandıysa (event.entity doluysa)
             if (event.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
@@ -86,18 +86,6 @@ function setupEventListeners(map) {
     map.addChild(mapListener);
 }
 
-    // Haritanın boş bir yerine tıklandığında seçimi temizle
-    const mapListener = new ymaps3.YMapListener({
-        layer: 'any',
-        onPointerDown: (event, point) => {
-            // Eğer bir marker'a tıklanmadıysa (yani event.entity boşsa) seçimi temizle
-            if (!event.entity) {
-                clearSelection();
-            }
-        }
-    });
-    map.addChild(mapListener);
-};
 
 /**
  * Bir pine tıklandığında çalışacak fonksiyon.
