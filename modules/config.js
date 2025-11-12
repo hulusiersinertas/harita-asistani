@@ -9,6 +9,9 @@ export const config = {
     // Google Apps Script'e veri YAZMAK için kullanılan URL.
     appsScriptUrl: 'https://script.google.com/macros/s/AKfycbwJ_i5tk-FInC2SxiE8opGY7ZbI9ffqyRPj5eJDnrxMrCdTKeJ2EffUzc5OS-GeeGZt/exec',
 
+    // YENİ EKLENDİ: OpenRouteService API anahtarı.
+    openRouteServiceApiKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImE5MTRjZTI4M2E1YTQzODdiZmFhYzFkMmEyNDVkYmRjIiwiaCI6Im11cm11cjY0In0=',
+
     // E-Tablo'daki sütunların kod içinde kullanılacak isimlerle eşleştirilmesi.
     // İndeksler 0'dan başlar (A=0, B=1, C=2, ...).
     COLUMN_MAPPING: {
