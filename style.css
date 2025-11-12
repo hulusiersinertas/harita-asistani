@@ -192,7 +192,7 @@ select:disabled {
 }
 
 /* =============================================== */
-/* YENİ EKLENEN NAVİGASYON VE KONTROL STİLLERİ */
+/* NAVİGASYON VE KONTROL STİLLERİ */
 /* =============================================== */
 
 .custom-controls {
@@ -203,7 +203,7 @@ select:disabled {
     display: flex;
     width: 100%;
     justify-content: space-between;
-    pointer-events: none; /* Sadece butonların tıklanabilir olmasını sağlar */
+    pointer-events: none;
 }
 
 .control-group {
@@ -239,7 +239,7 @@ select:disabled {
 /* Alt panel açıldığında (hem liste hem detay modunda) navigasyon butonunu yukarı kaydır */
 .bottom-panel.liste-acik ~ #navigation-toggle-btn,
 .bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
-    bottom: 120px;
+    bottom: 180px; 
 }
 
 #navigation-toggle-btn.active {
@@ -254,6 +254,5 @@ select:disabled {
     background-color: #007bff;
     border: 3px solid white;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    /* Marker'ın merkezi tam koordinatın üzerine gelsin */
     transform: translate(-50%, -50%);
 }
