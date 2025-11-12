@@ -4,13 +4,23 @@
  */
 
 /**
+ * Mahalle isimlerini karşılaştırma için standart bir formata sokar.
+ * Örnek: "Güllük Mah." -> "GÜLLÜK", "75.YIL (SULTANDERE) MAH." -> "75YILSULTANDERE"
+ * @param {string} name - Ham mahalle adı.
+ * @returns {string} Temizlenmiş ve standartlaştırılmış mahalle adı.
+ */
+function normalizeMahalleName(name) {
+    if (!name) return '';
+    return name
+        .toLocaleUpperCase('tr-TR') // Türkçe karakterlere uygun büyük harf çevrimi
+        .replace(/MAHALLESİ|MAH\.|MAH/g, '') // "MAHALLESİ", "MAH." veya "MAH" eklerini kaldır
+        .replace(/[^A-Z0-9ÇĞİÖŞÜ]/g, '') // Harfler, sayılar ve Türkçe karakterler dışındaki her şeyi kaldır
+        .trim();
+}
+
+/**
  * İki coğrafi koordinat arasındaki mesafeyi (kilometre olarak) hesaplar.
  * Haversine formülü kullanılır.
- * @param {number} lat1 İlk noktanın enlemi
- * @param {number} lon1 İlk noktanın boylamı
- * @param {number} lat2 İkinci noktanın enlemi
- * @param {number} lon2 İkinci noktanın boylamı
- * @returns {number} İki nokta arasındaki mesafe (km)
  */
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Dünya'nın yarıçapı (km)
@@ -25,24 +35,24 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 /**
  * Belirtilen mahalle sırasına göre bir sonraki en uygun görevi bulur.
- * Önce sıradaki ilk tamamlanmamış mahalleyi bulur,
- * sonra o mahalle içinde kullanıcının konumuna en yakın görevi seçer.
- * @param {[number, number]} userLocation Kullanıcının [boylam, enlem] konumu.
- * @param {Array<object>} allGorevler Henüz tamamlanmamış tüm görevlerin listesi.
- * @param {Array<string>} guzergahSiralamasi Mahalle isimlerinin sıralı listesi.
- * @returns {object | null} Bulunan en uygun görev veya görev kalmadıysa null.
  */
 export function findNextGorev(userLocation, allGorevler, guzergahSiralamasi) {
     // 1. Güzergah listesindeki her mahalle için sırayla kontrol et
-    for (const mahalle of guzergahSiralamasi) {
+    for (const guzergahMahalle of guzergahSiralamasi) {
+        // GÜNCELLEME: Karşılaştırma için güzergahtaki mahalle adını temizle
+        const normalizedGuzergahMahalle = normalizeMahalleName(guzergahMahalle);
+        
         // 2. O mahalleye ait tamamlanmamış görevleri bul
-        const gorevlerBuMahallede = allGorevler.filter(g => g.mahalle.trim().toUpperCase() === mahalle.trim().toUpperCase() && g.hasCoords);
+        const gorevlerBuMahallede = allGorevler.filter(g => {
+            // GÜNCELLEME: Karşılaştırma için görevdeki mahalle adını da temizle
+            const normalizedGorevMahalle = normalizeMahalleName(g.mahalle);
+            return normalizedGorevMahalle === normalizedGuzergahMahalle && g.hasCoords;
+        });
 
         // 3. Eğer bu mahallede görev varsa, en yakın olanı bul ve döngüyü bitir
         if (gorevlerBuMahallede.length > 0) {
             let enYakinGorev = null;
             let enKisaMesafe = Infinity;
-
             const [userLon, userLat] = userLocation;
 
             gorevlerBuMahallede.forEach(gorev => {
@@ -54,7 +64,7 @@ export function findNextGorev(userLocation, allGorevler, guzergahSiralamasi) {
             });
 
             console.log(`Güzergahtaki bir sonraki hedef: ${enYakinGorev.mahalle} -> ${enYakinGorev.adSoyad} (${enKisaMesafe.toFixed(2)} km)`);
-            return enYakinGorev; // En yakın görevi bulduk, fonksiyonu sonlandır.
+            return enYakinGorev;
         }
     }
 
