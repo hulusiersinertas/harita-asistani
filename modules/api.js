@@ -22,11 +22,11 @@ export async function fetchSheetData(sheetName) {
  * Ham E-Tablo verisini işler.
  */
 function processSheetData(rows) {
-    // Bu fonksiyon önceki adımlarla aynı, içeriği değişmedi.
     const processedData = [];
     const CM = config.COLUMN_MAPPING;
     rows.forEach((row, index) => {
-        if (row[CM.DURUM] && row[CM.DURUM].toLowerCase() === 'bekiyor') {
+        // --- DEĞİŞİKLİK BURADA: 'bekiyor' -> 'bekliyor' ---
+        if (row[CM.DURUM] && row[CM.DURUM].toLowerCase() === 'bekliyor') {
             const formatCoordinate = (coord) => {
                 if (!coord) return null;
                 let str = String(coord).replace(/,/g, '').trim();
@@ -51,8 +51,8 @@ function processSheetData(rows) {
                 telefon: row[CM.TELEFON] || '',
                 tamAdres: tamAdres,
                 mahalle: mahalle,
-                enlem: parseFloat(formatCoordinate(row[CM.ENLEM])),
-                boylam: parseFloat(formatCoordinate(row[CM.BOYLAM])),
+                enlem: formatCoordinate(row[CM.ENLEM]),
+                boylam: formatCoordinate(row[CM.BOYLAM]),
                 hasCoords: !!(row[CM.ENLEM] && row[CM.BOYLAM]),
                 durum: row[CM.DURUM]
             });
@@ -61,13 +61,9 @@ function processSheetData(rows) {
     return processedData;
 }
 
-// --- YENİ FONKSİYON BURADA ---
+
 /**
  * Google Apps Script'e bir POST isteği göndererek görev durumunu günceller.
- * @param {string} sheetName - Güncellenecek sayfanın adı (örn: "OP-1").
- * @param {number} rowId - E-Tablo'daki satır numarası (bizim görev ID'miz).
- * @param {string} newStatus - Yazılacak yeni durum ("Verildi" veya "Evde Yok").
- * @returns {Promise<boolean>} - İşlemin başarılı olup olmadığını döndürür.
  */
 export async function updateGorevStatus(sheetName, rowId, newStatus) {
     const formData = new FormData();
@@ -81,13 +77,10 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
             body: formData,
         });
         
-        // Apps Script genellikle yönlendirme yapar, bu yüzden response'un tipi 'cors' veya 'opaque' olabilir.
-        // Genellikle hata yoksa başarılı kabul edebiliriz.
         if (response.ok || response.type === 'opaque' || response.type === 'cors') {
             console.log(`Görev ${rowId} durumu "${newStatus}" olarak güncellendi.`);
             return true;
         } else {
-            // Eğer script'ten bir hata mesajı gelirse...
             const errorData = await response.json();
             throw new Error(errorData.error || 'Bilinmeyen bir sunucu hatası oluştu.');
         }
