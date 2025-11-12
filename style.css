@@ -126,7 +126,7 @@ select:disabled {
 }
 
 .ymaps3x0--marker .placemark.filtered-out {
-    background-color: #FFD700;
+    background-color: #FFFF00;
     opacity: 0.7;
 }
 
@@ -296,3 +296,4 @@ select:disabled {
         bottom: 240px; 
     }
 }
+
