@@ -40,13 +40,13 @@ html, body, #app {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px; /* Elemanlar arasına boşluk ekledik */
+    gap: 10px;
 }
 
 .top-panel h1 {
     font-size: 1.2em;
     margin: 0;
-    white-space: nowrap; /* Başlığın aşağı kaymasını engelle */
+    white-space: nowrap;
 }
 
 .top-panel span {
@@ -57,7 +57,7 @@ html, body, #app {
 
 .panel-left {
     display: flex;
-    flex-direction: column; /* Başlık ve sayacı alt alta getir */
+    flex-direction: column;
     align-items: flex-start;
 }
 
@@ -80,11 +80,127 @@ html, body, #app {
     height: auto;
 }
 
-/* ... Diğer stiller aynı ... */
-.hidden, #gorev-detay .placeholder, button, button:hover, select:disabled, .ymaps3x0--marker .placemark, .ymaps3x0--marker .placemark.selected, .ymaps3x0--marker .placemark.filtered-out, #gorev-listesi, .gorev-karti, .gorev-karti:hover, .gorev-karti.no-coords, .gorev-karti h4, .gorev-karti p, #alt-panel #gorev-detay, .close-panel-btn, .close-panel-btn:hover, .action-buttons button {
-    /* BU KISIMLAR DEĞİŞMEDİ */
+.hidden {
+    display: none;
 }
 
+#gorev-detay .placeholder {
+    margin: 0;
+    color: #666;
+    text-align: center;
+}
+
+button, select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+button:hover {
+    background-color: #f0f0f0;
+}
+
+select:disabled {
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}
+
+/* === İŞARETÇİ STİLLERİ (SİLİNEN KISIM GERİ EKLENDİ) === */
+.ymaps3x0--marker .placemark {
+    width: 18px;
+    height: 18px;
+    background-color: #DB342A;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ymaps3x0--marker .placemark.selected {
+    background-color: #8A2BE2;
+    transform: scale(1.4);
+    z-index: 20;
+}
+
+.ymaps3x0--marker .placemark.filtered-out {
+    background-color: #FFD700;
+    opacity: 0.7;
+}
+/* ======================================================= */
+
+#gorev-listesi {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.gorev-karti {
+    padding: 10px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-left: 5px solid #007bff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.gorev-karti:hover {
+    background-color: rgba(230, 240, 255, 0.9);
+}
+
+.gorev-karti.no-coords {
+    border-left-color: #dc3545;
+}
+
+.gorev-karti h4 {
+    margin: 0 0 5px 0;
+    font-size: 1em;
+}
+
+.gorev-karti p {
+    margin: 2px 0;
+    font-size: 0.85em;
+    color: #444;
+}
+
+#alt-panel #gorev-detay {
+    position: relative;
+    padding-right: 40px;
+}
+
+.close-panel-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 2px 0;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.close-panel-btn:hover {
+    background-color: #e53935;
+    color: white;
+}
+
+.action-buttons button {
+    flex-grow: 1;
+    text-align: center;
+}
 
 /* =============================================== */
 /* NAVİGASYON VE KONTROL STİLLERİ */
@@ -131,12 +247,10 @@ html, body, #app {
     right: 20px;
 }
 
-/* === ÇÖZÜM 2: Navigasyon Butonunun Konumunu Düzeltme === */
-/* Alt panel liste modunda açıkken, panelin yüksekliği kadar (50vh) + 20px boşluk bırakarak butonu yukarı taşıyoruz. */
 .bottom-panel.liste-acik ~ #navigation-toggle-btn {
     bottom: calc(50vh + 20px); 
 }
-/* Alt panel detay modunda açıkken, butonun panelin altında kalmaması için daha cömert bir boşluk bırakıyoruz (200px). */
+
 .bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
     bottom: 200px; 
 }
@@ -157,21 +271,18 @@ html, body, #app {
 }
 
 /* =============================================== */
-/* === ÇÖZÜM 1: Üst Panelin Mobil Görünümünü Düzeltme === */
+/* MOBİL GÖRÜNÜM DÜZELTMELERİ */
 /* =============================================== */
-/* Ekran genişliği 600px veya daha az olduğunda bu stiller devreye girer. */
 @media (max-width: 600px) {
     .top-panel {
-        flex-direction: column; /* Panelin içindeki sol ve sağ bölümleri alt alta getirir. */
-        align-items: flex-start; /* Elemanları sola hizalar. */
+        flex-direction: column;
+        align-items: flex-start;
     }
 
     .panel-right {
-        width: 100%; /* Filtre ve butonun tüm genişliği kaplamasını sağlar. */
-        margin-top: 10px; /* Üstteki başlıkla arasına boşluk koyar. */
+        width: 100%;
+        margin-top: 10px;
     }
 
     .panel-right > * {
-        flex-grow: 1; /* Filtre ve butonun mevcut alanı eşit paylaşmasını sağlar. */
-    }
-}
+        flex-grow: 1
