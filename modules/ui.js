@@ -52,26 +52,32 @@ function removeGorev(gorevId) {
 
 
 /**
- * Detay panelindeki eylem butonlarına basıldığında çalışır.
+ * Detay panelindeki eylem butonlarına basıldığında çalışır ve onay ister.
  * @param {string} newStatus - "Verildi" veya "Evde Yok"
  * @param {number} gorevId
+ * @param {string} adSoyad - Onay mesajında göstermek için kişinin adı.
  * @param {HTMLElement} clickedButton - Tıklanan buton elementi
  */
-async function handleStatusUpdate(newStatus, gorevId, clickedButton) {
+async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
+    // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+    // Kullanıcıdan onay al
+    const confirmationMessage = `${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`;
+    if (!confirm(confirmationMessage)) {
+        return; // Eğer kullanıcı "İptal" derse, fonksiyondan çık.
+    }
+    // --- YENİ EKLENEN KISIM SONU ---
+
     const originalText = clickedButton.textContent;
     const allButtons = clickedButton.parentElement.querySelectorAll('button');
     
-    // Tüm butonları devre dışı bırak ve butona "çalışıyor" metni ekle
     allButtons.forEach(btn => btn.disabled = true);
     clickedButton.textContent = 'İşleniyor...';
 
     const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
     
     if (success) {
-        // Başarılı olursa, görevi arayüzden kaldır
         removeGorev(gorevId);
     } else {
-        // Başarısız olursa, butonları tekrar aktif et
         alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
         allButtons.forEach(btn => btn.disabled = false);
         clickedButton.textContent = originalText;
