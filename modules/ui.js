@@ -111,18 +111,51 @@ function showDetailView(gorev) {
             ${gorev.adresNotu ? `<p class="adres-notu">${gorev.adresNotu}</p>` : ''}
             <p>${gorev.tamAdres}</p>
             <div class="action-buttons">
-                <button>Navigasyon</button> <button>Rota Çiz</button> <button>Verildi</button>
-                <button>Evde Yok</button> ${gorev.telefon ? `<button>Ara</button>` : ''}
+                <button id="nav-btn">Navigasyon</button> 
+                <button id="route-btn">Rota Çiz</button> 
+                <button id="delivered-btn">Verildi</button>
+                <button id="not-home-btn">Evde Yok</button> 
+                ${gorev.telefon ? `<button id="call-btn">Ara</button>` : ''}
             </div>
         </div>
     `;
     altPanel.style.display = 'block';
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
 
-    // Yeni eklenen kapatma butonuna olay dinleyicisini bağla
-    document.getElementById('close-btn').addEventListener('click', deselectGorev);
-}
+    // --- YENİ EKLENEN KISIM BAŞLANGICI ---
 
+    // Yeni eklenen butonlara olay dinleyicilerini bağla
+    document.getElementById('close-btn').addEventListener('click', deselectGorev);
+
+    const navBtn = document.getElementById('nav-btn');
+    if (navBtn) {
+        navBtn.addEventListener('click', () => {
+            // Yandex Navigasyon için URL oluştur ve yeni sekmede aç
+            const url = `https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`;
+            window.open(url, '_blank');
+        });
+    }
+
+    const callBtn = document.getElementById('call-btn');
+    if (callBtn) {
+        callBtn.addEventListener('click', () => {
+            // Telefon arama linki oluştur
+            window.location.href = `tel:${gorev.telefon}`;
+        });
+    }
+
+    // Gelecek adımlar için bu butonları şimdilik bağlayalım
+    const routeBtn = document.getElementById('route-btn');
+    if(routeBtn) routeBtn.addEventListener('click', () => alert('Rota Çizme özelliği yakında eklenecek.'));
+
+    const deliveredBtn = document.getElementById('delivered-btn');
+    if(deliveredBtn) deliveredBtn.addEventListener('click', () => alert('Durum güncelleme özelliği yakında eklenecek.'));
+    
+    const notHomeBtn = document.getElementById('not-home-btn');
+    if(notHomeBtn) notHomeBtn.addEventListener('click', () => alert('Durum güncelleme özelliği yakında eklenecek.'));
+    
+    // --- YENİ EKLENEN KISIM SONU ---
+}
 /**
  * Alt paneli büyük (liste) modunda gösterir.
  */
