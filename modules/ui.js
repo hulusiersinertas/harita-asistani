@@ -1,185 +1,173 @@
-:root {
-    --panel-background: rgba(255, 255, 255, 0.8);
-    --panel-border-radius: 12px;
-    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+// Global değişkenler ve DOM elementleri
+const altPanel = document.getElementById('alt-panel');
+const mahalleFiltresi = document.getElementById('mahalle-filtresi');
+const gorunumDegistirBtn = document.getElementById('gorunum-degistir-btn');
+
+let gorevlerData = [];
+let placemarksMap = new Map();
+let currentSelectedGorevId = null;
+let mapInstance = null;
+
+/**
+ * UI'ı başlatır.
+ */
+export function initUI(gorevler, map, placemarks) {
+    gorevlerData = gorevler;
+    placemarksMap = placemarks;
+    mapInstance = map;
+
+    populateMahalleFiltresi(gorevler);
+    setupEventListeners();
+    hidePanel();
 }
 
-html, body, #app {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+/**
+ * Mahalle filtresini doldurur.
+ */
+function populateMahalleFiltresi(gorevler) {
+    const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
+    const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
+    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
+    sortedMahalleler.forEach(mahalle => {
+        const option = new Option(mahalle, mahalle);
+        mahalleFiltresi.add(option);
+    });
+    mahalleFiltresi.disabled = false;
 }
 
-#app {
-    touch-action: none;
+/**
+ * Tüm olay dinleyicilerini ayarlar.
+ */
+function setupEventListeners() {
+    const mapContainer = mapInstance.container;
+
+    const mapListener = new ymaps3.YMapListener({
+        layer: 'any',
+        onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
+        onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
+        onPointerDown: (event) => {
+            // --- DEĞİŞİKLİK BURADA ---
+            // Sadece bir placemark'a tıklandığında işlem yap. Boşluğa tıklamayı Yoksay.
+            if (event?.entity?.element?.classList.contains('placemark')) {
+                const gorevId = parseInt(event.entity.element.dataset.id, 10);
+                selectGorev(gorevId);
+            }
+        }
+    });
+    mapInstance.addChild(mapListener);
+
+    mahalleFiltresi.addEventListener('change', () => showListView(mahalleFiltresi.value));
+    gorunumDegistirBtn.addEventListener('click', () => {
+        const isListeAcik = altPanel.classList.contains('liste-acik');
+        isListeAcik ? hidePanel() : showListView();
+    });
 }
 
-.panel {
-    position: absolute;
-    z-index: 10;
-    background-color: var(--panel-background);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: var(--panel-border-radius);
-    box-shadow: var(--box-shadow);
-    transition: all 0.4s ease-in-out;
+/**
+ * Belirli bir görevi seçer ve detay görünümünü gösterir.
+ */
+function selectGorev(gorevId) {
+    if (currentSelectedGorevId) {
+        placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+    }
+    currentSelectedGorevId = gorevId;
+    const gorev = gorevlerData.find(g => g.id === gorevId);
+    const pin = placemarksMap.get(gorevId);
+    if (!gorev || !pin) return;
+
+    pin.element.classList.add('selected');
+    showDetailView(gorev);
 }
 
-.top-panel {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/**
+ * Tüm seçimleri temizler ve paneli gizler.
+ */
+function deselectGorev() {
+    if (currentSelectedGorevId) {
+        placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+        currentSelectedGorevId = null;
+    }
+    hidePanel();
 }
 
-.top-panel h1 {
-    font-size: 1.2em;
-    margin: 0;
+/**
+ * Alt paneli tamamen gizler.
+ */
+function hidePanel() {
+    altPanel.style.display = 'none';
+    altPanel.classList.remove('liste-acik');
+    gorunumDegistirBtn.textContent = 'Listeyi Göster';
 }
 
-.top-panel span {
-    font-size: 0.9em;
-    color: #555;
+/**
+ * Alt paneli küçük (detay) modunda gösterir.
+ */
+function showDetailView(gorev) {
+    altPanel.classList.remove('liste-acik');
+    altPanel.innerHTML = `
+        <div id="gorev-detay">
+            <button class="close-panel-btn" id="close-btn" title="Paneli Kapat">&times;</button>
+            <h3>${gorev.adSoyad} (${gorev.miktar} Adet)</h3>
+            ${gorev.adresNotu ? `<p class="adres-notu">${gorev.adresNotu}</p>` : ''}
+            <p>${gorev.tamAdres}</p>
+            <div class="action-buttons">
+                <button>Navigasyon</button> <button>Rota Çiz</button> <button>Verildi</button>
+                <button>Evde Yok</button> ${gorev.telefon ? `<button>Ara</button>` : ''}
+            </div>
+        </div>
+    `;
+    altPanel.style.display = 'block';
+    gorunumDegistirBtn.textContent = 'Listeyi Göster';
+
+    // Yeni eklenen kapatma butonuna olay dinleyicisini bağla
+    document.getElementById('close-btn').addEventListener('click', deselectGorev);
 }
 
-.panel-right {
-    display: flex;
-    gap: 10px;
+/**
+ * Alt paneli büyük (liste) modunda gösterir.
+ */
+function showListView(mahalleFilter = 'TÜMÜ') {
+    altPanel.classList.add('liste-acik');
+    filterPinsOnMap(mahalleFilter);
+
+    const filtrelenmisGorevler = gorevlerData.filter(gorev => 
+        mahalleFilter === 'TÜMÜ' || gorev.mahalle === mahalleFilter
+    );
+    let listHTML = filtrelenmisGorevler.map(gorev => `
+        <div class="gorev-karti ${gorev.hasCoords ? '' : 'no-coords'}" data-id="${gorev.id}">
+            <h4>${gorev.adSoyad} (${gorev.miktar} Adet)</h4>
+            <p>${gorev.tamAdres}</p>
+            ${gorev.adresNotu ? `<p><strong>Not:</strong> ${gorev.adresNotu}</p>` : ''}
+        </div>
+    `).join('');
+    altPanel.innerHTML = `<div id="gorev-listesi">${listHTML}</div>`;
+    
+    altPanel.querySelectorAll('.gorev-karti').forEach(kart => {
+        kart.addEventListener('click', (e) => {
+            const gorevId = parseInt(e.currentTarget.dataset.id, 10);
+            const gorev = gorevlerData.find(g => g.id === gorevId);
+            if (gorev?.hasCoords) {
+                mapInstance.update({ location: { center: [gorev.boylam, gorev.enlem], zoom: 17, duration: 500 } });
+                selectGorev(gorevId);
+            } else {
+                alert('Bu görevin koordinat bilgisi bulunmuyor.');
+            }
+        });
+    });
+
+    altPanel.style.display = 'block';
+    gorunumDegistirBtn.textContent = 'Haritayı Göster';
 }
 
-.bottom-panel {
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 15px;
-    /* max-height panelin liste modunda ne kadar büyüyebileceğini kontrol edecek */
-    max-height: 90%; 
-    overflow-y: auto;
-}
-
-/* --- DEĞİŞİKLİK BURADA --- */
-.bottom-panel.liste-acik {
-    max-height: 50vh; /* Maksimum yükseklik ekranın %50'si */
-    height: auto;     /* Yüksekliği içeriğe göre otomatik ayarla */
-}
-
-.hidden {
-    display: none;
-}
-
-#gorev-detay .placeholder {
-    margin: 0;
-    color: #666;
-    text-align: center;
-}
-
-button, select {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    background-color: white;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-
-button:hover {
-    background-color: #f0f0f0;
-}
-
-select:disabled {
-    cursor: not-allowed;
-    background-color: #f5f5f5;
-}
-
-.ymaps3x0--marker .placemark {
-    width: 18px;
-    height: 18px;
-    background-color: #DB342A;
-    border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.ymaps3x0--marker .placemark.selected {
-    background-color: #8A2BE2;
-    transform: scale(1.4);
-    z-index: 20;
-}
-
-.ymaps3x0--marker .placemark.filtered-out {
-    background-color: #FFD700;
-    opacity: 0.7;
-}
-
-#gorev-listesi {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-}
-
-.gorev-karti {
-    padding: 10px;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-left: 5px solid #007bff;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.gorev-karti:hover {
-    background-color: rgba(230, 240, 255, 0.9);
-}
-
-.gorev-karti.no-coords {
-    border-left-color: #dc3545;
-}
-
-.gorev-karti h4 {
-    margin: 0 0 5px 0;
-    font-size: 1em;
-}
-
-.gorev-karti p {
-    margin: 2px 0;
-    font-size: 0.85em;
-    color: #444;
-}
-
-#alt-panel #gorev-detay {
-    position: relative;
-    padding-right: 40px;
-}
-
-.close-panel-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 30px;
-    height: 30px;
-    background-color: #f1f1f1;
-    border: 1px solid #ccc;
-    border-radius: 50%;
-    font-size: 20px;
-    font-weight: bold;
-    color: #555;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 0 2px 0;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.close-panel-btn:hover {
-    background-color: #e53935;
-    color: white;
+/**
+ * Haritadaki pinleri mahalleye göre filtreler.
+ */
+function filterPinsOnMap(secilenMahalle) {
+    placemarksMap.forEach((pin, gorevId) => {
+        const gorev = gorevlerData.find(g => g.id === gorevId);
+        if (gorev) {
+            const shouldBeVisible = secilenMahalle === 'TÜMÜ' || gorev.mahalle === secilenMahalle;
+            pin.element.classList.toggle('filtered-out', !shouldBeVisible);
+        }
+    });
 }
