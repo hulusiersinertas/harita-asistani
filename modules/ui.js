@@ -63,7 +63,7 @@ function getUserLocation() {
 }
 
 /**
- * Verilen göreve OpenRouteService kullanarak bir rota çizer.
+ * Verilen göreve OpenRouteService kullanarak bir rota çizer. (Daha Güvenli Versiyon)
  * @param {object} gorev 
  * @param {HTMLElement} clickedButton
  */
@@ -79,49 +79,54 @@ async function drawRoute(gorev, clickedButton) {
     }
 
     try {
-        // 1. Kullanıcının ve hedefin koordinatlarını al
         const startPoint = await getUserLocation();
         const endPoint = [gorev.boylam, gorev.enlem];
 
-        // 2. OpenRouteService API'sine POST isteği gönder
         const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
                 'Content-Type': 'application/json',
-                'Authorization': config.openRouteServiceApiKey // API anahtarını config dosyasından alıyoruz
+                'Authorization': config.openRouteServiceApiKey
             },
             body: JSON.stringify({
                 "coordinates": [startPoint, endPoint]
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error.message || `API Hatası: ${response.status}`);
+        const data = await response.json();
+        
+        // HATA AYIKLAMA İÇİN: Tarayıcı konsolunda API'den gelen ham veriyi görmek için bu satırı kullanabilirsiniz.
+        console.log("OpenRouteService Yanıtı:", data);
+
+        // --- YENİ EKLENEN GÜVENLİK KONTROLÜ ---
+        // API yanıtında 'features' dizisi var mı ve bu dizi boş değil mi diye kontrol et.
+        if (data.features && data.features.length > 0) {
+            const routeCoordinates = data.features[0].geometry.coordinates;
+
+            const routeFeature = new ymaps3.YMapFeature({
+                geometry: {
+                    type: 'LineString',
+                    coordinates: routeCoordinates
+                },
+                style: {
+                    stroke: [{ color: '#007BFF', width: 5 }]
+                }
+            });
+
+            currentRoute = routeFeature;
+            mapInstance.addChild(currentRoute);
+        } else {
+            // Rota bulunamadıysa veya API bir hata mesajı döndürdüyse bunu kullanıcıya bildir.
+            // data.error.message -> API'nin kendi hata mesajı
+            // "..." -> Bizim genel hata mesajımız
+            throw new Error(data.error?.message || "Bu iki nokta arasında bir rota bulunamadı.");
         }
 
-        const data = await response.json();
-        const routeCoordinates = data.features[0].geometry.coordinates;
-
-        // 3. Gelen rota geometrisini kullanarak Yandex haritası üzerinde bir çizgi oluştur
-        const routeFeature = new ymaps3.YMapFeature({
-            geometry: {
-                type: 'LineString',
-                coordinates: routeCoordinates
-            },
-            style: {
-                stroke: [{ color: '#007BFF', width: 5 }] // Mavi, 5px kalınlığında
-            }
-        });
-
-        currentRoute = routeFeature;
-        mapInstance.addChild(currentRoute);
-
     } catch (error) {
+        // Hem fetch hatasını hem de bizim oluşturduğumuz hatayı burada yakalıyoruz.
         alert(`Rota çizilemedi: ${error.message}`);
     } finally {
-        // 4. Butonu eski haline getir
         clickedButton.textContent = originalText;
         clickedButton.disabled = false;
     }
