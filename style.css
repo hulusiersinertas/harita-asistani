@@ -14,7 +14,7 @@ html, body, #app {
 }
 
 #app {
-    touch-action: none; /* Mobil cihazlarda daha akıcı harita deneyimi için */
+    touch-action: none;
 }
 
 .panel {
@@ -58,13 +58,15 @@ html, body, #app {
     left: 10px;
     right: 10px;
     padding: 15px;
-    max-height: 90%;
+    /* max-height panelin liste modunda ne kadar büyüyebileceğini kontrol edecek */
+    max-height: 90%; 
     overflow-y: auto;
 }
 
-/* Alt panelin liste görünümüne geçtiğindeki stili */
+/* --- DEĞİŞİKLİK BURADA --- */
 .bottom-panel.liste-acik {
-    height: 60%;
+    max-height: 50vh; /* Maksimum yükseklik ekranın %50'si */
+    height: auto;     /* Yüksekliği içeriğe göre otomatik ayarla */
 }
 
 .hidden {
@@ -77,7 +79,6 @@ html, body, #app {
     text-align: center;
 }
 
-/* Diğer elemanlar için temel stiller */
 button, select {
     padding: 8px 12px;
     border-radius: 8px;
@@ -96,15 +97,10 @@ select:disabled {
     background-color: #f5f5f5;
 }
 
-
-/* --- GÜNCELLENMİŞ VE GÜÇLENDİRİLMİŞ HARİTA PİN STİLLERİ --- */
-
-/* Harita içindeki marker'ları daha spesifik bir şekilde hedefliyoruz.
-   Bu kural, basit ".placemark" kuralından çok daha güçlüdür. */
 .ymaps3x0--marker .placemark {
     width: 18px;
     height: 18px;
-    background-color: #DB342A; /* Kırmızı */
+    background-color: #DB342A;
     border-radius: 50%;
     border: 2px solid white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.4);
@@ -112,46 +108,17 @@ select:disabled {
     transition: all 0.2s ease;
 }
 
-/* Kullanıcı tarafından seçilen pin'in stili */
 .ymaps3x0--marker .placemark.selected {
-    background-color: #8A2BE2; /* Mor */
-    transform: scale(1.4); /* Sadece büyütme efekti bırakıyoruz */
+    background-color: #8A2BE2;
+    transform: scale(1.4);
     z-index: 20;
 }
 
-/* Filtre dışı kalan pinlerin stili */
 .ymaps3x0--marker .placemark.filtered-out {
-    background-color: #FFD700; /* Soluk Sarı */
+    background-color: #FFD700;
     opacity: 0.7;
 }
 
-/* style.css'in sonuna ekleyin */
-
-/* Görev Detayları Paneli */
-#gorev-detay h3 {
-    margin: 0 0 5px 0;
-    font-size: 1.1em;
-}
-#gorev-detay p {
-    margin: 3px 0;
-    color: #333;
-    font-size: 0.9em;
-}
-#gorev-detay .adres-notu {
-    font-weight: bold;
-    color: #D9534F; /* Kırmızımsı bir renk */
-    text-transform: uppercase;
-}
-#gorev-detay .action-buttons {
-    margin-top: 15px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* style.css'in sonuna ekleyin */
-
-/* Görev Listesi Paneli */
 #gorev-listesi {
     display: flex;
     flex-direction: column;
@@ -163,7 +130,7 @@ select:disabled {
     padding: 10px;
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.7);
-    border-left: 5px solid #007bff; /* Mavi - Normal görev */
+    border-left: 5px solid #007bff;
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -173,7 +140,7 @@ select:disabled {
 }
 
 .gorev-karti.no-coords {
-    border-left-color: #dc3545; /* Kırmızı - Koordinatı olmayan görev */
+    border-left-color: #dc3545;
 }
 
 .gorev-karti h4 {
@@ -186,15 +153,12 @@ select:disabled {
     font-size: 0.85em;
     color: #444;
 }
-/* style.css'in sonuna ekleyin */
 
-/* Detay panelinin pozisyonlamasını sağlamak için */
 #alt-panel #gorev-detay {
     position: relative;
-    padding-right: 40px; /* Kapatma butonuna yer açmak için */
+    padding-right: 40px;
 }
 
-/* Kapatma Butonu (X) */
 .close-panel-btn {
     position: absolute;
     top: 10px;
@@ -211,14 +175,11 @@ select:disabled {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 0 2px 0; /* X işaretini ortalamak için ince ayar */
+    padding: 0 0 2px 0;
     transition: background-color 0.2s, color 0.2s;
 }
 
 .close-panel-btn:hover {
-    background-color: #e53935; /* Kırmızı */
+    background-color: #e53935;
     color: white;
 }
-
-
-
