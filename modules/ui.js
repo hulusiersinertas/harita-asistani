@@ -108,19 +108,18 @@ function showDetailView(gorev) {
     altPanel.style.display = 'block';
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
 
-    // Olay dinleyicilerini bağla
     document.getElementById('close-btn').addEventListener('click', deselectGorev);
     document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
     if (gorev.telefon) {
         document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
     }
     
-    // --- DURUM GÜNCELLEME BUTONLARI ---
+    // --- DEĞİŞİKLİK BURADA ---
     const deliveredBtn = document.getElementById('delivered-btn');
-    deliveredBtn.addEventListener('click', (e) => handleStatusUpdate('Verildi', gorev.id, e.target));
+    deliveredBtn.addEventListener('click', (e) => handleStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
 
     const notHomeBtn = document.getElementById('not-home-btn');
-    notHomeBtn.addEventListener('click', (e) => handleStatusUpdate('Evde Yok', gorev.id, e.target));
+    notHomeBtn.addEventListener('click', (e) => handleStatusUpdate('Evde Yok', gorev.id, gorev.adSoyad, e.target));
 
     document.getElementById('route-btn').addEventListener('click', () => alert('Rota Çizme özelliği yakında eklenecek.'));
 }
