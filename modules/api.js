@@ -64,12 +64,18 @@ function processSheetData(rows) {
 
 /**
  * Google Apps Script'e bir POST isteği göndererek görev durumunu günceller.
+ * @param {string} sheetName - Güncellenecek sayfanın adı.
+ * @param {number} rowId - E-Tablo'daki satır numarası.
+ * @param {string} newStatus - Yazılacak yeni durum.
+ * @param {string} saat - İşlemin yapıldığı saat damgası. // DEĞİŞİKLİK
+ * @returns {Promise<boolean>}
  */
-export async function updateGorevStatus(sheetName, rowId, newStatus) {
+export async function updateGorevStatus(sheetName, rowId, newStatus, saat) { // DEĞİŞİKLİK
     const formData = new FormData();
     formData.append('sheet', sheetName);
     formData.append('row', rowId);
     formData.append('sonuc', newStatus);
+    formData.append('saat', saat); // DEĞİŞİKLİK: Saat bilgisini forma ekle
 
     try {
         const response = await fetch(config.appsScriptUrl, {
@@ -90,3 +96,47 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
         return false;
     }
 }
+2. modules/ui.js Dosyasını Güncelleyin
+Şimdi ui.js dosyasında, onay kutusunu gösterecek, saat damgasını oluşturacak ve bu bilgileri api.js'e gönderecek olan handleStatusUpdate fonksiyonunu güncelleyeceğiz.
+Lütfen modules/ui.js dosyanızdaki sadece handleStatusUpdate fonksiyonunu aşağıdaki kod ile değiştirin:
+code
+JavaScript
+/**
+ * Detay panelindeki eylem butonlarına basıldığında çalışır.
+ * @param {string} newStatus - "Verildi" veya "Evde Yok"
+ * @param {number} gorevId
+ * @param {HTMLElement} clickedButton - Tıklanan buton elementi
+ */
+async function handleStatusUpdate(newStatus, gorevId, clickedButton) {
+    // 1. Kullanıcıdan onay al
+    const isConfirmed = confirm(`Bu görevi "${newStatus}" olarak işaretlemek istediğinizden emin misiniz?`);
+    if (!isConfirmed) {
+        return; // Kullanıcı iptal ederse hiçbir şey yapma
+    }
+    
+    // 2. Türkiye saatine göre zaman damgası oluştur
+    const saat = new Date().toLocaleString('tr-TR', {
+        timeZone: 'Europe/Istanbul',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    const originalText = clickedButton.textContent;
+    const allButtons = clickedButton.parentElement.querySelectorAll('button');
+    
+    allButtons.forEach(btn => btn.disabled = true);
+    clickedButton.textContent = 'İşleniyor...';
+
+    // 3. API'yi yeni saat bilgisiyle çağır
+    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus, saat);
+    
+    if (success) {
+        removeGorev(gorevId);
+    } else {
+        alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
+        allButtons.forEach(btn => btn.disabled = false);
+        clickedButton.textContent = originalText;
+    }
+}
+
