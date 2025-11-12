@@ -1,6 +1,7 @@
 // ================================================================================
 // DOSYA YOLU: modules/ui.js (BU KODUN TAMAMINI KOPYALAYIP MEVCUT DOSYAYLA DEĞİŞTİRİN)
 // ================================================================================
+
 import { config } from './config.js';
 import { updateGorevStatus } from './api.js';
 
@@ -17,46 +18,28 @@ let mapInstance = null;
 let currentAracAdi = '';
 let currentRoute = null;
 
-// ================================================================================
-// YENİ EKLENEN YARDIMCI FONKSİYON: ENCODED POLYLINE ÇÖZÜCÜ
-// ================================================================================
-/**
- * OpenRouteService'den gelen sıkıştırılmış rota metnini (encoded polyline)
- * koordinat dizisine dönüştürür.
- * @param {string} encoded - Sıkıştırılmış rota metni.
- * @returns {Array<[number, number]>} - [[boylam, enlem], ...] formatında koordinat dizisi.
- */
-function decodePolyline(encoded) {
-    let points = [];
-    let index = 0, len = encoded.length;
-    let lat = 0, lng = 0;
+// --- YENİ EKLENEN NAVİGASYON DEĞİŞKENLERİ ---
+let currentCameraState = { tilt: 0, azimuth: 0 }; // Haritanın mevcut dönüş açısını saklar
+let rotationDirection = 0; // Manuel döndürme yönü (-1 sol, 1 sağ, 0 dur)
+const ROTATION_SPEED = 0.2; // Manuel döndürme hızı
+let isNavigationModeActive = false; // Navigasyon modu aktif mi?
+let locationWatcherId = null; // Konum izleyicisinin kimliği (durdurmak için)
+let userMarker = null; // Kullanıcının konumunu gösteren imleç
 
+// Polyline çözücü fonksiyonu (OpenRouteService için gerekliydi, burada da kalabilir)
+function decodePolyline(encoded) {
+    let points = [], index = 0, len = encoded.length, lat = 0, lng = 0;
     while (index < len) {
         let b, shift = 0, result = 0;
-        do {
-            b = encoded.charCodeAt(index++) - 63;
-            result |= (b & 0x1f) << shift;
-            shift += 5;
-        } while (b >= 0x20);
-        let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
-        lat += dlat;
-
-        shift = 0;
-        result = 0;
-        do {
-            b = encoded.charCodeAt(index++) - 63;
-            result |= (b & 0x1f) << shift;
-            shift += 5;
-        } while (b >= 0x20);
-        let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
-        lng += dlng;
-
-        // Koordinatları [boylam, enlem] formatında ekliyoruz.
+        do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+        let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1)); lat += dlat;
+        shift = 0; result = 0;
+        do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+        let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1)); lng += dlng;
         points.push([lng / 1e5, lat / 1e5]);
     }
     return points;
 }
-// ================================================================================
 
 export function initUI(gorevler, map, placemarks, aracAdi) {
     gorevlerData = gorevler;
@@ -65,6 +48,7 @@ export function initUI(gorevler, map, placemarks, aracAdi) {
     currentAracAdi = aracAdi;
     populateMahalleFiltresi(gorevler);
     setupEventListeners();
+    setupNavigationControls(); // YENİ: Navigasyon kontrollerini ayarlayan fonksiyonu çağır
     hidePanel();
 }
 
@@ -75,19 +59,100 @@ function getUserLocation() {
             return;
         }
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve([position.coords.longitude, position.coords.latitude]);
-            },
+            (position) => resolve([position.coords.longitude, position.coords.latitude]),
             (error) => {
-                let message = 'Bilinmeyen bir hata oluştu.';
+                let message = 'Konum bilgisi alınamadı.';
                 if (error.code === error.PERMISSION_DENIED) message = 'Konum izni reddedildi.';
-                if (error.code === error.POSITION_UNAVAILABLE) message = 'Konum bilgisi alınamıyor.';
-                if (error.code === error.TIMEOUT) message = 'Konum alma isteği zaman aşımına uğradı.';
                 reject(new Error(message));
-            }
+            },
+            { enableHighAccuracy: true } // Yüksek doğrulukta konum iste
         );
     });
 }
+
+// ================================================================================
+// YENİ EKLENEN FONKSİYONLAR: NAVİGASYON VE DÖNDÜRME
+// ================================================================================
+
+// Manuel döndürme animasyonunu yönetir
+function animateRotation() {
+    if (rotationDirection === 0 || isNavigationModeActive) return; // Navigasyon modunda manuel döndürme olmaz
+    const newAzimuth = currentCameraState.azimuth + (rotationDirection * ROTATION_SPEED);
+    mapInstance.update({ camera: { ...currentCameraState, azimuth: newAzimuth } });
+    requestAnimationFrame(animateRotation);
+}
+
+// Yeni eklenen butonların tüm olay dinleyicilerini ayarlar
+function setupNavigationControls() {
+    const { YMapMarker } = ymaps3; // YMapMarker'ı kullanabilmek için import et
+    const rotateLeftBtn = document.getElementById('rotate-left');
+    const rotateRightBtn = document.getElementById('rotate-right');
+    const navigationBtn = document.getElementById('navigation-toggle-btn');
+
+    const startNavigation = () => {
+        if (!navigator.geolocation) { alert("Tarayıcınız konumu desteklemiyor."); return; }
+        
+        // Konumu sürekli izle
+        locationWatcherId = navigator.geolocation.watchPosition(
+            (position) => {
+                const { latitude, longitude, heading } = position.coords;
+                const userCoordinates = [longitude, latitude];
+
+                // Eğer kullanıcı imleci yoksa oluştur, varsa güncelle
+                if (!userMarker) {
+                    const markerElement = document.createElement('div');
+                    markerElement.className = 'user-marker';
+                    userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 10 }, markerElement);
+                    mapInstance.addChild(userMarker);
+                } else {
+                    userMarker.update({ coordinates: userCoordinates });
+                }
+                
+                // Cihaz bir GİDİŞ YÖNÜ bildiriyorsa haritayı o yöne döndür
+                if (heading !== null && heading >= 0) {
+                    mapInstance.update({ camera: { ...currentCameraState, azimuth: heading } });
+                }
+
+                // Haritayı kullanıcının konumuna ortala ve yakınlaştır
+                mapInstance.update({ location: { center: userCoordinates, zoom: 17, duration: 1000 } });
+            },
+            (error) => {
+                console.error("Konum izleme hatası:", error);
+                alert("Konum izlenirken bir hata oluştu. Mod durduruluyor.");
+                stopNavigation();
+            },
+            { enableHighAccuracy: true }
+        );
+        
+        isNavigationModeActive = true;
+        navigationBtn.classList.add('active');
+        navigationBtn.innerHTML = '🧭'; // İkonu pusulaya çevir
+    };
+
+    const stopNavigation = () => {
+        if (locationWatcherId) navigator.geolocation.clearWatch(locationWatcherId);
+        isNavigationModeActive = false;
+        navigationBtn.classList.remove('active');
+        navigationBtn.innerHTML = '🛰️'; // İkonu uyduya çevir
+    };
+    
+    // Döndürmeyi başlatan ve durduran yardımcı fonksiyonlar
+    const startRotation = (direction) => { if (isNavigationModeActive) return; if (rotationDirection === 0) { rotationDirection = direction; requestAnimationFrame(animateRotation); } else { rotationDirection = direction; } };
+    const stopRotation = () => { rotationDirection = 0; };
+
+    // Fare ve dokunmatik olaylarını butonlara bağla
+    rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
+    rotateLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(-1); });
+    rotateRightBtn.addEventListener('mousedown', () => startRotation(1));
+    rotateRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(1); });
+    document.addEventListener('mouseup', stopRotation);
+    document.addEventListener('touchend', stopRotation);
+
+    // Navigasyon aç/kapa butonu
+    navigationBtn.addEventListener('click', () => { isNavigationModeActive ? stopNavigation() : startNavigation(); });
+}
+
+// ================================================================================
 
 async function drawRoute(gorev, clickedButton) {
     const originalText = clickedButton.textContent;
@@ -114,17 +179,15 @@ async function drawRoute(gorev, clickedButton) {
         });
 
         const data = await response.json();
-        console.log("OpenRouteService Yanıtı:", data);
-
+        
         if (data.routes && data.routes.length > 0) {
-            // --- DEĞİŞİKLİK BURADA: Sıkıştırılmış metni alıp çözüyoruz ---
             const encodedRoute = data.routes[0].geometry;
-            const routeCoordinates = decodePolyline(encodedRoute); // Yeni fonksiyonumuzu kullanıyoruz
+            const routeCoordinates = decodePolyline(encodedRoute);
 
             const routeFeature = new ymaps3.YMapFeature({
                 geometry: {
                     type: 'LineString',
-                    coordinates: routeCoordinates // Artık Yandex'in anlayacağı formatta
+                    coordinates: routeCoordinates
                 },
                 style: {
                     stroke: [{ color: '#007BFF', width: 5 }]
@@ -223,8 +286,9 @@ function populateMahalleFiltresi(gorevler) {
 }
 
 function setupEventListeners() {
+    const { YMapListener } = ymaps3;
     const mapContainer = mapInstance.container;
-    const mapListener = new ymaps3.YMapListener({
+    const mapListener = new YMapListener({
         layer: 'any',
         onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
         onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
@@ -233,6 +297,11 @@ function setupEventListeners() {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 selectGorev(gorevId);
             }
+        },
+        // YENİ EKLENDİ: Haritanın kamera durumu her değiştiğinde (dönüş, zoom vs.)
+        // global değişkenimizi güncelliyoruz. Bu, manuel döndürme için gerekli.
+        onUpdate: ({ camera }) => {
+            currentCameraState = camera;
         }
     });
     mapInstance.addChild(mapListener);
