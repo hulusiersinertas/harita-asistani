@@ -88,3 +88,50 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
         return false;
     }
 }
+
+
+/**
+ * "Mahalleler Guzergah" sayfasından belirtilen araç için mahalle sırasını çeker.
+ * @param {string} aracAdi - (Örn: "OP-1")
+ * @returns {Promise<Array<string>>} Mahalle isimlerinden oluşan bir dizi.
+ */
+export async function fetchGuzergahData(aracAdi) {
+    const sheetName = 'Mahalleler Guzergah';
+    const headerRange = `${sheetName}!A1:Z1`; // Araç adlarının olduğu başlık satırı
+    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}`;
+
+    try {
+        // 1. Başlık satırını çekerek doğru sütunu bul
+        const headerResponse = await fetch(headerUrl);
+        if (!headerResponse.ok) throw new Error('Güzergah başlıkları alınamadı.');
+        const headerData = await headerResponse.json();
+        const headers = headerData.values[0];
+        
+        const aracIndex = headers.findIndex(h => h.trim().toUpperCase() === aracAdi.trim().toUpperCase());
+        if (aracIndex === -1) {
+            console.warn(`'${sheetName}' sayfasında '${aracAdi}' için bir güzergah sütunu bulunamadı.`);
+            return []; // Araç bulunamazsa boş bir güzergah döndür
+        }
+
+        // Sütun harfini hesapla (A=0, B=1, ...)
+        const aracColumn = String.fromCharCode(65 + aracIndex);
+        
+        // 2. Bulunan sütundaki tüm mahalleleri çek (2. satırdan başlayarak)
+        const dataRange = `${sheetName}!${aracColumn}2:${aracColumn}`;
+        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${dataRange}?key=${config.googleApiKey}`;
+        
+        const response = await fetch(dataUrl);
+        if (!response.ok) throw new Error('Güzergah verisi alınamadı.');
+        const data = await response.json();
+
+        if (!data.values) return [];
+
+        // Gelen veriyi [["mah1"], ["mah2"], ...] formatından ["mah1", "mah2"] formatına çevir
+        return data.values.map(row => row[0]).filter(Boolean); // Boş satırları atla
+        
+    } catch (error) {
+        console.error("Güzergah verisi çekme hatası:", error);
+        alert("Güzergah listesi yüklenemedi. Özellik devre dışı kalabilir.");
+        return []; // Hata durumunda boş güzergah döndür
+    }
+}
