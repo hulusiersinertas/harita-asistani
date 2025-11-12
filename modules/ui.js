@@ -1,3 +1,4 @@
+import { config } from './config.js';
 import { updateGorevStatus } from './api.js';
 
 // Global değişkenler
