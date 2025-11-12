@@ -1,3 +1,7 @@
+/* ================================================================================ */
+/* DOSYA YOLU: style.css (BU KODUN TAMAMINI KOPYALAYIP MEVCUT DOSYAYLA DEĞİŞTİRİN) */
+/* ================================================================================ */
+
 :root {
     --panel-background: rgba(255, 255, 255, 0.8);
     --panel-border-radius: 12px;
@@ -58,15 +62,13 @@ html, body, #app {
     left: 10px;
     right: 10px;
     padding: 15px;
-    /* max-height panelin liste modunda ne kadar büyüyebileceğini kontrol edecek */
     max-height: 90%; 
     overflow-y: auto;
 }
 
-/* --- DEĞİŞİKLİK BURADA --- */
 .bottom-panel.liste-acik {
-    max-height: 50vh; /* Maksimum yükseklik ekranın %50'si */
-    height: auto;     /* Yüksekliği içeriğe göre otomatik ayarla */
+    max-height: 50vh;
+    height: auto;
 }
 
 .hidden {
@@ -185,8 +187,13 @@ select:disabled {
 }
 
 .action-buttons button {
+    flex-grow: 1;
+    text-align: center;
+}
 
-    /* =============================================== */
+/* =============================================== */
+/* YENİ EKLENEN NAVİGASYON VE KONTROL STİLLERİ */
+/* =============================================== */
 
 .custom-controls {
     position: absolute;
@@ -219,7 +226,7 @@ select:disabled {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.3s, color 0.3s, bottom 0.4s ease-in-out;
 }
 
 #navigation-toggle-btn {
@@ -227,11 +234,9 @@ select:disabled {
     z-index: 5;
     bottom: 20px;
     right: 20px;
-    /* Alt panele çarpmaması için panel açıkken daha yukarı taşı */
-    transition: bottom 0.4s ease-in-out;
 }
 
-/* Alt panel açıldığında navigasyon butonunu yukarı kaydır */
+/* Alt panel açıldığında (hem liste hem detay modunda) navigasyon butonunu yukarı kaydır */
 .bottom-panel.liste-acik ~ #navigation-toggle-btn,
 .bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
     bottom: 120px;
@@ -252,7 +257,3 @@ select:disabled {
     /* Marker'ın merkezi tam koordinatın üzerine gelsin */
     transform: translate(-50%, -50%);
 }
-    flex-grow: 1; /* Butonların boş alanı doldurmasını sağlar */
-    text-align: center;
-}
-
