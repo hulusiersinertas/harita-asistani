@@ -185,6 +185,74 @@ select:disabled {
 }
 
 .action-buttons button {
+
+    /* =============================================== */
+
+.custom-controls {
+    position: absolute;
+    z-index: 5;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    pointer-events: none; /* Sadece butonların tıklanabilir olmasını sağlar */
+}
+
+.control-group {
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    margin: 0 10px;
+}
+
+.control-group button, #navigation-toggle-btn {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#navigation-toggle-btn {
+    position: absolute;
+    z-index: 5;
+    bottom: 20px;
+    right: 20px;
+    /* Alt panele çarpmaması için panel açıkken daha yukarı taşı */
+    transition: bottom 0.4s ease-in-out;
+}
+
+/* Alt panel açıldığında navigasyon butonunu yukarı kaydır */
+.bottom-panel.liste-acik ~ #navigation-toggle-btn,
+.bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
+    bottom: 120px;
+}
+
+#navigation-toggle-btn.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.user-marker {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: 3px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    /* Marker'ın merkezi tam koordinatın üzerine gelsin */
+    transform: translate(-50%, -50%);
+}
     flex-grow: 1; /* Butonların boş alanı doldurmasını sağlar */
     text-align: center;
 }
+
