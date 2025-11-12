@@ -4,13 +4,14 @@ import { updateGorevStatus } from './api.js';
 const altPanel = document.getElementById('alt-panel');
 const mahalleFiltresi = document.getElementById('mahalle-filtresi');
 const gorunumDegistirBtn = document.getElementById('gorunum-degistir-btn');
-const kalanGorevSayaci = document.getElementById('kalan-gorev-sayaci');
+const kalanGorevSayaci = document.getElementById('kalan-görev-sayaci');
 
 let gorevlerData = [];
 let placemarksMap = new Map();
 let currentSelectedGorevId = null;
 let mapInstance = null;
 let currentAracAdi = '';
+let currentRoute = null; // Haritadaki mevcut rotayı saklamak için
 
 /**
  * UI'ı başlatır.
@@ -27,94 +28,85 @@ export function initUI(gorevler, map, placemarks, aracAdi) {
 }
 
 /**
- * Görevi uygulamadan (harita, liste, veri) kaldırır.
+ * Kullanıcının o anki konumunu alır.
+ * @returns {Promise<[number, number]>} [boylam, enlem] formatında koordinatlar.
  */
-function removeGorev(gorevId) {
-    const pin = placemarksMap.get(gorevId);
-    if (pin) {
-        // YMapMarker'ı haritadan kaldırmak için parent'ından (map) removeChild kullanılır
-        mapInstance.removeChild(pin.marker);
-        placemarksMap.delete(gorevId);
-    }
-    gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
-    
-    kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
-    deselectGorev();
-    
-    if (altPanel.classList.contains('liste-acik')) {
-        showListView(mahalleFiltresi.value);
-    }
-}
-
-/**
- * Detay panelindeki eylem butonlarına basıldığında çalışır ve onay ister.
- */
-async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
-    const confirmationMessage = `${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`;
-    if (!confirm(confirmationMessage)) {
-        return;
-    }
-
-    const originalText = clickedButton.textContent;
-    const allButtons = clickedButton.parentElement.querySelectorAll('button');
-    
-    allButtons.forEach(btn => btn.disabled = true);
-    clickedButton.textContent = 'İşleniyor...';
-
-    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
-    
-    if (success) {
-        removeGorev(gorevId);
-    } else {
-        alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
-        allButtons.forEach(btn => btn.disabled = false);
-        clickedButton.textContent = originalText;
-    }
-}
-
-/**
- * Mahalle filtresini doldurur.
- */
-function populateMahalleFiltresi(gorevler) {
-    const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
-    const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
-    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
-    sortedMahalleler.forEach(mahalle => mahalleFiltresi.add(new Option(mahalle, mahalle)));
-    mahalleFiltresi.disabled = false;
-}
-
-/**
- * Tüm olay dinleyicilerini ayarlar.
- */
-function setupEventListeners() {
-    const mapContainer = mapInstance.container;
-    const mapListener = new ymaps3.YMapListener({
-        layer: 'any',
-        onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
-        onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
-        onPointerDown: (event) => {
-            if (event?.entity?.element?.classList.contains('placemark')) {
-                const gorevId = parseInt(event.entity.element.dataset.id, 10);
-                selectGorev(gorevId);
-            }
+function getUserLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Tarayıcınız konum servisini desteklemiyor.'));
+            return;
         }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve([position.coords.longitude, position.coords.latitude]);
+            },
+            (error) => {
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        reject(new Error('Konum izni reddedildi.'));
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        reject(new Error('Konum bilgisi alınamıyor.'));
+                        break;
+                    case error.TIMEOUT:
+                        reject(new Error('Konum alma isteği zaman aşımına uğradı.'));
+                        break;
+                    default:
+                        reject(new Error('Bilinmeyen bir hata oluştu.'));
+                        break;
+                }
+            }
+        );
     });
-    mapInstance.addChild(mapListener);
-    mahalleFiltresi.addEventListener('change', () => showListView(mahalleFiltresi.value));
-    gorunumDegistirBtn.addEventListener('click', () => altPanel.classList.contains('liste-acik') ? hidePanel() : showListView());
 }
 
 /**
- * Belirli bir görevi seçer ve detay görünümünü gösterir.
+ * Verilen göreve bir rota çizer.
+ * @param {object} gorev 
+ * @param {HTMLElement} clickedButton
  */
-function selectGorev(gorevId) {
-    if (currentSelectedGorevId) placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
-    currentSelectedGorevId = gorevId;
-    const gorev = gorevlerData.find(g => g.id === gorevId);
-    const pin = placemarksMap.get(gorevId);
-    if (!gorev || !pin) return;
-    pin.element.classList.add('selected');
-    showDetailView(gorev);
+async function drawRoute(gorev, clickedButton) {
+    const originalText = clickedButton.textContent;
+    clickedButton.textContent = 'Hesaplanıyor...';
+    clickedButton.disabled = true;
+
+    // Önceki rotayı temizle
+    if (currentRoute) {
+        mapInstance.removeChild(currentRoute);
+        currentRoute = null;
+    }
+
+    try {
+        const startPoint = await getUserLocation();
+        const endPoint = [gorev.boylam, gorev.enlem];
+
+        // Yandex'ten rotayı talep et
+        const route = await ymaps3.route({
+            points: [startPoint, endPoint],
+            type: 'driving' // Araç rotası
+        });
+        
+        // Gelen rota geometrisini kullanarak bir çizgi oluştur
+        const routeFeature = new ymaps3.YMapFeature({
+            geometry: {
+                type: 'LineString',
+                coordinates: route.geometry.coordinates
+            },
+            style: {
+                stroke: [{ color: '#FF0000', width: 4 }] // Kırmızı, 4px kalınlığında
+            }
+        });
+
+        currentRoute = routeFeature;
+        mapInstance.addChild(currentRoute);
+
+    } catch (error) {
+        alert(`Rota çizilemedi: ${error.message}`);
+    } finally {
+        clickedButton.textContent = originalText;
+        clickedButton.disabled = false;
+    }
 }
 
 /**
@@ -145,39 +137,108 @@ function showDetailView(gorev) {
     if (gorev.telefon) {
         document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
     }
-    
     const deliveredBtn = document.getElementById('delivered-btn');
     deliveredBtn.addEventListener('click', (e) => handleStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
-
     const notHomeBtn = document.getElementById('not-home-btn');
     notHomeBtn.addEventListener('click', (e) => handleStatusUpdate('Evde Yok', gorev.id, gorev.adSoyad, e.target));
 
-    document.getElementById('route-btn').addEventListener('click', () => alert('Rota Çizme özelliği yakında eklenecek.'));
+    // Rota çizme butonuna olay dinleyicisi ekle
+    const routeBtn = document.getElementById('route-btn');
+    routeBtn.addEventListener('click', (e) => drawRoute(gorev, e.target));
 }
 
+
 /**
- * Tüm seçimleri temizler ve paneli gizler.
+ * Tüm seçimleri temizler ve paneli gizler. Varsa rotayı da temizler.
  */
 function deselectGorev() {
     if (currentSelectedGorevId) {
         placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
         currentSelectedGorevId = null;
     }
+    // Paneli kapatırken rotayı da temizle
+    if (currentRoute) {
+        mapInstance.removeChild(currentRoute);
+        currentRoute = null;
+    }
     hidePanel();
 }
 
-/**
- * Alt paneli tamamen gizler.
- */
+// ---- Diğer Fonksiyonlar (Bu kısımlarda değişiklik yok, tamlık için eklendi) ----
+
+async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
+    const confirmationMessage = `${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`;
+    if (!confirm(confirmationMessage)) return;
+    const originalText = clickedButton.textContent;
+    const allButtons = clickedButton.parentElement.querySelectorAll('button');
+    allButtons.forEach(btn => btn.disabled = true);
+    clickedButton.textContent = 'İşleniyor...';
+    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
+    if (success) {
+        removeGorev(gorevId);
+    } else {
+        alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
+        allButtons.forEach(btn => btn.disabled = false);
+        clickedButton.textContent = originalText;
+    }
+}
+
+function removeGorev(gorevId) {
+    const pin = placemarksMap.get(gorevId);
+    if (pin) {
+        mapInstance.removeChild(pin.marker);
+        placemarksMap.delete(gorevId);
+    }
+    gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
+    kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
+    deselectGorev();
+    if (altPanel.classList.contains('liste-acik')) {
+        showListView(mahalleFiltresi.value);
+    }
+}
+
+function populateMahalleFiltresi(gorevler) {
+    const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
+    const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
+    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
+    sortedMahalleler.forEach(mahalle => mahalleFiltresi.add(new Option(mahalle, mahalle)));
+    mahalleFiltresi.disabled = false;
+}
+
+function setupEventListeners() {
+    const mapContainer = mapInstance.container;
+    const mapListener = new ymaps3.YMapListener({
+        layer: 'any',
+        onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
+        onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
+        onPointerDown: (event) => {
+            if (event?.entity?.element?.classList.contains('placemark')) {
+                const gorevId = parseInt(event.entity.element.dataset.id, 10);
+                selectGorev(gorevId);
+            }
+        }
+    });
+    mapInstance.addChild(mapListener);
+    mahalleFiltresi.addEventListener('change', () => showListView(mahalleFiltresi.value));
+    gorunumDegistirBtn.addEventListener('click', () => altPanel.classList.contains('liste-acik') ? hidePanel() : showListView());
+}
+
+function selectGorev(gorevId) {
+    if (currentSelectedGorevId) placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+    currentSelectedGorevId = gorevId;
+    const gorev = gorevlerData.find(g => g.id === gorevId);
+    const pin = placemarksMap.get(gorevId);
+    if (!gorev || !pin) return;
+    pin.element.classList.add('selected');
+    showDetailView(gorev);
+}
+
 function hidePanel() {
     altPanel.style.display = 'none';
     altPanel.classList.remove('liste-acik');
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
 }
 
-/**
- * Alt paneli büyük (liste) modunda gösterir.
- */
 function showListView(mahalleFilter = 'TÜMÜ') {
     altPanel.classList.add('liste-acik');
     filterPinsOnMap(mahalleFilter);
@@ -199,9 +260,6 @@ function showListView(mahalleFilter = 'TÜMÜ') {
     gorunumDegistirBtn.textContent = 'Haritayı Göster';
 }
 
-/**
- * Haritadaki pinleri mahalleye göre filtreler.
- */
 function filterPinsOnMap(secilenMahalle) {
     placemarksMap.forEach((pin, gorevId) => {
         const gorev = gorevlerData.find(g => g.id === gorevId);
