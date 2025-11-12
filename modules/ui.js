@@ -106,18 +106,55 @@ function filterGorevler(secilenMahalle) {
 /**
  * Alt paneldeki liste ve detay görünümü arasında geçiş yapar.
  */
-function toggleGorevListesi() {
-    const isListeAcik = altPanel.classList.toggle('liste-acik');
+function toggleGorevListesi(forceState) {
+    const isCurrentlyOpen = altPanel.classList.contains('liste-acik');
+    const shouldBeOpen = forceState === undefined ? !isCurrentlyOpen : forceState;
 
-    if (isListeAcik) {
+    if (shouldBeOpen) {
+        // Listeyi Aç
+        altPanel.classList.add('liste-acik');
         gorunumDegistirBtn.textContent = 'Haritayı Göster';
         gorevDetayPanel.classList.add('hidden');
         gorevListesiPanel.classList.remove('hidden');
-        renderGorevListesi(mahalleFiltresi.value); // Mevcut filtreye göre listeyi oluştur
+        renderGorevListesi(mahalleFiltresi.value);
     } else {
+        // Listeyi Kapat
+        altPanel.classList.remove('liste-acik');
         gorunumDegistirBtn.textContent = 'Listeyi Göster';
         gorevDetayPanel.classList.remove('hidden');
         gorevListesiPanel.classList.add('hidden');
+        
+        // --- KRİTİK DEĞİŞİKLİK BURADA ---
+        // Liste kapandığında, seçimi temizle fonksiyonunu çağırarak 
+        // alt panelin içeriğini varsayılan placeholder'a döndürüyoruz.
+        clearSelection(); 
+    }
+}
+2. handlePinClick Fonksiyonunu Güncelleyin
+Bu fonksiyonun listeyle ilgili hiçbir işi olmaması gerekir, o sadece harita ve alt panelin detay kısmı ile ilgilenir.
+code
+JavaScript
+/**
+ * Bir pine tıklandığında çalışacak fonksiyon.
+ * @param {number} gorevId 
+ */
+function handlePinClick(gorevId) {
+    // Önce listeyi kapat (Eğer açıksa ve kullanıcı haritadan tıklama yaptıysa)
+    if (altPanel.classList.contains('liste-acik')) {
+        toggleGorevListesi(false);
+    }
+    
+    // Şimdi seçimi temizle ve yeni seçimi göster
+    clearSelection();
+    
+    const pin = placemarksMap.get(gorevId);
+    if (pin && pin.element) {
+        pin.element.classList.add('selected');
+        currentSelectedPin = pin;
+    }
+    const gorev = gorevlerData.find(g => g.id === gorevId);
+    if (gorev) {
+        showGorevDetay(gorev);
     }
 }
 
