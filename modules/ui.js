@@ -18,7 +18,7 @@ export function initUI(gorevler, map, placemarks) {
 
     populateMahalleFiltresi(gorevler);
     setupEventListeners();
-    hidePanel(); // Başlangıçta paneli gizle
+    hidePanel();
 }
 
 /**
@@ -27,7 +27,7 @@ export function initUI(gorevler, map, placemarks) {
 function populateMahalleFiltresi(gorevler) {
     const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
     const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
-    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>'; // Temizle ve varsayılanı ekle
+    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
     sortedMahalleler.forEach(mahalle => {
         const option = new Option(mahalle, mahalle);
         mahalleFiltresi.add(option);
@@ -46,11 +46,11 @@ function setupEventListeners() {
         onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
         onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
         onPointerDown: (event) => {
+            // --- DEĞİŞİKLİK BURADA ---
+            // Sadece bir placemark'a tıklandığında işlem yap. Boşluğa tıklamayı Yoksay.
             if (event?.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 selectGorev(gorevId);
-            } else {
-                deselectGorev();
             }
         }
     });
@@ -65,13 +65,11 @@ function setupEventListeners() {
 
 /**
  * Belirli bir görevi seçer ve detay görünümünü gösterir.
- * @param {number} gorevId 
  */
 function selectGorev(gorevId) {
     if (currentSelectedGorevId) {
         placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
     }
-
     currentSelectedGorevId = gorevId;
     const gorev = gorevlerData.find(g => g.id === gorevId);
     const pin = placemarksMap.get(gorevId);
@@ -103,12 +101,12 @@ function hidePanel() {
 
 /**
  * Alt paneli küçük (detay) modunda gösterir.
- * @param {object} gorev Gösterilecek görevin verisi.
  */
 function showDetailView(gorev) {
     altPanel.classList.remove('liste-acik');
     altPanel.innerHTML = `
         <div id="gorev-detay">
+            <button class="close-panel-btn" id="close-btn" title="Paneli Kapat">&times;</button>
             <h3>${gorev.adSoyad} (${gorev.miktar} Adet)</h3>
             ${gorev.adresNotu ? `<p class="adres-notu">${gorev.adresNotu}</p>` : ''}
             <p>${gorev.tamAdres}</p>
@@ -120,11 +118,13 @@ function showDetailView(gorev) {
     `;
     altPanel.style.display = 'block';
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
+
+    // Yeni eklenen kapatma butonuna olay dinleyicisini bağla
+    document.getElementById('close-btn').addEventListener('click', deselectGorev);
 }
 
 /**
  * Alt paneli büyük (liste) modunda gösterir.
- * @param {string} [mahalleFilter='TÜMÜ']
  */
 function showListView(mahalleFilter = 'TÜMÜ') {
     altPanel.classList.add('liste-acik');
@@ -133,7 +133,6 @@ function showListView(mahalleFilter = 'TÜMÜ') {
     const filtrelenmisGorevler = gorevlerData.filter(gorev => 
         mahalleFilter === 'TÜMÜ' || gorev.mahalle === mahalleFilter
     );
-
     let listHTML = filtrelenmisGorevler.map(gorev => `
         <div class="gorev-karti ${gorev.hasCoords ? '' : 'no-coords'}" data-id="${gorev.id}">
             <h4>${gorev.adSoyad} (${gorev.miktar} Adet)</h4>
@@ -141,15 +140,12 @@ function showListView(mahalleFilter = 'TÜMÜ') {
             ${gorev.adresNotu ? `<p><strong>Not:</strong> ${gorev.adresNotu}</p>` : ''}
         </div>
     `).join('');
-
     altPanel.innerHTML = `<div id="gorev-listesi">${listHTML}</div>`;
     
-    // Liste kartlarına tıklama olaylarını ekle
     altPanel.querySelectorAll('.gorev-karti').forEach(kart => {
         kart.addEventListener('click', (e) => {
             const gorevId = parseInt(e.currentTarget.dataset.id, 10);
             const gorev = gorevlerData.find(g => g.id === gorevId);
-            
             if (gorev?.hasCoords) {
                 mapInstance.update({ location: { center: [gorev.boylam, gorev.enlem], zoom: 17, duration: 500 } });
                 selectGorev(gorevId);
@@ -164,8 +160,7 @@ function showListView(mahalleFilter = 'TÜMÜ') {
 }
 
 /**
- * Haritadaki pinleri mahalleye göre filtreler (görsel olarak).
- * @param {string} secilenMahalle 
+ * Haritadaki pinleri mahalleye göre filtreler.
  */
 function filterPinsOnMap(secilenMahalle) {
     placemarksMap.forEach((pin, gorevId) => {
