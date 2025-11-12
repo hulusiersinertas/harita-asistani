@@ -1,10 +1,8 @@
-import { fetchSheetData } from './modules/api.js';
+import { fetchSheetData, fetchGuzergahData } from './modules/api.js'; // fetchGuzergahData eklendi
 import { initMap } from './modules/map.js';
-import { initUI } from './modules/ui.js'; // ui.js'i import et
+import { initUI } from './modules/ui.js';
 
-// Uygulama başladığında çalışacak ana fonksiyon
 async function main() {
-    // 1. URL'den 'arac' parametresini al (Bu kısım aynı kalıyor)
     const params = new URLSearchParams(window.location.search);
     const aracAdi = params.get('arac');
 
@@ -16,8 +14,12 @@ async function main() {
     
     document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri Yükleniyor...`;
 
-    // 2. Google E-Tablosu'ndan verileri çek (Bu kısım aynı kalıyor)
-    const gorevler = await fetchSheetData(aracAdi);
+    // Görevleri ve Güzergah verisini AYNI ANDA çekmek için Promise.all kullanıyoruz.
+    // Bu, bekleme süresini kısaltır.
+    const [gorevler, guzergahSiralamasi] = await Promise.all([
+        fetchSheetData(aracAdi),
+        fetchGuzergahData(aracAdi)
+    ]);
     
     if (gorevler.length === 0) {
         document.getElementById('gorev-baslik').textContent = `Görev Yok`;
@@ -28,15 +30,12 @@ async function main() {
     document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
     document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
     console.log("Başarıyla çekilen ve işlenen görevler:", gorevler);
+    console.log("Çekilen güzergah sırası:", guzergahSiralamasi);
 
-    // 3. Haritayı başlat ve pinleri ekle (Bu kısım aynı kalıyor)
     const { map, placemarks } = await initMap(gorevler);
     
-    // --- YENİ ADIM ---
-    // 4. Arayüzü başlat ve etkileşimleri ayarla
-    initUI(gorevler, map, placemarks, aracAdi);
+    // Arayüzü başlatırken artık güzergah verisini de gönderiyoruz.
+    initUI(gorevler, map, placemarks, aracAdi, guzergahSiralamasi);
 }
 
-// Uygulamayı başlat
 main();
-
