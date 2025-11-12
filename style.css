@@ -183,3 +183,8 @@ select:disabled {
     background-color: #e53935;
     color: white;
 }
+
+.action-buttons button {
+    flex-grow: 1; /* Butonların boş alanı doldurmasını sağlar */
+    text-align: center;
+}
