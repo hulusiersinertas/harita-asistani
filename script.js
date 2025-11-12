@@ -34,8 +34,9 @@ async function main() {
     
     // --- YENİ ADIM ---
     // 4. Arayüzü başlat ve etkileşimleri ayarla
-    initUI(gorevler, map, placemarks);
+    initUI(gorevler, map, placemarks, aracAdi);
 }
 
 // Uygulamayı başlat
 main();
+
