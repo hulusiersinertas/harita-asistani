@@ -59,7 +59,7 @@ function setupEventListeners() {
             }
         },
         onPointerDown: (event) => {
-            if (event.entity?.element?.classList.contains('placemark')) {
+            if (event && event.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 handlePinClick(gorevId);
             } else {
@@ -69,35 +69,31 @@ function setupEventListeners() {
     });
     mapInstance.addChild(mapListener);
 
-    // Mahalle filtresi değiştiğinde
     mahalleFiltresi.addEventListener('change', () => {
         filterGorevler(mahalleFiltresi.value);
     });
 
-    // Görünüm değiştirme butonu
-    gorunumDegistirBtn.addEventListener('click', toggleGorevListesi);
+    gorunumDegistirBtn.addEventListener('click', () => {
+        toggleGorevListesi();
+    });
 }
 
 /**
  * Seçilen mahalleye göre görevleri filtreler.
- * @param {string} secilenMahalle 
  */
 function filterGorevler(secilenMahalle) {
     placemarksMap.forEach((pin, gorevId) => {
         const gorev = gorevlerData.find(g => g.id === gorevId);
         if (!gorev) return;
 
-        // "TÜMÜ" seçiliyse veya görev mahalleye uyuyorsa pini göster
         if (secilenMahalle === 'TÜMÜ' || gorev.mahalle === secilenMahalle) {
             pin.element.classList.remove('filtered-out');
-            pin.marker.update({ Mappable: true }); // Marker'ı görünür yap (API V3 için)
+            pin.marker.update({ Mappable: true });
         } else {
-        // Değilse, pini filtrele (soluk sarı yap)
             pin.element.classList.add('filtered-out');
-            // pin.marker.update({ Mappable: false }); // Alternatif: Marker'ı tamamen gizle
         }
     });
-    // Liste görünümü açıksa, listeyi de filtrele
+
     if (altPanel.classList.contains('liste-acik')) {
         renderGorevListesi(secilenMahalle);
     }
@@ -111,56 +107,22 @@ function toggleGorevListesi(forceState) {
     const shouldBeOpen = forceState === undefined ? !isCurrentlyOpen : forceState;
 
     if (shouldBeOpen) {
-        // Listeyi Aç
         altPanel.classList.add('liste-acik');
         gorunumDegistirBtn.textContent = 'Haritayı Göster';
         gorevDetayPanel.classList.add('hidden');
         gorevListesiPanel.classList.remove('hidden');
         renderGorevListesi(mahalleFiltresi.value);
     } else {
-        // Listeyi Kapat
         altPanel.classList.remove('liste-acik');
         gorunumDegistirBtn.textContent = 'Listeyi Göster';
         gorevDetayPanel.classList.remove('hidden');
         gorevListesiPanel.classList.add('hidden');
-        
-        // --- KRİTİK DEĞİŞİKLİK BURADA ---
-        // Liste kapandığında, seçimi temizle fonksiyonunu çağırarak 
-        // alt panelin içeriğini varsayılan placeholder'a döndürüyoruz.
-        clearSelection(); 
-    }
-}
-2. handlePinClick Fonksiyonunu Güncelleyin
-Bu fonksiyonun listeyle ilgili hiçbir işi olmaması gerekir, o sadece harita ve alt panelin detay kısmı ile ilgilenir.
-code
-JavaScript
-/**
- * Bir pine tıklandığında çalışacak fonksiyon.
- * @param {number} gorevId 
- */
-function handlePinClick(gorevId) {
-    // Önce listeyi kapat (Eğer açıksa ve kullanıcı haritadan tıklama yaptıysa)
-    if (altPanel.classList.contains('liste-acik')) {
-        toggleGorevListesi(false);
-    }
-    
-    // Şimdi seçimi temizle ve yeni seçimi göster
-    clearSelection();
-    
-    const pin = placemarksMap.get(gorevId);
-    if (pin && pin.element) {
-        pin.element.classList.add('selected');
-        currentSelectedPin = pin;
-    }
-    const gorev = gorevlerData.find(g => g.id === gorevId);
-    if (gorev) {
-        showGorevDetay(gorev);
+        clearSelection();
     }
 }
 
 /**
  * Görev listesini HTML olarak oluşturur ve panale ekler.
- * @param {string} mahalleFilter 
  */
 function renderGorevListesi(mahalleFilter) {
     let listHTML = '';
@@ -180,26 +142,20 @@ function renderGorevListesi(mahalleFilter) {
 
     gorevListesiPanel.innerHTML = listHTML;
 
-    // Oluşturulan her kart için tıklama olayı ekle
     document.querySelectorAll('.gorev-karti').forEach(kart => {
         kart.addEventListener('click', (e) => {
             const gorevId = parseInt(e.currentTarget.dataset.id, 10);
             const gorev = gorevlerData.find(g => g.id === gorevId);
             
             if (gorev && gorev.hasCoords) {
-                // Harita görünümüne geri dön
-                toggleGorevListesi();
-
-                // Haritayı pine odakla
+                toggleGorevListesi(false);
                 mapInstance.update({
                     location: {
                         center: [gorev.boylam, gorev.enlem],
-                        zoom: 17, // Daha yakın bir zoom
-                        duration: 500 // Animasyon süresi
+                        zoom: 17,
+                        duration: 500
                     }
                 });
-                
-                // Pini seç ve detayları göster
                 handlePinClick(gorevId);
             } else {
                 alert('Bu görevin koordinat bilgisi bulunmuyor, haritada gösterilemez.');
@@ -208,12 +164,16 @@ function renderGorevListesi(mahalleFilter) {
     });
 }
 
-
 /**
  * Bir pine tıklandığında çalışacak fonksiyon.
  */
 function handlePinClick(gorevId) {
+    if (altPanel.classList.contains('liste-acik')) {
+        toggleGorevListesi(false);
+    }
+    
     clearSelection();
+    
     const pin = placemarksMap.get(gorevId);
     if (pin && pin.element) {
         pin.element.classList.add('selected');
