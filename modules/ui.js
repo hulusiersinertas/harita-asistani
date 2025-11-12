@@ -303,14 +303,32 @@ function setupEventListeners() {
     gorunumDegistirBtn.addEventListener('click', () => altPanel.classList.contains('liste-acik') ? hidePanel() : showListView());
 }
 
+// === DEĞİŞİKLİK BU FONKSİYONDA ===
 function selectGorev(gorevId) {
-    if (currentSelectedGorevId) placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+    // 1. Önceki seçimi temizle (mevcut mantık)
+    if (currentSelectedGorevId) {
+        placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+    }
+    
+    // 2. Yeni görevi seç ve detaylarını göster (mevcut mantık)
     currentSelectedGorevId = gorevId;
     const gorev = gorevlerData.find(g => g.id === gorevId);
     const pin = placemarksMap.get(gorevId);
     if (!gorev || !pin) return;
     pin.element.classList.add('selected');
     showDetailView(gorev);
+
+    // --- YENİ EKLENEN MANTIK ---
+    // 3. Seçilen görevin mahallesini al
+    const secilenMahalle = gorev.mahalle;
+    if (secilenMahalle) {
+        // 4. Mahalle filtresi dropdown'ının değerini bu mahalleye ayarla
+        mahalleFiltresi.value = secilenMahalle;
+        
+        // 5. Haritadaki pinleri bu mahalleye göre anında filtrele
+        filterPinsOnMap(secilenMahalle);
+    }
+    // ----------------------------
 }
 
 function hidePanel() {
