@@ -1,7 +1,7 @@
 // ================================================================================
 // DOSYA YOLU: modules/ui.js (BU KODUN TAMAMINI KOPYALAYIP MEVCUT DOSYAYLA DEĞİŞTİRİN)
 // ================================================================================
-import { config } from './config.js'; // config import'u en üstte olmalı
+import { config } from './config.js';
 import { updateGorevStatus } from './api.js';
 
 // Global değişkenler
@@ -15,26 +15,59 @@ let placemarksMap = new Map();
 let currentSelectedGorevId = null;
 let mapInstance = null;
 let currentAracAdi = '';
-let currentRoute = null; // Haritadaki mevcut rotayı saklamak için
+let currentRoute = null;
 
+// ================================================================================
+// YENİ EKLENEN YARDIMCI FONKSİYON: ENCODED POLYLINE ÇÖZÜCÜ
+// ================================================================================
 /**
- * UI'ı başlatır.
+ * OpenRouteService'den gelen sıkıştırılmış rota metnini (encoded polyline)
+ * koordinat dizisine dönüştürür.
+ * @param {string} encoded - Sıkıştırılmış rota metni.
+ * @returns {Array<[number, number]>} - [[boylam, enlem], ...] formatında koordinat dizisi.
  */
-export function initUI(gorevler, map, placemarks, aracAdi) { // 'export' kelimesi burada!
+function decodePolyline(encoded) {
+    let points = [];
+    let index = 0, len = encoded.length;
+    let lat = 0, lng = 0;
+
+    while (index < len) {
+        let b, shift = 0, result = 0;
+        do {
+            b = encoded.charCodeAt(index++) - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20);
+        let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+        lat += dlat;
+
+        shift = 0;
+        result = 0;
+        do {
+            b = encoded.charCodeAt(index++) - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20);
+        let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+        lng += dlng;
+
+        // Koordinatları [boylam, enlem] formatında ekliyoruz.
+        points.push([lng / 1e5, lat / 1e5]);
+    }
+    return points;
+}
+// ================================================================================
+
+export function initUI(gorevler, map, placemarks, aracAdi) {
     gorevlerData = gorevler;
     placemarksMap = placemarks;
     mapInstance = map;
     currentAracAdi = aracAdi;
-
     populateMahalleFiltresi(gorevler);
     setupEventListeners();
     hidePanel();
 }
 
-/**
- * Kullanıcının o anki konumunu alır.
- * @returns {Promise<[number, number]>} [boylam, enlem] formatında koordinatlar.
- */
 function getUserLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -46,36 +79,21 @@ function getUserLocation() {
                 resolve([position.coords.longitude, position.coords.latitude]);
             },
             (error) => {
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        reject(new Error('Konum izni reddedildi.'));
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        reject(new Error('Konum bilgisi alınamıyor.'));
-                        break;
-                    case error.TIMEOUT:
-                        reject(new Error('Konum alma isteği zaman aşımına uğradı.'));
-                        break;
-                    default:
-                        reject(new Error('Bilinmeyen bir hata oluştu.'));
-                        break;
-                }
+                let message = 'Bilinmeyen bir hata oluştu.';
+                if (error.code === error.PERMISSION_DENIED) message = 'Konum izni reddedildi.';
+                if (error.code === error.POSITION_UNAVAILABLE) message = 'Konum bilgisi alınamıyor.';
+                if (error.code === error.TIMEOUT) message = 'Konum alma isteği zaman aşımına uğradı.';
+                reject(new Error(message));
             }
         );
     });
 }
 
-/**
- * Verilen göreve OpenRouteService kullanarak bir rota çizer. (Son ve Düzeltilmiş Versiyon)
- * @param {object} gorev 
- * @param {HTMLElement} clickedButton
- */
 async function drawRoute(gorev, clickedButton) {
     const originalText = clickedButton.textContent;
     clickedButton.textContent = 'Hesaplanıyor...';
     clickedButton.disabled = true;
 
-    // Önceki rotayı haritadan temizle
     if (currentRoute) {
         mapInstance.removeChild(currentRoute);
         currentRoute = null;
@@ -92,23 +110,21 @@ async function drawRoute(gorev, clickedButton) {
                 'Content-Type': 'application/json',
                 'Authorization': config.openRouteServiceApiKey
             },
-            body: JSON.stringify({
-                "coordinates": [startPoint, endPoint]
-            })
+            body: JSON.stringify({ "coordinates": [startPoint, endPoint] })
         });
 
         const data = await response.json();
         console.log("OpenRouteService Yanıtı:", data);
 
-        // API yanıtında 'routes' dizisi var mı ve bu dizi boş değil mi diye kontrol et.
         if (data.routes && data.routes.length > 0) {
-            
-            const routeCoordinates = data.routes[0].geometry.coordinates;
+            // --- DEĞİŞİKLİK BURADA: Sıkıştırılmış metni alıp çözüyoruz ---
+            const encodedRoute = data.routes[0].geometry;
+            const routeCoordinates = decodePolyline(encodedRoute); // Yeni fonksiyonumuzu kullanıyoruz
 
             const routeFeature = new ymaps3.YMapFeature({
                 geometry: {
                     type: 'LineString',
-                    coordinates: routeCoordinates
+                    coordinates: routeCoordinates // Artık Yandex'in anlayacağı formatta
                 },
                 style: {
                     stroke: [{ color: '#007BFF', width: 5 }]
@@ -129,10 +145,6 @@ async function drawRoute(gorev, clickedButton) {
     }
 }
 
-
-/**
- * Alt paneli küçük (detay) modunda gösterir.
- */
 function showDetailView(gorev) {
     altPanel.classList.remove('liste-acik');
     altPanel.innerHTML = `
@@ -152,25 +164,16 @@ function showDetailView(gorev) {
     `;
     altPanel.style.display = 'block';
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
-
     document.getElementById('close-btn').addEventListener('click', deselectGorev);
     document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
     if (gorev.telefon) {
         document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
     }
-    const deliveredBtn = document.getElementById('delivered-btn');
-    deliveredBtn.addEventListener('click', (e) => handleStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
-    const notHomeBtn = document.getElementById('not-home-btn');
-    notHomeBtn.addEventListener('click', (e) => handleStatusUpdate('Evde Yok', gorev.id, gorev.adSoyad, e.target));
-
-    const routeBtn = document.getElementById('route-btn');
-    routeBtn.addEventListener('click', (e) => drawRoute(gorev, e.target));
+    document.getElementById('delivered-btn').addEventListener('click', (e) => handleStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
+    document.getElementById('not-home-btn').addEventListener('click', (e) => handleStatusUpdate('Evde Yok', gorev.id, gorev.adSoyad, e.target));
+    document.getElementById('route-btn').addEventListener('click', (e) => drawRoute(gorev, e.target));
 }
 
-
-/**
- * Tüm seçimleri temizler ve paneli gizler. Varsa rotayı da temizler.
- */
 function deselectGorev() {
     if (currentSelectedGorevId) {
         placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
@@ -184,19 +187,16 @@ function deselectGorev() {
 }
 
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
-    const confirmationMessage = `${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`;
-    if (!confirm(confirmationMessage)) return;
-    const originalText = clickedButton.textContent;
+    if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
     const allButtons = clickedButton.parentElement.querySelectorAll('button');
-    allButtons.forEach(btn => btn.disabled = true);
+    allButtons.forEach(btn => { btn.disabled = true; });
     clickedButton.textContent = 'İşleniyor...';
     const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
     if (success) {
         removeGorev(gorevId);
     } else {
         alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
-        allButtons.forEach(btn => btn.disabled = false);
-        clickedButton.textContent = originalText;
+        allButtons.forEach(btn => { btn.disabled = false; });
     }
 }
 
