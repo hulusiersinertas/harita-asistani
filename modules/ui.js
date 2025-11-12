@@ -1,4 +1,4 @@
-import { updateGorevStatus } from './api.js'; // Yeni fonksiyonu import et
+import { updateGorevStatus } from './api.js';
 
 // Global değişkenler
 const altPanel = document.getElementById('alt-panel');
@@ -10,16 +10,16 @@ let gorevlerData = [];
 let placemarksMap = new Map();
 let currentSelectedGorevId = null;
 let mapInstance = null;
-let currentAracAdi = ''; // Güncellenecek sayfa adını saklamak için
+let currentAracAdi = '';
 
 /**
  * UI'ı başlatır.
  */
-export function initUI(gorevler, map, placemarks, aracAdi) { // aracAdi parametresini al
+export function initUI(gorevler, map, placemarks, aracAdi) {
     gorevlerData = gorevler;
     placemarksMap = placemarks;
     mapInstance = map;
-    currentAracAdi = aracAdi; // Gelen parametreyi sakla
+    currentAracAdi = aracAdi;
 
     populateMahalleFiltresi(gorevler);
     setupEventListeners();
@@ -28,44 +28,32 @@ export function initUI(gorevler, map, placemarks, aracAdi) { // aracAdi parametr
 
 /**
  * Görevi uygulamadan (harita, liste, veri) kaldırır.
- * @param {number} gorevId 
  */
 function removeGorev(gorevId) {
     const pin = placemarksMap.get(gorevId);
     if (pin) {
-        mapInstance.removeChild(pin.marker); // Marker'ı haritadan kaldır
-        placemarksMap.delete(gorevId); // Harita referansından sil
+        // YMapMarker'ı haritadan kaldırmak için parent'ından (map) removeChild kullanılır
+        mapInstance.removeChild(pin.marker);
+        placemarksMap.delete(gorevId);
     }
-    gorevlerData = gorevlerData.filter(g => g.id !== gorevId); // Ana veri dizisinden sil
+    gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
     
-    // Kalan görev sayacını güncelle
     kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
-
-    // Paneli gizle ve seçimi temizle
     deselectGorev();
     
-    // Eğer liste görünümü açıksa, listeyi de yenile
     if (altPanel.classList.contains('liste-acik')) {
         showListView(mahalleFiltresi.value);
     }
 }
 
-
 /**
  * Detay panelindeki eylem butonlarına basıldığında çalışır ve onay ister.
- * @param {string} newStatus - "Verildi" veya "Evde Yok"
- * @param {number} gorevId
- * @param {string} adSoyad - Onay mesajında göstermek için kişinin adı.
- * @param {HTMLElement} clickedButton - Tıklanan buton elementi
  */
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
-    // --- YENİ EKLENEN KISIM BAŞLANGICI ---
-    // Kullanıcıdan onay al
     const confirmationMessage = `${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`;
     if (!confirm(confirmationMessage)) {
-        return; // Eğer kullanıcı "İptal" derse, fonksiyondan çık.
+        return;
     }
-    // --- YENİ EKLENEN KISIM SONU ---
 
     const originalText = clickedButton.textContent;
     const allButtons = clickedButton.parentElement.querySelectorAll('button');
@@ -84,6 +72,50 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     }
 }
 
+/**
+ * Mahalle filtresini doldurur.
+ */
+function populateMahalleFiltresi(gorevler) {
+    const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
+    const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
+    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
+    sortedMahalleler.forEach(mahalle => mahalleFiltresi.add(new Option(mahalle, mahalle)));
+    mahalleFiltresi.disabled = false;
+}
+
+/**
+ * Tüm olay dinleyicilerini ayarlar.
+ */
+function setupEventListeners() {
+    const mapContainer = mapInstance.container;
+    const mapListener = new ymaps3.YMapListener({
+        layer: 'any',
+        onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
+        onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
+        onPointerDown: (event) => {
+            if (event?.entity?.element?.classList.contains('placemark')) {
+                const gorevId = parseInt(event.entity.element.dataset.id, 10);
+                selectGorev(gorevId);
+            }
+        }
+    });
+    mapInstance.addChild(mapListener);
+    mahalleFiltresi.addEventListener('change', () => showListView(mahalleFiltresi.value));
+    gorunumDegistirBtn.addEventListener('click', () => altPanel.classList.contains('liste-acik') ? hidePanel() : showListView());
+}
+
+/**
+ * Belirli bir görevi seçer ve detay görünümünü gösterir.
+ */
+function selectGorev(gorevId) {
+    if (currentSelectedGorevId) placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+    currentSelectedGorevId = gorevId;
+    const gorev = gorevlerData.find(g => g.id === gorevId);
+    const pin = placemarksMap.get(gorevId);
+    if (!gorev || !pin) return;
+    pin.element.classList.add('selected');
+    showDetailView(gorev);
+}
 
 /**
  * Alt paneli küçük (detay) modunda gösterir.
@@ -114,7 +146,6 @@ function showDetailView(gorev) {
         document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
     }
     
-    // --- DEĞİŞİKLİK BURADA ---
     const deliveredBtn = document.getElementById('delivered-btn');
     deliveredBtn.addEventListener('click', (e) => handleStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
 
@@ -124,58 +155,29 @@ function showDetailView(gorev) {
     document.getElementById('route-btn').addEventListener('click', () => alert('Rota Çizme özelliği yakında eklenecek.'));
 }
 
-// ---- Diğer Fonksiyonlar (Değişiklik Yok) ----
-// (populateMahalleFiltresi, setupEventListeners, selectGorev, deselectGorev, hidePanel, showListView, filterPinsOnMap)
-// Bu fonksiyonların tam ve doğru hallerini aşağıya ekliyorum ki dosyanız bütün kalsın.
-
-function populateMahalleFiltresi(gorevler) {
-    const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
-    const sortedMahalleler = [...mahalleler].sort((a, b) => a.localeCompare(b));
-    mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
-    sortedMahalleler.forEach(mahalle => mahalleFiltresi.add(new Option(mahalle, mahalle)));
-    mahalleFiltresi.disabled = false;
-}
-
-function setupEventListeners() {
-    const mapContainer = mapInstance.container;
-    const mapListener = new ymaps3.YMapListener({
-        layer: 'any',
-        onMouseEnter: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'pointer'; },
-        onMouseLeave: (obj) => { if (obj?.entity?.element?.classList.contains('placemark')) mapContainer.style.cursor = 'grab'; },
-        onPointerDown: (event) => {
-            if (event?.entity?.element?.classList.contains('placemark')) {
-                const gorevId = parseInt(event.entity.element.dataset.id, 10);
-                selectGorev(gorevId);
-            }
-        }
-    });
-    mapInstance.addChild(mapListener);
-    mahalleFiltresi.addEventListener('change', () => showListView(mahalleFiltresi.value));
-    gorunumDegistirBtn.addEventListener('click', () => altPanel.classList.contains('liste-acik') ? hidePanel() : showListView());
-}
-
-function selectGorev(gorevId) {
-    if (currentSelectedGorevId) placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
-    currentSelectedGorevId = gorevId;
-    const gorev = gorevlerData.find(g => g.id === gorevId);
-    const pin = placemarksMap.get(gorevId);
-    if (!gorev || !pin) return;
-    pin.element.classList.add('selected');
-    showDetailView(gorev);
-}
-
+/**
+ * Tüm seçimleri temizler ve paneli gizler.
+ */
 function deselectGorev() {
-    if (currentSelectedGorevId) placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
-    currentSelectedGorevId = null;
+    if (currentSelectedGorevId) {
+        placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
+        currentSelectedGorevId = null;
+    }
     hidePanel();
 }
 
+/**
+ * Alt paneli tamamen gizler.
+ */
 function hidePanel() {
     altPanel.style.display = 'none';
     altPanel.classList.remove('liste-acik');
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
 }
 
+/**
+ * Alt paneli büyük (liste) modunda gösterir.
+ */
 function showListView(mahalleFilter = 'TÜMÜ') {
     altPanel.classList.add('liste-acik');
     filterPinsOnMap(mahalleFilter);
@@ -197,6 +199,9 @@ function showListView(mahalleFilter = 'TÜMÜ') {
     gorunumDegistirBtn.textContent = 'Haritayı Göster';
 }
 
+/**
+ * Haritadaki pinleri mahalleye göre filtreler.
+ */
 function filterPinsOnMap(secilenMahalle) {
     placemarksMap.forEach((pin, gorevId) => {
         const gorev = gorevlerData.find(g => g.id === gorevId);
