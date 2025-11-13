@@ -1,4 +1,4 @@
-import { updateGorevStatus } from './api.js'; // Doğru fonksiyon adı burada import ediliyor
+import { updateGorevStatus } from './api.js';
 import { initPanelManager, showDetailView, showListView, hidePanel } from './panelManager.js';
 import { initNavigation, getUserLocation } from './navigation.js';
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
@@ -78,8 +78,6 @@ function setupEventListeners() {
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
 }
 
-// --- GÜZERGAH MODU FONKSİYONLARI ---
-
 function toggleGuzergahModu() {
     if (isGuzergahActive) {
         stopGuzergah();
@@ -95,7 +93,6 @@ async function startGuzergah() {
     guzergahBtn.style.color = 'white';
     mahalleFiltresi.disabled = true;
     document.getElementById('gorunum-degistir-btn').disabled = true;
-
     await findAndSelectNextGorev();
 }
 
@@ -129,8 +126,6 @@ async function findAndSelectNextGorev() {
     }
 }
 
-// --- MEVCUT FONKSİYONLARIN GÜNCELLENMESİ ---
-
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
 
@@ -138,8 +133,9 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     allButtons.forEach(btn => { btn.disabled = true; });
     clickedButton.textContent = 'İşleniyor...';
 
-    // DÜZELTME: Hatalı fonksiyon adı 'updateGuzergahStatus' idi, doğrusu 'updateGorevStatus' olmalı.
+    // *** BU SATIRDAKİ HATA DÜZELTİLDİ VE DOĞRU FONKSİYON ÇAĞRILIYOR ***
     const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
+    
     if (success) {
         await removeGorev(gorevId);
     } else {
