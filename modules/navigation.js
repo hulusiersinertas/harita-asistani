@@ -8,12 +8,11 @@ let isNavigationModeActive = false;
 // Harita döndürme değişkenleri
 let rotationDirection = 0;
 const ROTATION_SPEED = 0.2;
-let currentCameraState = { tilt: 0, azimuth: 0 }; // Başlangıç durumu
+let currentCameraState = { tilt: 0, azimuth: 0 };
 let onCameraUpdateCallback = () => {};
 
 /**
  * Kullanıcının mevcut konumunu bir Promise olarak döndürür.
- * @returns {Promise<[number, number]>} [boylam, enlem]
  */
 export function getUserLocation() {
     return new Promise((resolve, reject) => {
@@ -37,10 +36,15 @@ export function getUserLocation() {
  */
 function animateRotation() {
     if (rotationDirection === 0 || isNavigationModeActive) return;
+
     const newAzimuth = currentCameraState.azimuth + (rotationDirection * ROTATION_SPEED);
     const newCameraState = { ...currentCameraState, azimuth: newAzimuth };
+
+    // DÜZELTME: Yeni kamera durumunu, bir sonraki karede kullanılmak üzere modülün kendi "hafızasına" kaydediyoruz.
+    currentCameraState = newCameraState;
+
     mapInstance.update({ camera: newCameraState });
-    onCameraUpdateCallback(newCameraState); // Kamera durumunu ana UI modülüne bildir
+    onCameraUpdateCallback(newCameraState);
     requestAnimationFrame(animateRotation);
 }
 
@@ -97,12 +101,12 @@ const stopNavigation = () => {
 
 /**
  * Navigasyon ve harita döndürme kontrollerini kurar.
- * @param {ymaps3.YMap} map - Harita nesnesi.
- * @param {function} onCameraUpdate - Kamera durumu değiştiğinde çağrılacak callback.
  */
 export function initNavigation(map, onCameraUpdate) {
     mapInstance = map;
     onCameraUpdateCallback = onCameraUpdate;
+    // İyileştirme: Modülün hafızasını, haritanın gerçek başlangıç durumuyla eşitle
+    currentCameraState = map.camera; 
 
     const rotateLeftBtn = document.getElementById('rotate-left');
     const rotateRightBtn = document.getElementById('rotate-right');
@@ -133,20 +137,4 @@ export function initNavigation(map, onCameraUpdate) {
             startNavigation();
         }
     });
-}
-
-/**
- * Navigasyon modunun aktif olup olmadığını döndürür.
- * @returns {boolean}
- */
-export function isNavigating() {
-    return isNavigationModeActive;
-}
-
-/**
- * Aktif navigasyon sırasında bir hedef belirlendiğinde rota çizimini tetikler.
- */
-export function triggerRouteForNavigation() {
-    // Bu fonksiyon şimdilik boş, ana ui.js tarafından yönetilecek
-    // Gelecekte bir event emitter sistemiyle daha da soyutlanabilir.
 }
