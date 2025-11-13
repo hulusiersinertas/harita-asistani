@@ -69,6 +69,13 @@ function setupEventListeners() {
             if (isGuzergahActive) return;
             if (event?.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
+                const gorev = gorevlerData.find(g => g.id === gorevId);
+                
+                // DÜZELTME 2: Haritadan bir pine tıklandığında da haritayı o noktaya odakla.
+                if (gorev?.hasCoords) {
+                    mapInstance.update({ location: { center: [gorev.boylam, gorev.enlem], zoom: 17, duration: 500 } });
+                }
+                
                 selectGorev(gorevId);
             }
         },
@@ -77,6 +84,52 @@ function setupEventListeners() {
     mahalleFiltresi.addEventListener('change', () => displayListView(mahalleFiltresi.value));
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
 }
+
+// ... Diğer fonksiyonlar aynı kalıyor ...
+
+async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
+    if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
+
+    const allButtons = clickedButton.parentElement.querySelectorAll('button');
+    allButtons.forEach(btn => { btn.disabled = true; });
+    clickedButton.textContent = 'İşleniyor...';
+
+    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
+    if (success) {
+        await removeGorev(gorevId);
+    } else {
+        alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
+        allButtons.forEach(btn => { btn.disabled = false; });
+    }
+}
+
+async function removeGorev(gorevId) {
+    // Önce pini ve veriyi kaldır
+    const pin = placemarksMap.get(gorevId);
+    if (pin) {
+        mapInstance.removeChild(pin.marker);
+        placemarksMap.delete(gorevId);
+    }
+    gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
+    kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
+
+    // DÜZELTME 1: Mantığı değiştiriyoruz.
+    if (isGuzergahActive) {
+        // Güzergah modu aktifse, seçimi sıfırlama. Direkt bir sonraki görevi bul.
+        // Bu, panelin ve rotanın anlık olarak kaybolmasını önler.
+        await findAndSelectNextGorev();
+    } else {
+        // Güzergah modu aktif değilse, normal şekilde seçimi temizle.
+        deselectGorev();
+    }
+
+    // Liste görünümü açıksa, onu da güncelle
+    if (document.getElementById('alt-panel').classList.contains('liste-acik')) {
+        displayListView(mahalleFiltresi.value);
+    }
+}
+
+// --- BU NOKTADAN SONRAKİ FONKSİYONLARDA DEĞİŞİKLİK YOK ---
 
 function toggleGuzergahModu() {
     if (isGuzergahActive) {
@@ -114,7 +167,7 @@ async function findAndSelectNextGorev() {
 
         if (nextGorev) {
             selectGorev(nextGorev.id);
-            await drawRouteToTask(nextGorev, null); 
+            await drawRouteToTask(nextGorev, null);
             mapInstance.update({ location: { center: [nextGorev.boylam, nextGorev.enlem], zoom: 17, duration: 800 } });
         } else {
             alert("Tebrikler! Güzergahtaki tüm görevler tamamlandı.");
@@ -123,44 +176,6 @@ async function findAndSelectNextGorev() {
     } catch (error) {
         alert(`Konum alınamadığı için güzergah başlatılamadı: ${error.message}`);
         stopGuzergah();
-    }
-}
-
-async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
-    if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
-
-    const allButtons = clickedButton.parentElement.querySelectorAll('button');
-    allButtons.forEach(btn => { btn.disabled = true; });
-    clickedButton.textContent = 'İşleniyor...';
-
-    // *** BU SATIRDAKİ HATA DÜZELTİLDİ VE DOĞRU FONKSİYON ÇAĞRILIYOR ***
-    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
-    
-    if (success) {
-        await removeGorev(gorevId);
-    } else {
-        alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
-        allButtons.forEach(btn => { btn.disabled = false; });
-    }
-}
-
-async function removeGorev(gorevId) {
-    const pin = placemarksMap.get(gorevId);
-    if (pin) {
-        mapInstance.removeChild(pin.marker);
-        placemarksMap.delete(gorevId);
-    }
-    gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
-    kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
-
-    deselectGorev();
-
-    if (isGuzergahActive) {
-        await findAndSelectNextGorev();
-    }
-
-    if (document.getElementById('alt-panel').classList.contains('liste-acik')) {
-        displayListView(mahalleFiltresi.value);
     }
 }
 
@@ -179,15 +194,15 @@ function selectGorev(gorevId) {
     currentSelectedGorevId = gorevId;
     const gorev = gorevlerData.find(g => g.id === gorevId);
     const pin = placemarksMap.get(gorevId);
-    
+
     if (!gorev || !pin) {
         console.error(`Görev (ID: ${gorevId}) veya pini bulunamadı. Seçim yapılamıyor.`);
         return;
     }
-    
+
     pin.element.classList.add('selected');
     showDetailView(gorev);
-    
+
     if (!isGuzergahActive && gorev.mahalle) {
         mahalleFiltresi.value = gorev.mahalle;
         filterPinsOnMap(gorev.mahalle);
