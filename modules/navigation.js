@@ -33,11 +33,23 @@ export function getUserLocation() {
         navigator.geolocation.getCurrentPosition(
             (position) => resolve([position.coords.longitude, position.coords.latitude]),
             (error) => {
-                let message = 'Konum bilgisi alınamadı.';
-                if (error.code === error.PERMISSION_DENIED) message = 'Konum izni reddedildi.';
+                // GÜNCELLENDİ: Hata mesajlarını daha anlaşılır hale getiriyoruz.
+                let message = 'Bilinmeyen bir hata nedeniyle konum alınamadı.';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = 'Konum bilgisine ulaşılamıyor. Cihazınızın konum servislerinin açık olduğundan emin olun.';
+                        break;
+                    case error.TIMEOUT:
+                        message = 'Konum alımı zaman aşımına uğradı. Lütfen sinyalin daha iyi olduğu bir yerde tekrar deneyin.';
+                        break;
+                }
                 reject(new Error(message));
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            // GÜNCELLENDİ: Zaman aşımı süresini 15 saniyeye çıkarıyoruz.
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
 }
@@ -57,13 +69,12 @@ function animateRotation() {
     requestAnimationFrame(animateRotation);
 }
 
-// GÜNCELLENDİ: Fonksiyon artık dışarıdan çağrılabilmesi için export ediliyor.
+
 export const startNavigation = () => {
     if (!navigator.geolocation) {
         alert("Tarayıcınız konum servisini desteklemiyor.");
         return;
     }
-    // Eğer zaten izleme yapılıyorsa tekrar başlatma
     if (locationWatcherId !== null) return;
 
     isNavigationModeActive = true;
@@ -97,7 +108,7 @@ export const startNavigation = () => {
             });
         },
         (error) => {
-            alert("Konum bilgisi alınamadı. Lütfen konum servislerinin açık olduğundan emin olun.");
+            alert("Konum izlenirken bir hata oluştu. Lütfen konum servislerini kontrol edin.");
             console.error("Konum izleme hatası:", error);
             stopNavigation();
         },
@@ -105,7 +116,6 @@ export const startNavigation = () => {
     );
 };
 
-// GÜNCELLENDİ: Fonksiyon artık dışarıdan çağrılabilmesi için export ediliyor.
 export const stopNavigation = () => {
     if (locationWatcherId !== null) {
         navigator.geolocation.clearWatch(locationWatcherId);
