@@ -1,4 +1,4 @@
-import { updateGorevStatus } from './api.js';
+import { updateGorevStatus } from './api.js'; // Doğru fonksiyon adı burada import ediliyor
 import { initPanelManager, showDetailView, showListView, hidePanel } from './panelManager.js';
 import { initNavigation, getUserLocation } from './navigation.js';
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
@@ -96,9 +96,6 @@ async function startGuzergah() {
     mahalleFiltresi.disabled = true;
     document.getElementById('gorunum-degistir-btn').disabled = true;
 
-    // DÜZELTME: Bu satır, panelin gereksiz yere kaybolmasına neden oluyordu. Kaldırıldı.
-    // deselectGorev(); 
-
     await findAndSelectNextGorev();
 }
 
@@ -141,7 +138,8 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     allButtons.forEach(btn => { btn.disabled = true; });
     clickedButton.textContent = 'İşleniyor...';
 
-    const success = await updateGuzergahStatus(currentAracAdi, gorevId, newStatus);
+    // DÜZELTME: Hatalı fonksiyon adı 'updateGuzergahStatus' idi, doğrusu 'updateGorevStatus' olmalı.
+    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
     if (success) {
         await removeGorev(gorevId);
     } else {
@@ -186,7 +184,6 @@ function selectGorev(gorevId) {
     const gorev = gorevlerData.find(g => g.id === gorevId);
     const pin = placemarksMap.get(gorevId);
     
-    // Güvenlik kontrolü: Görev veya pin bulunamazsa işlemi durdur.
     if (!gorev || !pin) {
         console.error(`Görev (ID: ${gorevId}) veya pini bulunamadı. Seçim yapılamıyor.`);
         return;
