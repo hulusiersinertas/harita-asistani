@@ -1,6 +1,5 @@
 import { updateGorevStatus } from './api.js';
 import { initPanelManager, showDetailView, showListView, hidePanel } from './panelManager.js';
-// GÜNCELLENDİ: startNavigation ve stopNavigation import edildi
 import { initNavigation, getUserLocation, updateExternalCameraState, startNavigation, stopNavigation } from './navigation.js';
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
 import { findNextGorev } from './guzergahManager.js';
@@ -9,7 +8,6 @@ import { findNextGorev } from './guzergahManager.js';
 const mahalleFiltresi = document.getElementById('mahalle-filtresi');
 const kalanGorevSayaci = document.getElementById('kalan-gorev-sayaci');
 const guzergahBtn = document.getElementById('guzergah-toggle-btn');
-// GÜNCELLENDİ: Navigasyon butonu elementi eklendi
 const navigationBtn = document.getElementById('navigation-toggle-btn');
 
 // Uygulama Durumu (State)
@@ -63,8 +61,6 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     }
 }
 
-// ... setupEventListeners, handleStatusUpdate, removeGorev fonksiyonları aynı kalıyor ...
-
 function setupEventListeners() {
     const { YMapListener } = ymaps3;
 
@@ -108,14 +104,14 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
 
     const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
     if (success) {
-        await removeGorev(gorevId);
+        removeGorev(gorevId);
     } else {
         alert('Görev durumu güncellenemedi. Lütfen tekrar deneyin.');
         allButtons.forEach(btn => { btn.disabled = false; });
     }
 }
 
-async function removeGorev(gorevId) {
+function removeGorev(gorevId) {
     const pin = placemarksMap.get(gorevId);
     if (pin) {
         mapInstance.removeChild(pin.marker);
@@ -125,7 +121,10 @@ async function removeGorev(gorevId) {
     kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
 
     if (isGuzergahActive) {
-        await findAndSelectNextGorev();
+        // 1. Önce mevcut paneli kapatarak anında geri bildirim ver.
+        deselectGorev();
+        // 2. Sonra bir sonraki görevi bul ve seç. (async olarak arka planda çalışacak)
+        findAndSelectNextGorev(); 
     } else {
         deselectGorev();
     }
@@ -135,8 +134,6 @@ async function removeGorev(gorevId) {
     }
 }
 
-// ... toggleGuzergahModu fonksiyonu aynı kalıyor ...
-
 function toggleGuzergahModu() {
     if (isGuzergahActive) {
         stopGuzergah();
@@ -145,72 +142,64 @@ function toggleGuzergahModu() {
     }
 }
 
-// GÜNCELLENDİ: Güzergah başlatma ve durdurma fonksiyonları
 async function startGuzergah() {
     isGuzergahActive = true;
     guzergahBtn.textContent = 'Güzergahı Durdur';
     guzergahBtn.style.backgroundColor = '#dc3545';
     guzergahBtn.style.color = 'white';
     
-    // Diğer kontrollleri devre dışı bırak
     mahalleFiltresi.disabled = true;
     document.getElementById('gorunum-degistir-btn').disabled = true;
-    navigationBtn.disabled = true; // Pusula tuşu devre dışı
+    navigationBtn.disabled = true;
 
-    startNavigation(); // Navigasyon modunu otomatik başlat
+    startNavigation();
     await findAndSelectNextGorev();
 }
 
 function stopGuzergah() {
-    stopNavigation(); // Navigasyon modunu durdur
+    stopNavigation();
 
     isGuzergahActive = false;
     guzergahBtn.textContent = 'Güzergahı Başlat';
     guzergahBtn.style.backgroundColor = '';
     guzergahBtn.style.color = '';
     
-    // Kontrolleri tekrar aktif et
     mahalleFiltresi.disabled = false;
     document.getElementById('gorunum-degistir-btn').disabled = false;
-    navigationBtn.disabled = false; // Pusula tuşu aktif
+    navigationBtn.disabled = false;
 
     deselectGorev();
     alert("Güzergah modu durduruldu.");
 }
 
-// GÜNCELLENDİ: Bir sonraki görevi bulma ve odaklanma mantığı
 async function findAndSelectNextGorev() {
     try {
         const userLocation = await getUserLocation();
         const nextGorev = findNextGorev(userLocation, gorevlerData, guzergahSiralamasi);
 
         if (nextGorev) {
-            stopNavigation(); // 1. Harita kontrolünü ele almak için GPS takibini anlık durdur
+            stopNavigation();
             
             selectGorev(nextGorev.id);
             await drawRouteToTask(nextGorev, null);
 
-            // 2. Haritanın hedefe odaklanmasını bekle
             await mapInstance.update({
                 location: { center: [nextGorev.boylam, nextGorev.enlem], zoom: 17, duration: 800 }
             });
 
-            // 3. Kullanıcının hedefi görmesi için kısa bir süre bekle
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            startNavigation(); // 4. GPS takibini yeniden başlat
+            startNavigation();
 
         } else {
             alert("Tebrikler! Güzergahtaki tüm görevler tamamlandı.");
             stopGuzergah();
         }
     } catch (error) {
-        alert(`Konum alınamadığı için güzergah başlatılamadı: ${error.message}`);
+        alert(`Konum alınamadığı için güzergah devam edemiyor: ${error.message}`);
         stopGuzergah();
     }
 }
-
-// ... Diğer fonksiyonlar (populateMahalleFiltresi, selectGorev, deselectGorev, vb.) aynı kalıyor ...
 
 function populateMahalleFiltresi(gorevler) {
     const mahalleler = new Set(gorevler.map(g => g.mahalle).filter(Boolean));
