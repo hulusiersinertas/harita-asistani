@@ -1,6 +1,6 @@
 import { updateGorevStatus } from './api.js';
 import { initPanelManager, showDetailView, showListView, hidePanel } from './panelManager.js';
-import { initNavigation, getUserLocation } from './navigation.js';
+import { initNavigation, getUserLocation, updateExternalCameraState } from './navigation.js';
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
 import { findNextGorev } from './guzergahManager.js';
 
@@ -50,7 +50,9 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
         onDeselect: deselectGorev,
         onShowListView: () => displayListView(mahalleFiltresi.value)
     });
-    initNavigation(map, () => {});
+    
+    // Artık callback göndermiyoruz
+    initNavigation(map);
     initRouting(map);
     hidePanel();
 
@@ -61,7 +63,6 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
 
 function setupEventListeners() {
     const { YMapListener } = ymaps3;
-    const mapContainer = mapInstance.container;
 
     const mapListener = new YMapListener({
         layer: 'any',
@@ -71,7 +72,6 @@ function setupEventListeners() {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 const gorev = gorevlerData.find(g => g.id === gorevId);
                 
-                // DÜZELTME 2: Haritadan bir pine tıklandığında da haritayı o noktaya odakla.
                 if (gorev?.hasCoords) {
                     mapInstance.update({ location: { center: [gorev.boylam, gorev.enlem], zoom: 17, duration: 500 } });
                 }
@@ -79,13 +79,15 @@ function setupEventListeners() {
                 selectGorev(gorevId);
             }
         },
+        // Harita her güncellendiğinde navigation modülünün hafızasını güncelliyoruz.
+        onUpdate: ({ camera }) => {
+            updateExternalCameraState(camera);
+        }
     });
     mapInstance.addChild(mapListener);
     mahalleFiltresi.addEventListener('change', () => displayListView(mahalleFiltresi.value));
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
 }
-
-// ... Diğer fonksiyonlar aynı kalıyor ...
 
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
@@ -104,7 +106,6 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
 }
 
 async function removeGorev(gorevId) {
-    // Önce pini ve veriyi kaldır
     const pin = placemarksMap.get(gorevId);
     if (pin) {
         mapInstance.removeChild(pin.marker);
@@ -113,23 +114,16 @@ async function removeGorev(gorevId) {
     gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
     kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
 
-    // DÜZELTME 1: Mantığı değiştiriyoruz.
     if (isGuzergahActive) {
-        // Güzergah modu aktifse, seçimi sıfırlama. Direkt bir sonraki görevi bul.
-        // Bu, panelin ve rotanın anlık olarak kaybolmasını önler.
         await findAndSelectNextGorev();
     } else {
-        // Güzergah modu aktif değilse, normal şekilde seçimi temizle.
         deselectGorev();
     }
 
-    // Liste görünümü açıksa, onu da güncelle
     if (document.getElementById('alt-panel').classList.contains('liste-acik')) {
         displayListView(mahalleFiltresi.value);
     }
 }
-
-// --- BU NOKTADAN SONRAKİ FONKSİYONLARDA DEĞİŞİKLİK YOK ---
 
 function toggleGuzergahModu() {
     if (isGuzergahActive) {
