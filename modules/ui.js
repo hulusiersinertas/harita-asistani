@@ -85,7 +85,19 @@ function setupEventListeners() {
         }
     });
     mapInstance.addChild(mapListener);
-    mahalleFiltresi.addEventListener('change', () => displayListView(mahalleFiltresi.value));
+
+    // GÜNCELLENDİ: Filtre değiştiğinde mevcut seçimi ve detayı temizle.
+    mahalleFiltresi.addEventListener('change', () => {
+        // Mevcut seçimi ve detayı temizleyerek tutarlılığı sağlıyoruz.
+        if (currentSelectedGorevId) {
+            deselectGorev();
+        }
+
+        // deselectGorev() zaten mahalleFiltresi'ni 'TÜMÜ' ve pinleri 'TÜMÜ' yapmış olabilir.
+        // Tekrar listenin gösterimini tetikliyoruz.
+        displayListView(mahalleFiltresi.value);
+    });
+
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
 }
 
@@ -209,6 +221,13 @@ function deselectGorev() {
         currentSelectedGorevId = null;
     }
     clearCurrentRoute();
+
+    // GÜNCELLENDİ: Filtreyi sıfırla ve tüm pinleri göster.
+    if (mahalleFiltresi.value !== 'TÜMÜ') {
+        mahalleFiltresi.value = 'TÜMÜ';
+    }
+    filterPinsOnMap('TÜMÜ');
+
     hidePanel();
 }
 
