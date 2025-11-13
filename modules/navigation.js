@@ -5,6 +5,9 @@ let userMarker = null;
 let locationWatcherId = null;
 let isNavigationModeActive = false;
 
+// YENİ EKLENDİ: Navigasyon modundayken en son bilinen konumu saklamak için.
+let lastKnownLocation = null;
+
 // Harita döndürme değişkenleri
 let rotationDirection = 0;
 const ROTATION_SPEED = 0.2;
@@ -26,6 +29,12 @@ export function updateExternalCameraState(newCamera) {
  * Kullanıcının mevcut konumunu bir Promise olarak döndürür.
  */
 export function getUserLocation() {
+    // GÜNCELLENDİ: Eğer navigasyon modu aktifse ve bir konumumuz varsa,
+    // yeni bir istek atmak yerine direkt onu kullanıyoruz. Bu, zaman aşımını engeller.
+    if (isNavigationModeActive && lastKnownLocation) {
+        return Promise.resolve(lastKnownLocation);
+    }
+    
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
             return reject(new Error('Tarayıcınız konum servisini desteklemiyor.'));
@@ -33,7 +42,6 @@ export function getUserLocation() {
         navigator.geolocation.getCurrentPosition(
             (position) => resolve([position.coords.longitude, position.coords.latitude]),
             (error) => {
-                // GÜNCELLENDİ: Hata mesajlarını daha anlaşılır hale getiriyoruz.
                 let message = 'Bilinmeyen bir hata nedeniyle konum alınamadı.';
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
@@ -48,7 +56,6 @@ export function getUserLocation() {
                 }
                 reject(new Error(message));
             },
-            // GÜNCELLENDİ: Zaman aşımı süresini 15 saniyeye çıkarıyoruz.
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
@@ -69,7 +76,6 @@ function animateRotation() {
     requestAnimationFrame(animateRotation);
 }
 
-
 export const startNavigation = () => {
     if (!navigator.geolocation) {
         alert("Tarayıcınız konum servisini desteklemiyor.");
@@ -86,6 +92,9 @@ export const startNavigation = () => {
         (position) => {
             const { longitude, latitude, heading } = position.coords;
             const userCoordinates = [longitude, latitude];
+
+            // YENİ EKLENDİ: En son konumu her geldiğinde saklıyoruz.
+            lastKnownLocation = userCoordinates;
 
             if (!userMarker) {
                 const markerElement = document.createElement('div');
@@ -122,6 +131,8 @@ export const stopNavigation = () => {
         locationWatcherId = null;
     }
     isNavigationModeActive = false;
+    // YENİ EKLENDİ: Navigasyon durunca son konumu temizle.
+    lastKnownLocation = null;
     document.getElementById('navigation-toggle-btn').classList.remove('active');
     if (rotateLeftBtn) rotateLeftBtn.disabled = false;
     if (rotateRightBtn) rotateRightBtn.disabled = false;
