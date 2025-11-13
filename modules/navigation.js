@@ -57,24 +57,25 @@ function animateRotation() {
     requestAnimationFrame(animateRotation);
 }
 
-// GÜNCELLENDİ: Navigasyon başlatma fonksiyonu
-const startNavigation = () => {
+// GÜNCELLENDİ: Fonksiyon artık dışarıdan çağrılabilmesi için export ediliyor.
+export const startNavigation = () => {
     if (!navigator.geolocation) {
         alert("Tarayıcınız konum servisini desteklemiyor.");
         return;
     }
+    // Eğer zaten izleme yapılıyorsa tekrar başlatma
+    if (locationWatcherId !== null) return;
 
     isNavigationModeActive = true;
     document.getElementById('navigation-toggle-btn').classList.add('active');
-    rotateLeftBtn.disabled = true;
-    rotateRightBtn.disabled = true;
+    if (rotateLeftBtn) rotateLeftBtn.disabled = true;
+    if (rotateRightBtn) rotateRightBtn.disabled = true;
 
     locationWatcherId = navigator.geolocation.watchPosition(
         (position) => {
             const { longitude, latitude, heading } = position.coords;
             const userCoordinates = [longitude, latitude];
 
-            // Kullanıcı işaretçisi yoksa oluştur, varsa güncelle
             if (!userMarker) {
                 const markerElement = document.createElement('div');
                 markerElement.className = 'user-marker';
@@ -83,13 +84,11 @@ const startNavigation = () => {
             } else {
                 userMarker.update({ coordinates: userCoordinates });
             }
-
-            // Harita kamerasını kullanıcıyı takip edecek şekilde güncelle
-            // Heading (gidilen yön) null değilse haritayı o yöne döndür
+            
             const cameraUpdate = {
-                tilt: 60, // 3D görünüm için eğim
-                azimuth: heading ?? currentCameraState.azimuth, // Gidilen yön veya mevcut açı
-                duration: 400 // Yumuşak geçiş
+                tilt: 60,
+                azimuth: heading ?? currentCameraState.azimuth,
+                duration: 400
             };
 
             mapInstance.update({
@@ -100,24 +99,23 @@ const startNavigation = () => {
         (error) => {
             alert("Konum bilgisi alınamadı. Lütfen konum servislerinin açık olduğundan emin olun.");
             console.error("Konum izleme hatası:", error);
-            stopNavigation(); // Hata durumunda navigasyonu durdur
+            stopNavigation();
         },
         { enableHighAccuracy: true }
     );
 };
 
-// GÜNCELLENDİ: Navigasyon durdurma fonksiyonu
-const stopNavigation = () => {
+// GÜNCELLENDİ: Fonksiyon artık dışarıdan çağrılabilmesi için export ediliyor.
+export const stopNavigation = () => {
     if (locationWatcherId !== null) {
         navigator.geolocation.clearWatch(locationWatcherId);
         locationWatcherId = null;
     }
     isNavigationModeActive = false;
     document.getElementById('navigation-toggle-btn').classList.remove('active');
-    rotateLeftBtn.disabled = false;
-    rotateRightBtn.disabled = false;
-
-    // Haritayı normal görünüme geri döndür
+    if (rotateLeftBtn) rotateLeftBtn.disabled = false;
+    if (rotateRightBtn) rotateRightBtn.disabled = false;
+    
     mapInstance.update({
         camera: { tilt: 0, duration: 500 }
     });
@@ -129,7 +127,6 @@ const stopNavigation = () => {
 export function initNavigation(map) {
     mapInstance = map;
 
-    // Butonları global değişkenlere ata
     rotateLeftBtn = document.getElementById('rotate-left');
     rotateRightBtn = document.getElementById('rotate-right');
     const navigationBtn = document.getElementById('navigation-toggle-btn');
