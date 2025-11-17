@@ -26,9 +26,6 @@ html, body, #app {
     box-shadow: var(--box-shadow);
 }
 
-/* =============================================== */
-/* 1. ÜST PANEL SIĞMA SORUNU ÇÖZÜMÜ               */
-/* =============================================== */
 .top-panel {
     top: 10px;
     left: 10px;
@@ -39,32 +36,11 @@ html, body, #app {
     align-items: center;
     gap: 15px;
 }
-.panel-left {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    flex-shrink: 1; /* Sol tarafın sıkışabilmesini sağlar */
-    min-width: 0; /* Flexbox'ın küçülme yapabilmesi için kritik */
-}
-.panel-right {
-    display: flex;
-    gap: 10px;
-    flex-shrink: 0; /* Sağdaki butonların sıkışmasını engeller */
-}
-.top-panel h1 {
-    font-size: 1.1em;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden; /* Uzun metin taşarsa gizle */
-    text-overflow: ellipsis; /* Gizlenen metnin sonuna ... koy */
-    max-width: 100%; /* Konteynerinden taşmasını engelle */
-}
+.panel-left { display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 1; min-width: 0; }
+.panel-right { display: flex; gap: 10px; flex-shrink: 0; }
+.top-panel h1 { font-size: 1.1em; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .top-panel span { font-size: 0.85em; color: #555; }
 
-
-/* =============================================== */
-/* 2. ALT PANEL GÖRÜNÜM SORUNLARI ÇÖZÜMÜ          */
-/* =============================================== */
 .bottom-panel {
     bottom: 0;
     left: 0;
@@ -74,9 +50,8 @@ html, body, #app {
     display: flex;
     flex-direction: column;
     max-height: 85vh;
-    /* Sadece transform ile animasyon, height'e dokunmuyoruz */
     transform: translateY(100%);
-    transition: transform 0.4s ease-out;
+    transition: transform 0.4s ease-out, height 0.4s ease-out; /* Height animasyonu eklendi */
 }
 .bottom-panel.visible {
     transform: translateY(0);
@@ -90,7 +65,6 @@ html, body, #app {
     margin: 0 auto;
     flex-shrink: 0;
     cursor: grab;
-    /* Dokunma alanını büyütmek için hile */
     padding: 10px;
     background-clip: content-box;
 }
@@ -98,37 +72,45 @@ html, body, #app {
 .panel-content {
     padding: 0 15px 15px 15px;
     overflow-y: auto;
-    /* Bu iki kural içeriğin görünmesi için hayati öneme sahip */
     flex: 1;
     min-height: 0;
 }
 
-/* Farklı panel tipleri için yükseklikler */
-.bottom-panel.liste-acik { height: 50vh; }
-.bottom-panel:not(.liste-acik) { height: auto; }
-
-
-/* ... Diğer stiller (butonlar, kartlar vb.) ... */
-button, select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background-color: white; cursor: pointer; font-size: 0.9em; }
-.ymaps3x0--marker .placemark { width: 18px; height: 18px; background-color: #DB342A; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
-.ymaps3x0--marker .placemark.selected { background-color: #8A2BE2; transform: scale(1.4); z-index: 20; }
-.close-panel-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background-color: #f1f1f1; border-radius: 50%; z-index: 2; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #555; }
-.action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-.action-buttons button { flex-grow: 1; text-align: center; flex-basis: calc(50% - 10px); }
-.gorev-karti { padding: 10px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 10px; }
+.gorev-karti { padding: 10px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 10px; background: rgba(255,255,255,0.6); }
 .gorev-karti h4 { margin: 0 0 5px 0; font-size: 1em; }
 .gorev-karti p { margin: 2px 0; font-size: 0.85em; color: #444; }
 
+.action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+.action-buttons button { flex-grow: 1; text-align: center; flex-basis: calc(50% - 10px); }
 
-/* =============================================== */
-/* KONTROL BUTONLARI                              */
-/* =============================================== */
-.custom-controls { position: absolute; z-index: 5; top: 50%; display: flex; width: 100%; justify-content: space-between; pointer-events: none; transition: transform 0.4s ease-out; }
+.close-panel-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background-color: #f1f1f1; border-radius: 50%; z-index: 2; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #555; border:none; }
+
+.custom-controls { position: absolute; z-index: 5; top: 50%; transform: translateY(-50%); display: flex; width: 100%; justify-content: space-between; pointer-events: none; transition: transform 0.4s ease-out; }
 .control-group { pointer-events: all; margin: 0 10px; }
 .control-group button, #navigation-toggle-btn { background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.4s ease-out; }
 #navigation-toggle-btn { position: absolute; z-index: 5; bottom: 20px; right: 20px; }
 .user-marker { width: 22px; height: 22px; border-radius: 50%; background-color: #007bff; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); transform: translate(-50%, -50%); }
 
+
+/* =============================================== */
+/* MOBİL GÖRÜNÜM ÖZEL KURALLARI                    */
+/* =============================================== */
 @media (max-width: 600px) {
     .control-group button, #navigation-toggle-btn { width: 44px; height: 44px; font-size: 20px; }
+
+    /* 1. TEKİL GÖRÜNÜM (DETAY) PANELİ İYİLEŞTİRMESİ */
+    .bottom-panel:not(.liste-acik) {
+        height: 35vh; /* Kompakt bir başlangıç yüksekliği */
+    }
+    
+    /* 2. LİSTE GÖRÜNÜMÜ YÜKSEKLİĞİ */
+    .bottom-panel.liste-acik {
+        height: 50vh; /* Liste için varsayılan yükseklik */
+    }
+
+    /* 3. MOBİL İÇİN DAHA KOMPAKT BUTONLAR */
+    .action-buttons button {
+        padding: 10px 8px; /* Dikey padding'i azalt */
+        font-size: 0.9em;
+    }
 }
