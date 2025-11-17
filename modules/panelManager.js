@@ -19,8 +19,7 @@ export function initPanelManager(cbs) {
 
 function showDetailView(gorev) {
     altPanel.classList.remove('liste-acik');
-    // Detay görünümü için panelin yüksekliği CSS'te 'auto' olarak ayarlandı
-    altPanel.style.height = 'auto'; 
+    // GÜNCELLENDİ: Yükseklik artık CSS'ten geliyor, JS'te style vermeye gerek yok.
     altPanel.innerHTML = `
         <div class="panel-handle"></div>
         <div class="panel-content">
@@ -45,8 +44,7 @@ function showDetailView(gorev) {
 
 function showListView(filtrelenmisGorevler) {
     altPanel.classList.add('liste-acik');
-    // Liste görünümü için yüksekliği CSS'te '50vh' olarak ayarlandı
-    altPanel.style.height = '50vh';
+    // GÜNCELLENDİ: Yükseklik artık CSS'ten geliyor.
     altPanel.innerHTML = `
         <div class="panel-handle"></div>
         <div class="panel-content">
@@ -69,14 +67,13 @@ function showListView(filtrelenmisGorevler) {
 
 function hidePanel() {
     altPanel.classList.remove('visible');
-    updateControlPositions(0);
+    updateControlPositions(0); // Butonları orijinal pozisyonuna döndür
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
+    // Artık height'i sıfırlamaya gerek yok, transform yeterli
 }
 
 function openPanel() {
     altPanel.classList.add('visible');
-    // Panelin açıldıktan sonraki anlık yüksekliğine göre butonları ayarla
-    // requestAnimationFrame tarayıcının paneli çizmesini bekler
     requestAnimationFrame(() => {
         updateControlPositions(altPanel.offsetHeight);
     });
@@ -100,7 +97,7 @@ function attachPanelEvents(gorev = null) {
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('touchstart', startDrag, { passive: false });
     }
-
+    // Olay dinleyicileri (kart, buton vb.) aynı kalıyor
     if (altPanel.classList.contains('liste-acik')) {
         altPanel.querySelectorAll('.gorev-karti').forEach(kart => {
             kart.addEventListener('click', (e) => {
@@ -118,14 +115,14 @@ function attachPanelEvents(gorev = null) {
     }
 }
 
-// --- SÜRÜKLEME FONKSİYONLARI ---
+// GÜNCELLENDİ: Sürükleme fonksiyonları artık height'i dinamik olarak ayarlıyor
 function startDrag(e) {
     e.preventDefault();
     isDragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     startHeight = altPanel.offsetHeight;
-    altPanel.style.transition = 'none'; // Sürüklerken animasyonları kapat
-    document.body.style.userSelect = 'none'; // Metin seçimini engelle
+    altPanel.style.transition = 'none';
+    document.body.style.userSelect = 'none';
 
     document.addEventListener('mousemove', doDrag);
     document.addEventListener('touchmove', doDrag);
@@ -143,7 +140,7 @@ function doDrag(e) {
     if (newHeight > maxHeight) newHeight = maxHeight;
     if (newHeight < 100) newHeight = 100;
 
-    altPanel.style.height = `${newHeight}px`;
+    altPanel.style.height = `${newHeight}px`; // Sürüklerken yüksekliği değiştir
     updateControlPositions(newHeight);
 }
 
@@ -154,13 +151,11 @@ function stopDrag() {
     document.body.style.userSelect = 'auto';
 
     const currentHeight = altPanel.offsetHeight;
-    if (currentHeight < 150) { // Yeterince aşağı çekildiyse kapat
+    if (currentHeight < 150) {
         callbacks.onDeselect();
-    } else if (altPanel.classList.contains('liste-acik')) { // Liste ise %50'ye geri çek
-        const targetHeight = window.innerHeight * 0.5;
-        altPanel.style.height = `${targetHeight}px`;
-        updateControlPositions(targetHeight);
     }
+    // Sürükleme bittikten sonra panele sabit bir hedef yükseklik vermeye gerek yok,
+    // kullanıcı bıraktığı yerde kalabilir (sınırlar dahilinde).
     
     document.removeEventListener('mousemove', doDrag);
     document.removeEventListener('touchmove', doDrag);
