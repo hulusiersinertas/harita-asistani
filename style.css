@@ -1,9 +1,5 @@
-/* ================================================================================ */
-/* DOSYA YOLU: style.css (BU KODUN TAMAMINI KOPYALAYIP MEVCUT DOSYAYLA DEĞİŞTİRİN) */
-/* ================================================================================ */
-
 :root {
-    --panel-background: rgba(255, 255, 255, 0.8);
+    --panel-background: rgba(255, 255, 255, 0.85);
     --panel-border-radius: 12px;
     --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -15,6 +11,7 @@ html, body, #app {
     margin: 0;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #app {
@@ -43,28 +40,10 @@ html, body, #app {
     gap: 10px;
 }
 
-.top-panel h1 {
-    font-size: 1.2em;
-    margin: 0;
-    white-space: nowrap;
-}
-
-.top-panel span {
-    font-size: 0.9em;
-    color: #555;
-    white-space: nowrap;
-}
-
-.panel-left {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.panel-right {
-    display: flex;
-    gap: 10px;
-}
+.top-panel h1 { font-size: 1.2em; margin: 0; white-space: nowrap; }
+.top-panel span { font-size: 0.9em; color: #555; white-space: nowrap; }
+.panel-left { display: flex; flex-direction: column; align-items: flex-start; }
+.panel-right { display: flex; gap: 10px; }
 
 .bottom-panel {
     bottom: 10px;
@@ -75,20 +54,7 @@ html, body, #app {
     overflow-y: auto;
 }
 
-.bottom-panel.liste-acik {
-    max-height: 50vh;
-    height: auto;
-}
-
-.hidden {
-    display: none;
-}
-
-#gorev-detay .placeholder {
-    margin: 0;
-    color: #666;
-    text-align: center;
-}
+.bottom-panel.liste-acik { max-height: 50vh; height: auto; }
 
 button, select {
     padding: 8px 12px;
@@ -99,14 +65,8 @@ button, select {
     font-size: 0.9em;
 }
 
-button:hover {
-    background-color: #f0f0f0;
-}
-
-select:disabled {
-    cursor: not-allowed;
-    background-color: #f5f5f5;
-}
+button:hover { background-color: #f0f0f0; }
+select:disabled { cursor: not-allowed; background-color: #f5f5f5; }
 
 .ymaps3x0--marker .placemark {
     width: 18px;
@@ -119,56 +79,16 @@ select:disabled {
     transition: all 0.2s ease;
 }
 
-.ymaps3x0--marker .placemark.selected {
-    background-color: #8A2BE2;
-    transform: scale(1.4);
-    z-index: 20;
-}
+.ymaps3x0--marker .placemark.selected { background-color: #8A2BE2; transform: scale(1.4); z-index: 20; }
+.ymaps3x0--marker .placemark.filtered-out { background-color: #FFFF00; opacity: 0.7; }
 
-.ymaps3x0--marker .placemark.filtered-out {
-    background-color: #FFFF00;
-    opacity: 0.7;
-}
-
-#gorev-listesi {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-}
-
-.gorev-karti {
-    padding: 10px;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-left: 5px solid #007bff;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.gorev-karti:hover {
-    background-color: rgba(230, 240, 255, 0.9);
-}
-
-.gorev-karti.no-coords {
-    border-left-color: #dc3545;
-}
-
-.gorev-karti h4 {
-    margin: 0 0 5px 0;
-    font-size: 1em;
-}
-
-.gorev-karti p {
-    margin: 2px 0;
-    font-size: 0.85em;
-    color: #444;
-}
-
-#alt-panel #gorev-detay {
-    position: relative;
-    padding-right: 40px;
-}
+#gorev-listesi { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.gorev-karti { padding: 10px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.7); border-left: 5px solid #007bff; cursor: pointer; transition: background-color 0.2s; }
+.gorev-karti:hover { background-color: rgba(230, 240, 255, 0.9); }
+.gorev-karti.no-coords { border-left-color: #dc3545; }
+.gorev-karti h4 { margin: 0 0 5px 0; font-size: 1em; }
+.gorev-karti p { margin: 2px 0; font-size: 0.85em; color: #444; }
+#alt-panel #gorev-detay { position: relative; padding-right: 40px; }
 
 .close-panel-btn {
     position: absolute;
@@ -188,20 +108,16 @@ select:disabled {
     justify-content: center;
     padding: 0 0 2px 0;
     transition: background-color 0.2s, color 0.2s;
+    z-index: 2;
 }
 
-.close-panel-btn:hover {
-    background-color: #e53935;
-    color: white;
-}
+.close-panel-btn:hover { background-color: #e53935; color: white; }
 
-.action-buttons button {
-    flex-grow: 1;
-    text-align: center;
-}
+.action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+.action-buttons button { flex-grow: 1; text-align: center; flex-basis: calc(50% - 10px); }
 
 /* =============================================== */
-/* NAVİGASYON VE KONTROL STİLLERİ */
+/* KONTROL BUTONLARI (Varsayılan - Masaüstü) */
 /* =============================================== */
 
 .custom-controls {
@@ -213,12 +129,11 @@ select:disabled {
     width: 100%;
     justify-content: space-between;
     pointer-events: none;
+    transition: transform 0.4s ease-in-out; /* Animasyon için eklendi */
 }
 
 .control-group {
     pointer-events: all;
-    display: flex;
-    flex-direction: column;
     margin: 0 10px;
 }
 
@@ -245,55 +160,70 @@ select:disabled {
     right: 20px;
 }
 
-/* Liste görünümü için buton konumu (Tüm ekran boyutları) */
-.bottom-panel.liste-acik ~ #navigation-toggle-btn {
-    bottom: calc(50vh + 20px); 
-}
-
-/* Detay görünümü için buton konumu (SADECE GENİŞ EKRANLAR - Varsayılan) */
-.bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
-    bottom: 200px; 
-}
-
-#navigation-toggle-btn.active {
-    background-color: #007bff;
-    color: white;
-}
-
-.user-marker {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background-color: #007bff;
-    border: 3px solid white;
-    box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    transform: translate(-50%, -50%);
-}
+#navigation-toggle-btn.active { background-color: #007bff; color: white; }
+.user-marker { width: 22px; height: 22px; border-radius: 50%; background-color: #007bff; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); transform: translate(-50%, -50%); }
 
 /* =============================================== */
-/* MOBİL GÖRÜNÜM DÜZELTMELERİ */
+/* MOBİL GÖRÜNÜM DÜZELTMELERİ (max-width: 600px) */
 /* =============================================== */
 @media (max-width: 600px) {
-    /* Üst panelin mobil uyumluluğu */
-    .top-panel {
-        flex-direction: column;
-        align-items: flex-start;
+    /* --- ÜST PANEL --- */
+    .top-panel { flex-direction: column; align-items: flex-start; }
+    .panel-right { width: 100%; margin-top: 10px; }
+    .panel-right > * { flex-grow: 1; }
+
+    /* --- ALT PANEL (BOTTOM SHEET GÖRÜNÜMÜ) --- */
+    .bottom-panel {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%); 
+        transition: transform 0.4s ease-in-out;
+    }
+    .bottom-panel[style*="display: block"] {
+        transform: translateY(0);
+    }
+    .bottom-panel.liste-acik { height: 85vh; max-height: 85vh; }
+    .bottom-panel:not(.liste-acik) { height: auto; max-height: 85vh; }
+
+    /* --- KONTROL BUTONLARI (MOBİL) --- */
+    /* Döndürme butonlarını küçült */
+    .control-group button {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }
+    /* Navigasyon butonunu küçült */
+    #navigation-toggle-btn {
+        width: 44px;
+        height: 44px;
     }
 
-    .panel-right {
-        width: 100%;
-        margin-top: 10px;
+    /* --- KONTROL BUTONLARININ PANEL AÇIKKEN POZİSYONU --- */
+    
+    /* 1. Döndürme Butonları (Sağ ve Sol) */
+    /* Detay paneli açıkken */
+    .bottom-panel[style*="display: block"]:not(.liste-acik) ~ .custom-controls {
+        /* Mevcut dikey ortalamayı (-50%) korurken, panelin yüksekliğinin yarısı kadar yukarı ittir. */
+        /* Bu, butonların kalan boşluğun ortasında kalmasını sağlar. */
+        transform: translateY(-50%) translateY(-110px); 
+    }
+    /* Liste paneli açıkken */
+    .bottom-panel.liste-acik[style*="display: block"] ~ .custom-controls {
+        /* Ekran yüksekliğinin yarısı (%85vh / 2) kadar yukarı ittir. */
+        transform: translateY(-50%) translateY(calc(-42.5vh));
     }
 
-    .panel-right > * {
-        flex-grow: 1;
+    /* 2. Navigasyon Butonu (Sağ Alt) */
+    /* Detay paneli açıkken */
+    .bottom-panel[style*="display: block"]:not(.liste-acik) ~ #navigation-toggle-btn {
+        /* Panel yüksekliği (yaklaşık 200px) + boşluk (20px) */
+        bottom: 220px;
     }
-
-    /* === MOBİL İÇİN NAVİGASYON BUTONU DÜZELTMESİ === */
-    /* Detay görünümü için buton konumu (SADECE MOBİL EKRANLAR - Kuralı Ezme) */
-    /* Panelin yüksekliğine yetecek daha güvenli bir mesafe belirliyoruz */
-    .bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
-        bottom: 240px; 
+    /* Liste paneli açıkken */
+    .bottom-panel.liste-acik[style*="display: block"] ~ #navigation-toggle-btn {
+        /* Panel yüksekliği (85vh) + boşluk (20px) */
+        bottom: calc(85vh + 20px);
     }
 }
-
