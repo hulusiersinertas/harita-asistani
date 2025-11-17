@@ -1,7 +1,7 @@
 :root {
-    --panel-background: rgba(255, 255, 255, 0.85);
-    --panel-border-radius: 12px;
-    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --panel-background: rgba(255, 255, 255, 0.9);
+    --panel-border-radius: 16px;
+    --box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.15);
 }
 
 html, body, #app {
@@ -20,12 +20,15 @@ html, body, #app {
     position: absolute;
     z-index: 10;
     background-color: var(--panel-background);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: var(--panel-border-radius);
     box-shadow: var(--box-shadow);
 }
 
+/* =============================================== */
+/* 1. ÜST PANEL SIĞMA SORUNU ÇÖZÜMÜ               */
+/* =============================================== */
 .top-panel {
     top: 10px;
     left: 10px;
@@ -34,34 +37,34 @@ html, body, #app {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px; /* Boşluğu biraz artırdım */
+    gap: 15px;
 }
-
 .panel-left {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    /* GÜNCELLENDİ: Sol panelin gerektiğinde küçülebilmesini sağlar */
-    flex-shrink: 1;
-    min-width: 0;
+    flex-shrink: 1; /* Sol tarafın sıkışabilmesini sağlar */
+    min-width: 0; /* Flexbox'ın küçülme yapabilmesi için kritik */
 }
 .panel-right {
     display: flex;
     gap: 10px;
-    /* GÜNCELLENDİ: Sağ panelin küçülmesini engeller, kontrolleri korur */
-    flex-shrink: 0;
+    flex-shrink: 0; /* Sağdaki butonların sıkışmasını engeller */
 }
 .top-panel h1 {
-    font-size: 1.2em;
+    font-size: 1.1em;
     margin: 0;
     white-space: nowrap;
-    /* GÜNCELLENDİ: Çok uzunsa ... ile keser */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: hidden; /* Uzun metin taşarsa gizle */
+    text-overflow: ellipsis; /* Gizlenen metnin sonuna ... koy */
+    max-width: 100%; /* Konteynerinden taşmasını engelle */
 }
-.top-panel span { font-size: 0.9em; color: #555; white-space: nowrap; }
+.top-panel span { font-size: 0.85em; color: #555; }
 
 
+/* =============================================== */
+/* 2. ALT PANEL GÖRÜNÜM SORUNLARI ÇÖZÜMÜ          */
+/* =============================================== */
 .bottom-panel {
     bottom: 0;
     left: 0;
@@ -70,22 +73,13 @@ html, body, #app {
     border-radius: 20px 20px 0 0;
     display: flex;
     flex-direction: column;
-    height: auto;
     max-height: 85vh;
-    /* GÜNCELLENDİ: Animasyon için sadece transform kullanılıyor, height değil */
+    /* Sadece transform ile animasyon, height'e dokunmuyoruz */
     transform: translateY(100%);
-    transition: transform 0.4s ease-in-out;
+    transition: transform 0.4s ease-out;
 }
 .bottom-panel.visible {
     transform: translateY(0);
-}
-
-.panel-content {
-    padding: 0 15px 15px 15px;
-    overflow-y: auto;
-    /* GÜNCELLENDİ: Bu iki kural panelin içeriğinin görünmesi için hayati öneme sahip */
-    flex: 1;
-    min-height: 0;
 }
 
 .panel-handle {
@@ -93,30 +87,48 @@ html, body, #app {
     height: 5px;
     background-color: #ccc;
     border-radius: 2.5px;
-    margin: 8px auto;
+    margin: 0 auto;
     flex-shrink: 0;
     cursor: grab;
-    /* GÜNCELLENDİ: Tutamaca biraz padding ekleyerek dokunma alanını büyüt */
+    /* Dokunma alanını büyütmek için hile */
     padding: 10px;
-    margin-top: 0;
-    background-clip: content-box; /* Padding'i saydam yapar, sadece ortadaki çizgi görünür */
+    background-clip: content-box;
 }
 
-/* ... Diğer stiller aynı ... */
-button, select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background-color: white; cursor: pointer; font-size: 0.9em; }
-.ymaps3x0--marker .placemark { width: 18px; height: 18px; background-color: #DB342A; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); cursor: pointer; transition: all 0.2s ease; }
-.ymaps3x0--marker .placemark.selected { background-color: #8A2BE2; transform: scale(1.4); z-index: 20; }
-.close-panel-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background-color: #f1f1f1; border-radius: 50%; z-index: 2; /* ... */ }
-.action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+.panel-content {
+    padding: 0 15px 15px 15px;
+    overflow-y: auto;
+    /* Bu iki kural içeriğin görünmesi için hayati öneme sahip */
+    flex: 1;
+    min-height: 0;
+}
 
-/* --- KONTROL BUTONLARI --- */
-.custom-controls { position: absolute; z-index: 5; top: 50%; transform: translateY(-50%); display: flex; width: 100%; justify-content: space-between; pointer-events: none; transition: transform 0.4s ease-in-out; }
+/* Farklı panel tipleri için yükseklikler */
+.bottom-panel.liste-acik { height: 50vh; }
+.bottom-panel:not(.liste-acik) { height: auto; }
+
+
+/* ... Diğer stiller (butonlar, kartlar vb.) ... */
+button, select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background-color: white; cursor: pointer; font-size: 0.9em; }
+.ymaps3x0--marker .placemark { width: 18px; height: 18px; background-color: #DB342A; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+.ymaps3x0--marker .placemark.selected { background-color: #8A2BE2; transform: scale(1.4); z-index: 20; }
+.close-panel-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background-color: #f1f1f1; border-radius: 50%; z-index: 2; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #555; }
+.action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+.action-buttons button { flex-grow: 1; text-align: center; flex-basis: calc(50% - 10px); }
+.gorev-karti { padding: 10px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 10px; }
+.gorev-karti h4 { margin: 0 0 5px 0; font-size: 1em; }
+.gorev-karti p { margin: 2px 0; font-size: 0.85em; color: #444; }
+
+
+/* =============================================== */
+/* KONTROL BUTONLARI                              */
+/* =============================================== */
+.custom-controls { position: absolute; z-index: 5; top: 50%; display: flex; width: 100%; justify-content: space-between; pointer-events: none; transition: transform 0.4s ease-out; }
 .control-group { pointer-events: all; margin: 0 10px; }
-.control-group button, #navigation-toggle-btn { background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.4s ease-in-out; }
+.control-group button, #navigation-toggle-btn { background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.4s ease-out; }
 #navigation-toggle-btn { position: absolute; z-index: 5; bottom: 20px; right: 20px; }
 .user-marker { width: 22px; height: 22px; border-radius: 50%; background-color: #007bff; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); transform: translate(-50%, -50%); }
 
 @media (max-width: 600px) {
-    /* Mobil için butonları küçült */
     .control-group button, #navigation-toggle-btn { width: 44px; height: 44px; font-size: 20px; }
 }
