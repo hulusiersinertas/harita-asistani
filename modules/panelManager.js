@@ -4,11 +4,7 @@ const altPanel = document.getElementById('alt-panel');
 const gorunumDegistirBtn = document.getElementById('gorunum-degistir-btn');
 
 let callbacks = {};
-
-// Sürükleme durumu için değişkenler
-let isDragging = false;
-let startY = 0;
-let startHeight = 0;
+let isDragging = false, startY = 0, startHeight = 0;
 
 export function initPanelManager(cbs) {
     callbacks = cbs;
@@ -23,6 +19,8 @@ export function initPanelManager(cbs) {
 
 function showDetailView(gorev) {
     altPanel.classList.remove('liste-acik');
+    // Detay görünümü için panelin yüksekliği CSS'te 'auto' olarak ayarlandı
+    altPanel.style.height = 'auto'; 
     altPanel.innerHTML = `
         <div class="panel-handle"></div>
         <div class="panel-content">
@@ -40,14 +38,15 @@ function showDetailView(gorev) {
         </div>
     `;
     
-    // GÜNCELLENDİ: Paneli açma mantığı basitleştirildi
-    openPanel(); 
+    openPanel();
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
-    attachPanelEvents(gorev); // Görev verisini de gönder
+    attachPanelEvents(gorev);
 }
 
 function showListView(filtrelenmisGorevler) {
     altPanel.classList.add('liste-acik');
+    // Liste görünümü için yüksekliği CSS'te '50vh' olarak ayarlandı
+    altPanel.style.height = '50vh';
     altPanel.innerHTML = `
         <div class="panel-handle"></div>
         <div class="panel-content">
@@ -63,7 +62,6 @@ function showListView(filtrelenmisGorevler) {
         </div>
     `;
     
-    // GÜNCELLENDİ: Paneli açma mantığı basitleştirildi
     openPanel();
     gorunumDegistirBtn.textContent = 'Haritayı Göster';
     attachPanelEvents();
@@ -75,25 +73,13 @@ function hidePanel() {
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
 }
 
-// GÜNCELLENDİ: openPanel artık yükseklik parametresi almıyor
 function openPanel() {
-    // Önce paneli görünür yap
     altPanel.classList.add('visible');
-
-    // Animasyonun bitmesini bekle ve sonra buton pozisyonlarını ayarla
-    // Bu, panelin gerçek yüksekliğinin doğru ölçülmesini sağlar
-    setTimeout(() => {
-        const currentHeight = altPanel.offsetHeight;
-        updateControlPositions(currentHeight);
-        // Liste görünümü ise yüksekliğini %50 ile sınırla
-        if (altPanel.classList.contains('liste-acik')) {
-            altPanel.style.height = '50vh';
-            updateControlPositions(window.innerHeight * 0.5);
-        } else {
-            // Detay görünümü ise yüksekliği auto olsun
-            altPanel.style.height = 'auto';
-        }
-    }, 400); // CSS transition süresiyle aynı
+    // Panelin açıldıktan sonraki anlık yüksekliğine göre butonları ayarla
+    // requestAnimationFrame tarayıcının paneli çizmesini bekler
+    requestAnimationFrame(() => {
+        updateControlPositions(altPanel.offsetHeight);
+    });
 }
 
 function updateControlPositions(panelHeight) {
@@ -109,7 +95,6 @@ function updateControlPositions(panelHeight) {
 
 function attachPanelEvents(gorev = null) {
     document.getElementById('close-btn').addEventListener('click', () => callbacks.onDeselect());
-
     const handle = altPanel.querySelector('.panel-handle');
     if (handle) {
         handle.addEventListener('mousedown', startDrag);
@@ -122,7 +107,7 @@ function attachPanelEvents(gorev = null) {
                 callbacks.onGorevSelect(parseInt(e.currentTarget.dataset.id, 10));
             });
         });
-    } else if(gorev) { // Detay görünümü ise
+    } else if(gorev) {
         document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
         document.getElementById('route-btn').addEventListener('click', (e) => callbacks.onRouteClick(gorev, e.target));
         document.getElementById('delivered-btn').addEventListener('click', (e) => callbacks.onStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
@@ -133,18 +118,14 @@ function attachPanelEvents(gorev = null) {
     }
 }
 
-
 // --- SÜRÜKLEME FONKSİYONLARI ---
 function startDrag(e) {
     e.preventDefault();
     isDragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     startHeight = altPanel.offsetHeight;
-    altPanel.style.transition = 'none';
-    const customControls = document.querySelector('.custom-controls');
-    const navigationBtn = document.getElementById('navigation-toggle-btn');
-    if(customControls) customControls.style.transition = 'none';
-    if(navigationBtn) navigationBtn.style.transition = 'none';
+    altPanel.style.transition = 'none'; // Sürüklerken animasyonları kapat
+    document.body.style.userSelect = 'none'; // Metin seçimini engelle
 
     document.addEventListener('mousemove', doDrag);
     document.addEventListener('touchmove', doDrag);
@@ -169,21 +150,22 @@ function doDrag(e) {
 function stopDrag() {
     if (!isDragging) return;
     isDragging = false;
-    altPanel.style.transition = 'transform 0.4s ease-in-out, height 0.4s ease-in-out';
-    const customControls = document.querySelector('.custom-controls');
-    const navigationBtn = document.getElementById('navigation-toggle-btn');
-    if(customControls) customControls.style.transition = 'transform 0.4s ease-in-out';
-    if(navigationBtn) navigationBtn.style.transition = 'bottom 0.4s ease-in-out';
+    altPanel.style.transition = 'transform 0.4s ease-out, height 0.4s ease-out';
+    document.body.style.userSelect = 'auto';
 
     const currentHeight = altPanel.offsetHeight;
-    if (currentHeight < 150) {
+    if (currentHeight < 150) { // Yeterince aşağı çekildiyse kapat
         callbacks.onDeselect();
-    } else if (altPanel.classList.contains('liste-acik')) {
-        // Liste için bir hedef noktaya çek (örn: %50)
+    } else if (altPanel.classList.contains('liste-acik')) { // Liste ise %50'ye geri çek
         const targetHeight = window.innerHeight * 0.5;
         altPanel.style.height = `${targetHeight}px`;
         updateControlPositions(targetHeight);
     }
+    
+    document.removeEventListener('mousemove', doDrag);
+    document.removeEventListener('touchmove', doDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchend', stopDrag);
 }
 
 export { showDetailView, showListView, hidePanel };
