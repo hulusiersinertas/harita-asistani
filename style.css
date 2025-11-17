@@ -44,32 +44,49 @@ html, body, #app {
 .panel-right { display: flex; gap: 10px; }
 
 .bottom-panel {
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 15px;
-    max-height: 90%; 
-    overflow-y: auto;
+    bottom: 0; /* GÜNCELLENDİ: Kenar boşluğunu kaldırıp tam yasla */
+    left: 0;
+    right: 0;
+    padding: 0;
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    /* GÜNCELLENDİ: Animasyon için transform kullanmak daha performanslı ve güvenilir */
+    transform: translateY(100%);
+    transition: transform 0.4s ease-in-out;
+    height: auto; /* Yüksekliği içeriği belirleyecek */
+    max-height: 85vh; /* Ekranın %85'inden fazla büyümesin */
+}
+/* Paneli görünür yapmak için sadece transform'u değiştir */
+.bottom-panel.visible {
+    transform: translateY(0);
 }
 
-button, select {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    background-color: white;
-    cursor: pointer;
-    font-size: 0.9em;
+.panel-content {
+    padding: 20px 15px 15px 15px;
+    overflow-y: auto;
+    /* GÜNCELLENDİ: Bu kritik. Flex container'da içeriğin esnemesini ve görünmesini sağlar */
+    flex: 1 1 auto; 
+    min-height: 0; /* Flexbox'ın doğru küçülme yapabilmesi için */
+}
+
+.panel-handle {
+    width: 40px;
+    height: 5px;
+    background-color: #ccc;
+    border-radius: 2.5px;
+    margin: 8px auto;
+    flex-shrink: 0;
+    cursor: grab;
 }
 
 /* ... Diğer stiller aynı ... */
+button, select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background-color: white; cursor: pointer; font-size: 0.9em; }
 .ymaps3x0--marker .placemark { width: 18px; height: 18px; background-color: #DB342A; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); cursor: pointer; transition: all 0.2s ease; }
 .ymaps3x0--marker .placemark.selected { background-color: #8A2BE2; transform: scale(1.4); z-index: 20; }
 .ymaps3x0--marker .placemark.filtered-out { background-color: #FFFF00; opacity: 0.7; }
 #gorev-listesi { display: flex; flex-direction: column; gap: 10px; height: 100%; }
 .gorev-karti { padding: 10px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.7); border-left: 5px solid #007bff; cursor: pointer; transition: background-color 0.2s; }
-.gorev-karti h4 { margin: 0 0 5px 0; font-size: 1em; }
-.gorev-karti p { margin: 2px 0; font-size: 0.85em; color: #444; }
-
 .close-panel-btn { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 50%; font-size: 20px; font-weight: bold; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 0 2px 0; z-index: 2; }
 .action-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
 .action-buttons button { flex-grow: 1; text-align: center; flex-basis: calc(50% - 10px); }
@@ -79,100 +96,39 @@ button, select {
 .control-group { pointer-events: all; margin: 0 10px; }
 .control-group button, #navigation-toggle-btn { background-color: white; border: 1px solid #ccc; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.4s ease-in-out; }
 #navigation-toggle-btn { position: absolute; z-index: 5; bottom: 20px; right: 20px; }
-#navigation-toggle-btn.active { background-color: #007bff; color: white; }
 .user-marker { width: 22px; height: 22px; border-radius: 50%; background-color: #007bff; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); transform: translate(-50%, -50%); }
+
 
 /* =============================================== */
 /* MOBİL GÖRÜNÜM DÜZELTMELERİ (max-width: 600px) */
 /* =============================================== */
 @media (max-width: 600px) {
-    /* 1-) ÜST PANELİ SIĞDIRMA */
+    /* 3-) ÜST PANELİ SIĞDIRMA (GÜNCELLENDİ) */
     .top-panel {
-        padding: 8px 12px; /* İç boşluğu azalt */
+        flex-wrap: wrap; /* En önemli kural: Sığmazsa alt satıra geç */
+        padding: 8px 12px;
         gap: 8px;
     }
-    .top-panel h1 {
-        font-size: 1em; /* Başlık yazısını küçült */
+    .panel-left {
+        flex-basis: 100%; /* Sol taraf her zaman tam genişlikte başlasın */
     }
-    .top-panel span {
-        font-size: 0.8em; /* Kalan görev sayısını küçült */
+    .panel-right {
+        flex-basis: 100%; /* Sağ taraf da tam genişlikte olsun (alt satıra geçer) */
+        justify-content: space-between; /* İçindeki elemanları dağıt */
     }
-    .panel-right > * {
-        padding: 6px 10px; /* Buton ve select'in iç boşluğunu azalt */
-        font-size: 0.85em;
-    }
-
-    /* --- ALT PANEL (BOTTOM SHEET) --- */
-    .bottom-panel {
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: 20px 20px 0 0;
-        /* YENİ: Animasyonu transform yerine height üzerinden yapacağız */
-        transform: none;
-        transition: height 0.4s ease-in-out;
-        height: 0; /* Başlangıçta kapalı */
-        padding: 0; /* Padding'i iç konteynere taşıyacağız */
-        display: flex; /* İçeriği yönetmek için flexbox */
-        flex-direction: column;
-    }
-    /* Panel içeriğini saran bir div oluşturacağız, asıl padding ve scroll burada olacak */
-    .panel-content {
-        padding: 20px 15px 15px 15px;
-        overflow-y: auto;
-        flex-grow: 1; /* Kalan tüm alanı kapla */
-    }
+    .top-panel h1 { font-size: 1em; }
+    .top-panel span { font-size: 0.8em; }
+    .panel-right > * { padding: 6px 10px; font-size: 0.85em; }
     
-    /* 2-) LİSTE GÖRÜNÜMÜ YÜKSEKLİK SINIRI */
+    /* --- ALT PANEL --- */
+    /* Yüksekliği JS ile yöneteceğiz, bu yüzden CSS'ten kaldırıyoruz */
     .bottom-panel.liste-acik {
-        /* YENİ: Artık başlangıç yüksekliği %50, sürüklenerek artırılabilir */
-        height: 50vh; 
-        max-height: 85vh; /* En fazla %85'e kadar açılabilsin */
-    }
-    .bottom-panel:not(.liste-acik) {
-        height: auto;
-        max-height: 85vh;
-    }
-    /* Paneli görünür yapmak için sadece height'i değiştireceğiz */
-    .bottom-panel.visible {
-        /* Detay görünümü için içeriğe göre yükseklik ver */
-        height: auto;
-        /* İçerik yüksekliği 50vh'den fazlaysa 50vh olsun */
-        max-height: 50vh;
-    }
-    .bottom-panel.liste-acik.visible {
-        height: 50vh;
-    }
-    
-    /* 3-) TUTAMAÇ (HANDLE) STİLİ */
-    .panel-handle {
-        width: 40px;
-        height: 5px;
-        background-color: #ccc;
-        border-radius: 2.5px;
-        margin: 8px auto; /* Panelin üst ortasına konumlandır */
-        flex-shrink: 0; /* Küçülmesin */
-        cursor: grab;
+        /* Liste görünümü için başlangıç yüksekliği JS ile ayarlanacak */
     }
 
-    /* --- KONTROL BUTONLARI (MOBİL) --- */
+    /* --- KONTROL BUTONLARI --- */
     .control-group button, #navigation-toggle-btn { width: 44px; height: 44px; font-size: 20px; }
     
-    /* Butonların panel açıkkenki pozisyonu */
-    .bottom-panel.visible:not(.liste-acik) ~ .custom-controls,
-    .bottom-panel[style*="height"]:not([style*="height: 0px"]):not(.liste-acik) ~ .custom-controls {
-        transform: translateY(-50%) translateY(-110px); 
-    }
-    .bottom-panel.visible.liste-acik ~ .custom-controls,
-    .bottom-panel[style*="height"]:not([style*="height: 0px"]).liste-acik ~ .custom-controls {
-        transform: translateY(-50%) translateY(calc(-25vh)); /* %50'nin yarısı */
-    }
-    .bottom-panel.visible:not(.liste-acik) ~ #navigation-toggle-btn,
-    .bottom-panel[style*="height"]:not([style*="height: 0px"]):not(.liste-acik) ~ #navigation-toggle-btn {
-        bottom: 220px;
-    }
-    .bottom-panel.visible.liste-acik ~ #navigation-toggle-btn,
-    .bottom-panel[style*="height"]:not([style*="height: 0px"]).liste-acik ~ #navigation-toggle-btn {
-        bottom: calc(50vh + 20px);
-    }
+    /* Panel açıkken butonların pozisyonu JS ile ayarlanacağı için CSS kurallarını kaldırıyoruz */
+    /* Bu, JS'in daha hassas kontrol sağlamasına olanak tanır */
 }
