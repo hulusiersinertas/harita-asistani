@@ -2,8 +2,6 @@
 
 const altPanel = document.getElementById('alt-panel');
 const gorunumDegistirBtn = document.getElementById('gorunum-degistir-btn');
-const customControls = document.querySelector('.custom-controls');
-const navigationBtn = document.getElementById('navigation-toggle-btn');
 
 let callbacks = {};
 
@@ -30,28 +28,22 @@ function showDetailView(gorev) {
         <div class="panel-content">
             <button class="close-panel-btn" id="close-btn" title="Paneli Kapat">&times;</button>
             <h3>${gorev.adSoyad} (${gorev.miktar} Adet)</h3>
-            ${gorev.adresNotu ? `<p class="adres-notu">${gorev.adresNotu}</p>` : ''}
             <p>${gorev.tamAdres}</p>
+            ${gorev.adresNotu ? `<p><strong>Not:</strong> ${gorev.adresNotu}</p>` : ''}
             <div class="action-buttons">
-                <!-- Butonlar aynı -->
+                <button id="nav-btn">Navigasyon</button>
+                <button id="route-btn">Rota Çiz</button>
+                <button id="delivered-btn" class="status-btn">Verildi</button>
+                <button id="not-home-btn" class="status-btn">Evde Yok</button>
+                ${gorev.telefon ? `<button id="call-btn">Ara</button>` : ''}
             </div>
         </div>
     `;
     
-    // YENİ: Paneli açmadan önce içeriğin yüksekliğini ölç
-    const content = altPanel.querySelector('.panel-content');
-    // Geçici olarak görünür yapıp ölçüm al ve tekrar gizle
-    altPanel.style.visibility = 'hidden';
-    altPanel.style.transform = 'translateY(0)'; // Ölçüm için açık pozisyona getir
-    const contentHeight = content.scrollHeight + 40; // Padding vs. için pay
-    altPanel.style.transform = 'translateY(100%)'; // Tekrar gizle
-    altPanel.style.visibility = 'visible';
-    
-    openPanel(contentHeight); // Paneli ölçülen yükseklikte aç
-
+    // GÜNCELLENDİ: Paneli açma mantığı basitleştirildi
+    openPanel(); 
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
-    attachPanelEvents();
-    // ...diğer event listenerlar...
+    attachPanelEvents(gorev); // Görev verisini de gönder
 }
 
 function showListView(filtrelenmisGorevler) {
@@ -61,71 +53,98 @@ function showListView(filtrelenmisGorevler) {
         <div class="panel-content">
             <button class="close-panel-btn" id="close-btn" title="Paneli Kapat">&times;</button>
             <div id="gorev-listesi">
-                ${filtrelenmisGorevler.map(gorev => `
+                ${filtrelenmisGorevler.length > 0 ? filtrelenmisGorevler.map(gorev => `
                     <div class="gorev-karti" data-id="${gorev.id}">
                         <h4>${gorev.adSoyad} (${gorev.miktar} Adet)</h4>
                         <p>${gorev.tamAdres}</p>
                     </div>
-                `).join('')}
+                `).join('') : '<p style="text-align:center;">Bu mahallede görev yok.</p>'}
             </div>
         </div>
     `;
     
-    // Liste görünümünü ekranın %50'si yükseklikte aç
-    openPanel(window.innerHeight * 0.5);
-
+    // GÜNCELLENDİ: Paneli açma mantığı basitleştirildi
+    openPanel();
     gorunumDegistirBtn.textContent = 'Haritayı Göster';
     attachPanelEvents();
-    
-    altPanel.querySelectorAll('.gorev-karti').forEach(kart => {
-        kart.addEventListener('click', (e) => {
-            callbacks.onGorevSelect(parseInt(e.currentTarget.dataset.id, 10));
-        });
-    });
 }
 
 function hidePanel() {
-    altPanel.classList.remove('visible', 'liste-acik');
-    altPanel.style.transform = 'translateY(100%)';
-    updateControlPositions(0); // Butonları orijinal pozisyonuna döndür
+    altPanel.classList.remove('visible');
+    updateControlPositions(0);
     gorunumDegistirBtn.textContent = 'Listeyi Göster';
 }
 
-function openPanel(height) {
-    altPanel.style.height = `${height}px`;
+// GÜNCELLENDİ: openPanel artık yükseklik parametresi almıyor
+function openPanel() {
+    // Önce paneli görünür yap
     altPanel.classList.add('visible');
-    updateControlPositions(height);
+
+    // Animasyonun bitmesini bekle ve sonra buton pozisyonlarını ayarla
+    // Bu, panelin gerçek yüksekliğinin doğru ölçülmesini sağlar
+    setTimeout(() => {
+        const currentHeight = altPanel.offsetHeight;
+        updateControlPositions(currentHeight);
+        // Liste görünümü ise yüksekliğini %50 ile sınırla
+        if (altPanel.classList.contains('liste-acik')) {
+            altPanel.style.height = '50vh';
+            updateControlPositions(window.innerHeight * 0.5);
+        } else {
+            // Detay görünümü ise yüksekliği auto olsun
+            altPanel.style.height = 'auto';
+        }
+    }, 400); // CSS transition süresiyle aynı
 }
 
-// YENİ: Kontrol butonlarının pozisyonunu panel yüksekliğine göre güncelleyen fonksiyon
 function updateControlPositions(panelHeight) {
-     if (window.innerWidth > 600) return; // Sadece mobilde çalışsın
+    if (window.innerWidth > 600) return;
+    const customControls = document.querySelector('.custom-controls');
+    const navigationBtn = document.getElementById('navigation-toggle-btn');
+    if (!customControls || !navigationBtn) return;
 
-    const bottomOffset = panelHeight + 20; // 20px boşluk
+    const bottomOffset = panelHeight + 20;
     navigationBtn.style.bottom = `${bottomOffset}px`;
-
-    const controlsOffset = `translateY(-50%) translateY(-${panelHeight / 2}px)`;
-    customControls.style.transform = controlsOffset;
+    customControls.style.transform = `translateY(-50%) translateY(-${panelHeight / 2}px)`;
 }
 
-function attachPanelEvents() {
+function attachPanelEvents(gorev = null) {
     document.getElementById('close-btn').addEventListener('click', () => callbacks.onDeselect());
+
     const handle = altPanel.querySelector('.panel-handle');
     if (handle) {
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('touchstart', startDrag, { passive: false });
     }
+
+    if (altPanel.classList.contains('liste-acik')) {
+        altPanel.querySelectorAll('.gorev-karti').forEach(kart => {
+            kart.addEventListener('click', (e) => {
+                callbacks.onGorevSelect(parseInt(e.currentTarget.dataset.id, 10));
+            });
+        });
+    } else if(gorev) { // Detay görünümü ise
+        document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
+        document.getElementById('route-btn').addEventListener('click', (e) => callbacks.onRouteClick(gorev, e.target));
+        document.getElementById('delivered-btn').addEventListener('click', (e) => callbacks.onStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.target));
+        document.getElementById('not-home-btn').addEventListener('click', (e) => callbacks.onStatusUpdate('Evde Yok', gorev.id, gorev.adSoyad, e.target));
+        if (gorev.telefon) {
+            document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
+        }
+    }
 }
 
-// --- SÜRÜKLEME FONKSİYONLARI (GÜNCELLENDİ) ---
+
+// --- SÜRÜKLEME FONKSİYONLARI ---
 function startDrag(e) {
     e.preventDefault();
     isDragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     startHeight = altPanel.offsetHeight;
-    altPanel.style.transition = 'none'; // Sürüklerken animasyonu kapat
-    customControls.style.transition = 'none';
-    navigationBtn.style.transition = 'none';
+    altPanel.style.transition = 'none';
+    const customControls = document.querySelector('.custom-controls');
+    const navigationBtn = document.getElementById('navigation-toggle-btn');
+    if(customControls) customControls.style.transition = 'none';
+    if(navigationBtn) navigationBtn.style.transition = 'none';
 
     document.addEventListener('mousemove', doDrag);
     document.addEventListener('touchmove', doDrag);
@@ -141,33 +160,30 @@ function doDrag(e) {
 
     const maxHeight = window.innerHeight * 0.85;
     if (newHeight > maxHeight) newHeight = maxHeight;
-    if (newHeight < 100) newHeight = 100; // Minimum yükseklik
+    if (newHeight < 100) newHeight = 100;
 
     altPanel.style.height = `${newHeight}px`;
-    updateControlPositions(newHeight); // Butonları da anlık olarak güncelle
+    updateControlPositions(newHeight);
 }
 
 function stopDrag() {
     if (!isDragging) return;
     isDragging = false;
-    altPanel.style.transition = 'transform 0.4s ease-in-out'; // Animasyonu geri aç
-    customControls.style.transition = 'transform 0.4s ease-in-out';
-    navigationBtn.style.transition = 'bottom 0.4s ease-in-out';
+    altPanel.style.transition = 'transform 0.4s ease-in-out, height 0.4s ease-in-out';
+    const customControls = document.querySelector('.custom-controls');
+    const navigationBtn = document.getElementById('navigation-toggle-btn');
+    if(customControls) customControls.style.transition = 'transform 0.4s ease-in-out';
+    if(navigationBtn) navigationBtn.style.transition = 'bottom 0.4s ease-in-out';
 
     const currentHeight = altPanel.offsetHeight;
-    // Eğer 150px'den daha aza indirildiyse paneli kapat
     if (currentHeight < 150) {
         callbacks.onDeselect();
-    } 
-    // Liste görünümünde 50vh'nin altına indiyse 50vh'ye geri çek
-    else if (altPanel.classList.contains('liste-acik') && currentHeight < window.innerHeight * 0.45) {
-        openPanel(window.innerHeight * 0.5);
+    } else if (altPanel.classList.contains('liste-acik')) {
+        // Liste için bir hedef noktaya çek (örn: %50)
+        const targetHeight = window.innerHeight * 0.5;
+        altPanel.style.height = `${targetHeight}px`;
+        updateControlPositions(targetHeight);
     }
-
-    document.removeEventListener('mousemove', doDrag);
-    document.removeEventListener('touchmove', doDrag);
-    document.removeEventListener('mouseup', stopDrag);
-    document.removeEventListener('touchend', stopDrag);
 }
 
 export { showDetailView, showListView, hidePanel };
