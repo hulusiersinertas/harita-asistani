@@ -1,11 +1,14 @@
+// OpenRouteService API'si ile rota çizme mantığını yönetir.
+
 import { config } from './config.js';
 import { getUserLocation } from './navigation.js';
 
-let currentRouteFeature = null;
+let currentRouteFeature = null; // Haritadaki mevcut rota katmanını saklar
 let mapInstance = null;
 
 /**
  * Rota çizim modülünü başlatır.
+ * @param {ymaps3.YMap} map - Harita nesnesi.
  */
 export function initRouting(map) {
     mapInstance = map;
@@ -40,6 +43,8 @@ export function clearCurrentRoute() {
 
 /**
  * Kullanıcının mevcut konumundan belirtilen göreve bir rota çizer.
+ * @param {object} gorev - Hedef görev nesnesi.
+ * @param {HTMLElement} [clickedButton] - Tıklanan buton (isteğe bağlı).
  */
 export async function drawRouteToTask(gorev, clickedButton) {
     let originalText = '';
@@ -49,42 +54,23 @@ export async function drawRouteToTask(gorev, clickedButton) {
         clickedButton.disabled = true;
     }
 
-    clearCurrentRoute();
+    clearCurrentRoute(); // Yeni rota çizmeden önce eskisini temizle
 
     try {
-        // 1. Koordinatları al ve doğrula
         const startPoint = await getUserLocation();
         const endPoint = [gorev.boylam, gorev.enlem];
-
-        if (!startPoint || !Array.isArray(startPoint) || startPoint.length !== 2) {
-            throw new Error('Geçerli bir başlangıç konumu alınamadı.');
-        }
-        if (!endPoint || !Array.isArray(endPoint) || endPoint.length !== 2 || !endPoint[0] || !endPoint[1]) {
-            throw new Error(`Hedef görevin (${gorev.adSoyad}) koordinatları geçersiz.`);
-        }
-        console.log('Rota çizim isteği:', { from: startPoint, to: endPoint });
-
-        // 2. API isteğini yap
-        const requestBody = {
-            coordinates: [startPoint, endPoint]
-        };
 
         const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
             method: 'POST',
             headers: {
+                'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
                 'Content-Type': 'application/json',
                 'Authorization': config.openRouteServiceApiKey
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({ "coordinates": [startPoint, endPoint] })
         });
 
         const data = await response.json();
-
-        // 3. Hata kontrolünü iyileştir
-        if (!response.ok) {
-            const errorMessage = data.error?.message || JSON.stringify(data);
-            throw new Error(`API Hatası: ${errorMessage}`);
-        }
 
         if (data.routes && data.routes.length > 0) {
             const encodedRoute = data.routes[0].geometry;
@@ -98,13 +84,11 @@ export async function drawRouteToTask(gorev, clickedButton) {
             currentRouteFeature = routeFeature;
             mapInstance.addChild(currentRouteFeature);
         } else {
-            throw new Error("Bu iki nokta arasında bir rota bulunamadı.");
+            throw new Error(data.error?.message || "Bu iki nokta arasında bir rota bulunamadı.");
         }
 
     } catch (error) {
-        // Hata mesajını daha net göster
         alert(`Rota çizilemedi: ${error.message}`);
-        console.error("Rota çizim hatası detayı:", error);
     } finally {
         if (clickedButton) {
             clickedButton.textContent = originalText;

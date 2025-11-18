@@ -7,13 +7,13 @@ let callbacks = {}; // Olayları ana UI modülüne bildirmek için
 
 /**
  * Panel yöneticisini başlatır ve gerekli callback'leri ayarlar.
+ * @param {object} cbs - Dışarıdan gelen callback fonksiyonları.
  */
 export function initPanelManager(cbs) {
     callbacks = cbs; // onGorevSelect, onStatusUpdate vb.
     gorunumDegistirBtn.addEventListener('click', () => {
         if (altPanel.classList.contains('liste-acik')) {
-            // "Haritayı Göster" butonu aslında paneli kapatma işlevi görüyor.
-            callbacks.onDeselect();
+            hidePanel();
         } else {
             callbacks.onShowListView();
         }
@@ -22,6 +22,7 @@ export function initPanelManager(cbs) {
 
 /**
  * Görev detay görünümünü oluşturur ve gösterir.
+ * @param {object} gorev - Görüntülenecek görev nesnesi.
  */
 export function showDetailView(gorev) {
     altPanel.classList.remove('liste-acik');
@@ -56,12 +57,11 @@ export function showDetailView(gorev) {
 
 /**
  * Görev listesi görünümünü oluşturur ve gösterir.
+ * @param {Array} filtrelenmisGorevler - Listelenecek görevler.
  */
 export function showListView(filtrelenmisGorevler) {
     altPanel.classList.add('liste-acik');
-    // GÜNCELLENDİ: Liste görünümüne de "Kapat" butonu eklendi.
     altPanel.innerHTML = `
-        <button class="close-panel-btn" id="close-btn" title="Paneli Kapat">&times;</button>
         <div id="gorev-listesi">
             ${filtrelenmisGorevler.map(gorev => `
                 <div class="gorev-karti ${gorev.hasCoords ? '' : 'no-coords'}" data-id="${gorev.id}">
@@ -72,17 +72,12 @@ export function showListView(filtrelenmisGorevler) {
             `).join('')}
         </div>
     `;
-
-    // GÜNCELLENDİ: Hem görev kartlarına hem de yeni eklenen kapat butonuna olay dinleyicisi atanıyor.
-    document.getElementById('close-btn').addEventListener('click', () => callbacks.onDeselect());
-    
     altPanel.querySelectorAll('.gorev-karti').forEach(kart => {
         kart.addEventListener('click', (e) => {
             const gorevId = parseInt(e.currentTarget.dataset.id, 10);
             callbacks.onGorevSelect(gorevId);
         });
     });
-
     altPanel.style.display = 'block';
     gorunumDegistirBtn.textContent = 'Haritayı Göster';
 }

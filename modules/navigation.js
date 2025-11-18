@@ -5,36 +5,17 @@ let userMarker = null;
 let locationWatcherId = null;
 let isNavigationModeActive = false;
 
-// YENİ EKLENDİ: Navigasyon modundayken en son bilinen konumu saklamak için.
-let lastKnownLocation = null;
-
 // Harita döndürme değişkenleri
 let rotationDirection = 0;
 const ROTATION_SPEED = 0.2;
-let currentCameraState = { tilt: 0, azimuth: 0 };
-
-// Manuel kontrol butonları (daha sonra erişmek için)
-let rotateLeftBtn, rotateRightBtn;
-
-/**
- * Dışarıdan (ui.js'ten) gelen kamera güncellemelerini güvenli bir şekilde alır.
- */
-export function updateExternalCameraState(newCamera) {
-    if (newCamera && typeof newCamera.azimuth !== 'undefined') {
-        currentCameraState = newCamera;
-    }
-}
+let currentCameraState = { tilt: 0, azimuth: 0 }; // Başlangıç durumu
+let onCameraUpdateCallback = () => {};
 
 /**
  * Kullanıcının mevcut konumunu bir Promise olarak döndürür.
+ * @returns {Promise<[number, number]>} [boylam, enlem]
  */
 export function getUserLocation() {
-    // GÜNCELLENDİ: Eğer navigasyon modu aktifse ve bir konumumuz varsa,
-    // yeni bir istek atmak yerine direkt onu kullanıyoruz. Bu, zaman aşımını engeller.
-    if (isNavigationModeActive && lastKnownLocation) {
-        return Promise.resolve(lastKnownLocation);
-    }
-    
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
             return reject(new Error('Tarayıcınız konum servisini desteklemiyor.'));
@@ -42,21 +23,11 @@ export function getUserLocation() {
         navigator.geolocation.getCurrentPosition(
             (position) => resolve([position.coords.longitude, position.coords.latitude]),
             (error) => {
-                let message = 'Bilinmeyen bir hata nedeniyle konum alınamadı.';
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        message = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        message = 'Konum bilgisine ulaşılamıyor. Cihazınızın konum servislerinin açık olduğundan emin olun.';
-                        break;
-                    case error.TIMEOUT:
-                        message = 'Konum alımı zaman aşımına uğradı. Lütfen sinyalin daha iyi olduğu bir yerde tekrar deneyin.';
-                        break;
-                }
+                let message = 'Konum bilgisi alınamadı.';
+                if (error.code === error.PERMISSION_DENIED) message = 'Konum izni reddedildi.';
                 reject(new Error(message));
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { enableHighAccuracy: true }
         );
     });
 }
@@ -66,90 +37,75 @@ export function getUserLocation() {
  */
 function animateRotation() {
     if (rotationDirection === 0 || isNavigationModeActive) return;
-
     const newAzimuth = currentCameraState.azimuth + (rotationDirection * ROTATION_SPEED);
     const newCameraState = { ...currentCameraState, azimuth: newAzimuth };
-
-    currentCameraState = newCameraState;
-
     mapInstance.update({ camera: newCameraState });
+    onCameraUpdateCallback(newCameraState); // Kamera durumunu ana UI modülüne bildir
     requestAnimationFrame(animateRotation);
 }
 
-export const startNavigation = () => {
+const startNavigation = () => {
     if (!navigator.geolocation) {
-        alert("Tarayıcınız konum servisini desteklemiyor.");
+        alert("Tarayıcınız konumu desteklemiyor.");
         return;
     }
-    if (locationWatcherId !== null) return;
-
-    isNavigationModeActive = true;
-    document.getElementById('navigation-toggle-btn').classList.add('active');
-    if (rotateLeftBtn) rotateLeftBtn.disabled = true;
-    if (rotateRightBtn) rotateRightBtn.disabled = true;
+    const navigationBtn = document.getElementById('navigation-toggle-btn');
 
     locationWatcherId = navigator.geolocation.watchPosition(
         (position) => {
-            const { longitude, latitude, heading } = position.coords;
+            const { latitude, longitude, heading } = position.coords;
             const userCoordinates = [longitude, latitude];
-
-            // YENİ EKLENDİ: En son konumu her geldiğinde saklıyoruz.
-            lastKnownLocation = userCoordinates;
+            const { YMapMarker } = ymaps3;
 
             if (!userMarker) {
                 const markerElement = document.createElement('div');
                 markerElement.className = 'user-marker';
-                userMarker = new ymaps3.YMapMarker({ coordinates: userCoordinates }, markerElement);
+                userMarker = new YMapMarker({ coordinates: userCoordinates, zIndex: 10 }, markerElement);
                 mapInstance.addChild(userMarker);
             } else {
                 userMarker.update({ coordinates: userCoordinates });
             }
-            
-            const cameraUpdate = {
-                tilt: 60,
-                azimuth: heading ?? currentCameraState.azimuth,
-                duration: 400
-            };
 
-            mapInstance.update({
-                location: { center: userCoordinates, zoom: 18, duration: 400 },
-                camera: cameraUpdate
-            });
+            let newCameraState = { ...currentCameraState };
+            if (heading !== null && heading >= 0) {
+                newCameraState.azimuth = heading;
+            }
+            onCameraUpdateCallback(newCameraState);
+
+            mapInstance.update({ location: { center: userCoordinates, zoom: 17, duration: 1000 } });
         },
         (error) => {
-            alert("Konum izlenirken bir hata oluştu. Lütfen konum servislerini kontrol edin.");
             console.error("Konum izleme hatası:", error);
+            alert("Konum izlenirken bir hata oluştu. Mod durduruluyor.");
             stopNavigation();
         },
         { enableHighAccuracy: true }
     );
+
+    isNavigationModeActive = true;
+    navigationBtn.classList.add('active');
+    navigationBtn.innerHTML = '🧭';
 };
 
-export const stopNavigation = () => {
-    if (locationWatcherId !== null) {
-        navigator.geolocation.clearWatch(locationWatcherId);
-        locationWatcherId = null;
-    }
+const stopNavigation = () => {
+    if (locationWatcherId) navigator.geolocation.clearWatch(locationWatcherId);
     isNavigationModeActive = false;
-    // YENİ EKLENDİ: Navigasyon durunca son konumu temizle.
-    lastKnownLocation = null;
-    document.getElementById('navigation-toggle-btn').classList.remove('active');
-    if (rotateLeftBtn) rotateLeftBtn.disabled = false;
-    if (rotateRightBtn) rotateRightBtn.disabled = false;
-    
-    mapInstance.update({
-        camera: { tilt: 0, duration: 500 }
-    });
+    const navigationBtn = document.getElementById('navigation-toggle-btn');
+    navigationBtn.classList.remove('active');
+    navigationBtn.innerHTML = '🛰️';
 };
 
 /**
  * Navigasyon ve harita döndürme kontrollerini kurar.
+ * @param {ymaps3.YMap} map - Harita nesnesi.
+ * @param {function} onCameraUpdate - Kamera durumu değiştiğinde çağrılacak callback.
  */
-export function initNavigation(map) {
+export function initNavigation(map, onCameraUpdate) {
     mapInstance = map;
+    onCameraUpdateCallback = onCameraUpdate;
 
-    rotateLeftBtn = document.getElementById('rotate-left');
-    rotateRightBtn = document.getElementById('rotate-right');
+    const rotateLeftBtn = document.getElementById('rotate-left');
+    const rotateRightBtn = document.getElementById('rotate-right');
     const navigationBtn = document.getElementById('navigation-toggle-btn');
 
     const startRotation = (direction) => {
@@ -177,4 +133,20 @@ export function initNavigation(map) {
             startNavigation();
         }
     });
+}
+
+/**
+ * Navigasyon modunun aktif olup olmadığını döndürür.
+ * @returns {boolean}
+ */
+export function isNavigating() {
+    return isNavigationModeActive;
+}
+
+/**
+ * Aktif navigasyon sırasında bir hedef belirlendiğinde rota çizimini tetikler.
+ */
+export function triggerRouteForNavigation() {
+    // Bu fonksiyon şimdilik boş, ana ui.js tarafından yönetilecek
+    // Gelecekte bir event emitter sistemiyle daha da soyutlanabilir.
 }
