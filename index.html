@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dağıtım Asistanı v3</title>
+    <!-- Yandex Maps API v3 -->
+    <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
+    <!-- Stil Dosyası -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Haritanın render edileceği ana container -->
+    <div id="app"></div>
+
+    <!-- Üst Panel -->
+    <header class="panel top-panel">
+        <div class="panel-left">
+            <h1 id="gorev-baslik">Yükleniyor...</h1>
+            <span id="kalan-gorev-sayaci"></span>
+        </div>
+        <div class="panel-right">
+            <select id="mahalle-filtresi" disabled>
+                <option value="TÜMÜ">Tüm Mahalleler</option>
+            </select>
+            <button id="guzergah-toggle-btn" style="display: none;">Güzergahı Başlat</button>
+            <button id="gorunum-degistir-btn">Listeyi Göster</button>
+        </div>
+    </header>
+
+    <!-- Alt Panel -->
+    <footer id="alt-panel" class="panel bottom-panel">
+        <!-- İçerik JavaScript tarafından dinamik olarak eklenecek -->
+    </footer>
+
+    <!-- NAVİGASYON VE KONTROL BUTONLARI -->
+    <div class="custom-controls">
+        <div class="control-group">
+            <button id="rotate-left" title="Sola Döndür (Basılı Tut)">↶</button>
+        </div>
+        <div class="control-group">
+            <button id="rotate-right" title="Sağa Döndür (Basılı Tut)">↷</button>
+        </div>
+    </div>
+    <button id="navigation-toggle-btn" title="Navigasyon Modu">🛰️</button>
+
+    <!-- Modüler JavaScript Dosyaları -->
+    <script src="./modules/config.js" type="module"></script>
+    <script src="./modules/api.js" type="module"></script>
+    <script src="./modules/map.js" type="module"></script>
+    <script src="./modules/guzergahManager.js" type="module"></script>
+    <script src="./modules/navigation.js" type="module"></script>
+    <script src="./modules/route.js" type="module"></script>
+    <script src="./modules/panelManager.js" type="module"></script>
+    <!-- Orkestratör UI modülü -->
+    <script src="./modules/ui.js" type="module"></script>
+    <!-- Ana Başlatıcı -->
+    <script src="./script.js" type="module"></script>
+</body>
+
+</html>
