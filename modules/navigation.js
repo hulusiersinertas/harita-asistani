@@ -106,16 +106,25 @@ export const startNavigation = () => {
 
             // 1. Marker Oluşturma veya Güncelleme
             if (!userMarker) {
-                // Marker için HTML elementi oluştur
+                // Kapsayıcı (0x0 boyutunda)
                 const markerContainer = document.createElement('div');
                 markerContainer.className = 'user-marker-container';
-                // İçine ikon veya şekil koyabiliriz. CSS'de .user-marker ok şeklindeyse:
+                
+                // Görselin olduğu Ok (44x44 boyutunda)
                 const markerArrow = document.createElement('div');
                 markerArrow.className = 'user-marker'; 
+                
+                // Oku kapsayıcının içine koyuyoruz
                 markerContainer.appendChild(markerArrow);
 
-                userMarker = new ymaps3.YMapMarker({ coordinates: userCoordinates }, markerContainer);
+                // Yandex Marker'a kapsayıcıyı veriyoruz
+                userMarker = new ymaps3.YMapMarker({ 
+                    coordinates: userCoordinates,
+                    zIndex: 2000 // API tarafında da z-index verelim
+                }, markerContainer);
+                
                 mapInstance.addChild(userMarker);
+                console.log("Kullanıcı imleci haritaya eklendi."); // Konsoldan kontrol et
             } else {
                 userMarker.update({ coordinates: userCoordinates });
             }
@@ -236,3 +245,4 @@ export function initNavigation(map) {
         });
     }
 }
+
