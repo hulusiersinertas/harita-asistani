@@ -1,104 +1,114 @@
-// DOSYA: modules/panelManager.js (TAMAMEN YENİLENMİŞ DRAGGABLE MANTIK)
+// DOSYA: modules/panelManager.js (TAMAMINI DEĞİŞTİR)
 
 const altPanel = document.getElementById('alt-panel');
-const gorunumDegistirBtn = document.getElementById('gorunum-degistir-btn');
+// Liste butonu kaldırıldığı için buradaki listener'ı da siliyoruz.
+// const gorunumDegistirBtn = ... (GEREK YOK)
 
 let callbacks = {};
 let startY = 0;
-let currentHeight = 0;
+let startHeight = 0;
 let isDragging = false;
-const SHEET_PEEK_HEIGHT = 180; // Açılıştaki küçük yükseklik (px)
-const SHEET_MAX_HEIGHT_PERCENT = 50; // Maksimum yükseklik (%)
+
+const SHEET_PEEK_HEIGHT = 180; 
+const SHEET_MAX_HEIGHT_PERCENT = 60; // Yarıdan biraz fazla olsun
 
 export function initPanelManager(cbs) {
     callbacks = cbs;
-    gorunumDegistirBtn.addEventListener('click', () => {
-        if (altPanel.classList.contains('panel-open')) {
-             // Eğer zaten açıksa kapat
-            callbacks.onDeselect();
-        } else {
-            callbacks.onShowListView();
-        }
-    });
-
-    // Sürükleme Olaylarını Dinle (ÇÖZÜM 4)
+    
+    // Liste butonu listener'ı kaldırıldı.
+    
     setupDragListeners();
 }
 
 function setupDragListeners() {
-    // Touch Events (Mobil)
-    altPanel.addEventListener('touchstart', (e) => {
-        // Sadece header veya handle kısmından tutulursa sürüklemeye izin ver
-        // İçerik kısmında kaydırma (scroll) bozulmasın diye
-        const target = e.target;
-        const isHeader = target.closest('.sheet-handle') || target.closest('.detail-header');
-        
-        // Liste en üstteyse ve aşağı çekiliyorsa da izin verilebilir ama basitleştirelim:
-        if (isHeader || altPanel.scrollTop <= 0) {
-            isDragging = true;
-            startY = e.touches[0].clientY;
-            currentHeight = altPanel.offsetHeight;
-            altPanel.style.transition = 'none'; // Sürüklerken animasyon olmasın
-        }
-    }, { passive: true });
+    // --- MOBİL (TOUCH) ---
+    altPanel.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientY, e.target), { passive: false });
+    document.addEventListener('touchmove', (e) => onDrag(e.touches[0].clientY, e), { passive: false });
+    document.addEventListener('touchend', endDrag);
 
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        const deltaY = startY - e.touches[0].clientY;
-        const newHeight = currentHeight + deltaY;
-        
-        // Yükseklik sınırları
-        const maxHeight = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
-        
-        if (newHeight > 60 && newHeight <= maxHeight + 50) { // Biraz esneme payı (+50)
-             altPanel.style.height = `${newHeight}px`;
+    // --- PC (MOUSE) --- (SORUN 2 ÇÖZÜMÜ)
+    altPanel.addEventListener('mousedown', (e) => startDrag(e.clientY, e.target));
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            e.preventDefault(); // Yazı seçimini engelle
+            onDrag(e.clientY, e);
         }
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-        if (!isDragging) return;
-        isDragging = false;
-        altPanel.style.transition = 'height 0.3s cubic-bezier(0.25, 1, 0.5, 1)'; // Yaylanma efekti
-        snapSheet();
     });
+    document.addEventListener('mouseup', endDrag);
 }
 
-// Paneli en yakın mantıklı noktaya yapıştır (Snap)
+// Sürükleme Başlatma Mantığı
+function startDrag(clientY, target) {
+    // SORUN 3 ÇÖZÜMÜ: Sadece Header veya Handle tutulursa sürüklemeye izin ver.
+    // İçerik (liste) tutulursa sürükleme başlatma, bırak kendi scroll'unu yapsın.
+    const isHandle = target.closest('.sheet-handle');
+    const isHeader = target.closest('.detail-header'); // Başlık kısmı
+
+    if (!isHandle && !isHeader) return;
+
+    isDragging = true;
+    startY = clientY;
+    startHeight = altPanel.offsetHeight;
+    altPanel.style.transition = 'none'; // Sürüklerken animasyon olmasın
+}
+
+// Sürükleme Sırası
+function onDrag(clientY, event) {
+    if (!isDragging) return;
+    
+    // Tarayıcının varsayılan kaydırmasını engelle (Telefonda sayfa yenilemeyi tetiklemesin)
+    if(event.cancelable) event.preventDefault();
+
+    const deltaY = startY - clientY; // Yukarı çekerken delta pozitif olur
+    const newHeight = startHeight + deltaY;
+    
+    const maxHeight = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
+    
+    // Minimum 50px, Maksimum sınıra kadar izin ver
+    if (newHeight > 50 && newHeight < maxHeight + 50) {
+         altPanel.style.height = `${newHeight}px`;
+    }
+}
+
+// Bırakma
+function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+    altPanel.style.transition = 'height 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+    snapSheet();
+}
+
 function snapSheet() {
     const currentH = altPanel.offsetHeight;
     const maxH = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
     
-    // Eğer yarıyı geçtiyse tam aç (%50), yoksa küçük moda dön (Peek)
-    // Eğer çok aşağı çekildiyse kapat
-    if (currentH < 100) {
-        callbacks.onDeselect(); // Kapat
-    } else if (currentH > (maxH - 100)) {
-        altPanel.style.height = `${maxH}px`; // Maksimuma çek
-    } else {
-        altPanel.style.height = `${SHEET_PEEK_HEIGHT}px`; // Küçük moda çek
+    // Çok aşağı çekildiyse kapat (100px altı)
+    if (currentH < 120) {
+        callbacks.onDeselect();
+    } 
+    // Peek yüksekliğinden fazlaysa tam aç
+    else if (currentH > SHEET_PEEK_HEIGHT + 50) {
+        altPanel.style.height = `${maxH}px`;
+    } 
+    // Değilse peek moduna geri dön
+    else {
+        altPanel.style.height = `${SHEET_PEEK_HEIGHT}px`;
     }
 }
 
-// Ortak İçerik Doldurucu
 function setPanelContent(htmlContent, heightMode = 'peek') {
     altPanel.innerHTML = htmlContent;
     altPanel.style.display = 'flex';
     altPanel.classList.add('panel-open');
     
-    // ÇÖZÜM 5: İlk açılış yüksekliğini ayarla
     const maxH = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
-    
-    // Eğer detay ise hemen tam boy açılabilir, liste ise küçük başlasın (tercih meselesi)
-    // Kullanıcı "küçük başlasın" dediği için:
     const targetHeight = heightMode === 'full' ? maxH : SHEET_PEEK_HEIGHT;
     
     requestAnimationFrame(() => {
         altPanel.style.height = `${targetHeight}px`;
     });
-    
     adjustFabPosition(true);
 }
-
 
 export function showDetailView(gorev) {
     const html = `
@@ -121,12 +131,8 @@ export function showDetailView(gorev) {
             </div>
         </div>
     `;
+    setPanelContent(html, 'peek');
     
-    // Detay için de 'peek' modunda başlatıyoruz, kullanıcı yukarı çekerse butonları görür.
-    // Ya da butonlar sığsın diye biraz daha yüksek başlatabiliriz.
-    setPanelContent(html, 'peek'); 
-
-    // Listenerlar
     document.getElementById('close-panel-btn').addEventListener('click', () => callbacks.onDeselect());
     document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
     document.getElementById('route-btn').addEventListener('click', (e) => callbacks.onRouteClick(gorev, e.currentTarget));
@@ -153,8 +159,6 @@ export function showListView(filtrelenmisGorevler) {
             </div>
         </div>
     `;
-    
-    // ÇÖZÜM 5: Liste görünümü küçük (peek) modda başlasın
     setPanelContent(html, 'peek');
 
     document.getElementById('close-list-btn').addEventListener('click', () => callbacks.onDeselect());
@@ -167,21 +171,19 @@ export function showListView(filtrelenmisGorevler) {
 }
 
 export function hidePanel() {
-    altPanel.style.height = '0px'; // Yüksekliği sıfırla
+    altPanel.style.height = '0px';
     altPanel.classList.remove('panel-open');
     setTimeout(() => {
         if(!altPanel.classList.contains('panel-open')) altPanel.style.display = 'none';
-    }, 300); // Animasyon bitince gizle
+    }, 300);
     adjustFabPosition(false);
 }
 
 function adjustFabPosition(isOpen) {
     const fab = document.getElementById('navigation-toggle-btn');
     if (!fab) return;
-    // FAB'ı panelin üstüne dinamik olarak sabitleyebiliriz veya basitçe yukarı atabiliriz
-    // Panel yüksekliği dinamik olduğu için CSS class yerine JS ile style verebiliriz
     if (isOpen) {
-        fab.style.transform = 'translateY(-190px)'; // Peek yüksekliğinin hemen üstü
+        fab.style.transform = 'translateY(-190px)';
     } else {
         fab.style.transform = 'translateY(0)';
     }
