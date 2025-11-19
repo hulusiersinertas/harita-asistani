@@ -344,41 +344,37 @@ html, body, #app {
     color: var(--white);
 }
 
-/* --- 5. Harita İşaretçileri (Placemarks) --- */
+/* --- 5. Harita İşaretçileri (Placemarks) - RENK GÜNCELLEMESİ --- */
 .ymaps3x0--marker .placemark {
     width: 24px;
     height: 24px;
-    background-color: var(--danger-color);
-    border: 3px solid var(--white);
+    background-color: var(--danger-color); /* Varsayılan: KIRMIZI (Seçili Bölge) */
+    border: 2px solid var(--white);
     border-radius: 50%;
     box-shadow: 0 3px 8px rgba(0,0,0,0.4);
     cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s;
+    transition: all 0.3s ease; /* Renk geçişleri yumuşak olsun */
     box-sizing: border-box;
+    z-index: 10;
 }
 
+/* Seçili Olan (Mavi) - En baskın */
 .ymaps3x0--marker .placemark.selected {
-    background-color: var(--primary-color);
-    transform: scale(1.4); /* Seçilince büyüsün */
-    z-index: 50;
+    background-color: var(--primary-color); /* MAVİ */
+    transform: scale(1.4);
+    z-index: 50; /* En üstte */
     border-color: var(--white);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
 }
 
+/* Filtre Dışı Kalanlar (Soluk Sarı) */
 .ymaps3x0--marker .placemark.filtered-out {
-    opacity: 0; /* Filtrelenenleri tamamen gizle */
-    pointer-events: none;
+    background-color: #fde047; /* SOLUK SARI */
+    border-color: #eab308; /* Kenarları biraz daha koyu sarı */
+    opacity: 0.8; /* Hafif şeffaf */
+    transform: scale(0.8); /* Biraz küçülüyor */
+    z-index: 1; /* Arkada kalsın */
 }
-
-/* Kullanıcı Konumu (Mavi Nokta) */
-.user-marker {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
-    border: 3px solid var(--white);
-    box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
-}
-
 /* --- 6. Responsive İnce Ayarlar --- */
 @media (max-width: 380px) {
     /* Çok küçük telefonlar için fontları biraz daha küçült */
@@ -387,4 +383,5 @@ html, body, #app {
     .action-grid { gap: 4px; }
     .action-btn span.label { font-size: 0.6rem; }
 }
+
 
