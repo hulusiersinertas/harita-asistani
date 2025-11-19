@@ -1,299 +1,294 @@
-/* ================================================================================ */
-/* DOSYA YOLU: style.css (BU KODUN TAMAMINI KOPYALAYIP MEVCUT DOSYAYLA DEĞİŞTİRİN) */
-/* ================================================================================ */
+/* DOSYA: style.css */
 
 :root {
-    --panel-background: rgba(255, 255, 255, 0.8);
-    --panel-border-radius: 12px;
-    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --primary-color: #2563eb; /* Stitch Mavisi */
+    --bg-light: #f4f4f5;
+    --text-dark: #18181b;
+    --text-gray: #71717a;
+    --white: #ffffff;
+    --border-color: #e4e4e7;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
 }
 
-html, body, #app {
+body, html, #app {
     width: 100%;
     height: 100%;
-    padding: 0;
     margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
     overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-light);
 }
 
-#app {
-    touch-action: none;
-}
-
-.panel {
+/* === Üst Panel (Header) === */
+.mobile-header {
     position: absolute;
-    z-index: 10;
-    background-color: var(--panel-background);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: var(--panel-border-radius);
-    box-shadow: var(--box-shadow);
-    transition: all 0.4s ease-in-out;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.top-panel {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 10px 15px;
+.header-top-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
 }
 
-.top-panel h1 {
-    font-size: 1.2em;
+.header-info h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
     margin: 0;
-    white-space: nowrap;
 }
 
-.top-panel span {
-    font-size: 0.9em;
-    color: #555;
-    white-space: nowrap;
+.badge {
+    font-size: 0.85rem;
+    color: var(--text-gray);
 }
 
-.panel-left {
+.header-actions {
     display: flex;
+    gap: 8px;
+}
+
+/* İkonlu Header Butonları */
+.icon-btn {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.icon-btn:hover {
+    background: #f4f4f5;
+}
+
+/* Dropdown Tasarımı */
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+#mahalle-filtresi {
+    width: 100%;
+    appearance: none;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.dropdown-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-gray);
+}
+
+/* === Alt Panel (Bottom Sheet) === */
+.bottom-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--white);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    max-height: 80vh;
+    display: none; /* JS ile açılacak */
     flex-direction: column;
-    align-items: flex-start;
+    animation: slideUp 0.3s ease-out;
 }
 
-.panel-right {
-    display: flex;
-    gap: 10px;
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
 }
 
-.bottom-panel {
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 15px;
-    max-height: 90%; 
+.sheet-handle {
+    width: 40px;
+    height: 5px;
+    background: #e4e4e7;
+    border-radius: 10px;
+    margin: 12px auto 8px auto;
+}
+
+.sheet-content {
+    padding: 16px;
     overflow-y: auto;
 }
 
-.bottom-panel.liste-acik {
-    max-height: 50vh;
-    height: auto;
+/* Liste Görünümü Kartları */
+.gorev-list-item {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.hidden {
-    display: none;
+.gorev-list-item:hover {
+    background-color: #fafafa;
+    border-color: var(--primary-color);
 }
 
-#gorev-detay .placeholder {
+.gorev-list-item h4 {
+    margin: 0 0 4px 0;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+}
+
+.gorev-list-item p {
     margin: 0;
-    color: #666;
-    text-align: center;
+    color: var(--text-gray);
+    font-size: 0.8rem;
 }
 
-button, select {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    background-color: white;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-
-button:hover {
-    background-color: #f0f0f0;
-}
-
-select:disabled {
-    cursor: not-allowed;
-    background-color: #f5f5f5;
-}
-
-.ymaps3x0--marker .placemark {
-    width: 18px;
-    height: 18px;
-    background-color: #DB342A;
-    border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.ymaps3x0--marker .placemark.selected {
-    background-color: #8A2BE2;
-    transform: scale(1.4);
-    z-index: 20;
-}
-
-.ymaps3x0--marker .placemark.filtered-out {
-    background-color: #FFFF00;
-    opacity: 0.7;
-}
-
-#gorev-listesi {
+/* Detay Görünümü Başlıkları */
+.detail-header {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-}
-
-.gorev-karti {
-    padding: 10px;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-left: 5px solid #007bff;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.gorev-karti:hover {
-    background-color: rgba(230, 240, 255, 0.9);
-}
-
-.gorev-karti.no-coords {
-    border-left-color: #dc3545;
-}
-
-.gorev-karti h4 {
-    margin: 0 0 5px 0;
-    font-size: 1em;
-}
-
-.gorev-karti p {
-    margin: 2px 0;
-    font-size: 0.85em;
-    color: #444;
-}
-
-#alt-panel #gorev-detay {
-    position: relative;
-    padding-right: 40px;
-}
-
-.close-panel-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 30px;
-    height: 30px;
-    background-color: #f1f1f1;
-    border: 1px solid #ccc;
-    border-radius: 50%;
-    font-size: 20px;
-    font-weight: bold;
-    color: #555;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 0 2px 0;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.close-panel-btn:hover {
-    background-color: #e53935;
-    color: white;
-}
-
-.action-buttons button {
-    flex-grow: 1;
-    text-align: center;
-}
-
-/* =============================================== */
-/* NAVİGASYON VE KONTROL STİLLERİ */
-/* =============================================== */
-
-.custom-controls {
-    position: absolute;
-    z-index: 5;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    width: 100%;
     justify-content: space-between;
-    pointer-events: none;
+    align-items: start;
+    margin-bottom: 16px;
 }
 
-.control-group {
-    pointer-events: all;
+.detail-header h2 {
+    font-size: 1.25rem;
+    margin: 0 0 4px 0;
+    color: var(--text-dark);
+}
+
+.detail-header p {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Aksiyon Butonları Grid Yapısı (Stitch Tasarımı) */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.action-btn {
     display: flex;
     flex-direction: column;
-    margin: 0 10px;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-light);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 4px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.control-group button, #navigation-toggle-btn {
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+.action-btn span.material-icons-outlined {
     font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    margin-bottom: 4px;
+    color: var(--primary-color);
+}
+
+.action-btn span.label {
+    font-size: 0.7rem;
+    color: var(--text-gray);
+    font-weight: 500;
+}
+
+/* Renkli Butonlar */
+.btn-green { background: #dcfce7; }
+.btn-green span.material-icons-outlined { color: #16a34a; }
+.btn-green span.label { color: #166534; }
+
+.btn-red { background: #fee2e2; }
+.btn-red span.material-icons-outlined { color: #dc2626; }
+.btn-red span.label { color: #991b1b; }
+
+/* FAB Navigasyon Butonu */
+.fab-btn {
+    position: absolute;
+    bottom: 24px; /* Panel kapalıyken */
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.3s, color 0.3s, bottom 0.4s ease-in-out;
+    z-index: 90; /* Header ve Sheet'in altında kalabilir, duruma göre ayarla */
+    transition: all 0.3s;
 }
 
-#navigation-toggle-btn {
-    position: absolute;
-    z-index: 5;
-    bottom: 20px;
-    right: 20px;
+.fab-btn.active {
+    background: #dc2626;
+    transform: rotate(45deg); /* İkonun çarpı olması yerine dönmesi efekti */
 }
 
-/* Liste görünümü için buton konumu (Tüm ekran boyutları) */
-.bottom-panel.liste-acik ~ #navigation-toggle-btn {
-    bottom: calc(50vh + 20px); 
+.close-btn-mini {
+    background: transparent;
+    border: none;
+    color: var(--text-gray);
+    padding: 4px;
+    cursor: pointer;
 }
 
-/* Detay görünümü için buton konumu (SADECE GENİŞ EKRANLAR - Varsayılan) */
-.bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
-    bottom: 200px; 
-}
-
-#navigation-toggle-btn.active {
-    background-color: #007bff;
-    color: white;
-}
-
-.user-marker {
-    width: 22px;
-    height: 22px;
+/* === Harita Markerları === */
+.ymaps3x0--marker .placemark {
+    width: 20px;
+    height: 20px;
+    background-color: #ef4444;
+    border: 2px solid white;
     border-radius: 50%;
-    background-color: #007bff;
-    border: 3px solid white;
-    box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.ymaps3x0--marker .placemark.selected {
+    background-color: #2563eb;
+    transform: scale(1.3);
+    z-index: 50;
+    border-width: 3px;
+}
+.ymaps3x0--marker .placemark.filtered-out {
+    background-color: #fbbf24;
+    opacity: 0.6;
 }
 
-/* =============================================== */
-/* MOBİL GÖRÜNÜM DÜZELTMELERİ */
-/* =============================================== */
-@media (max-width: 600px) {
-    /* Üst panelin mobil uyumluluğu */
-    .top-panel {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .panel-right {
-        width: 100%;
-        margin-top: 10px;
-    }
-
-    .panel-right > * {
-        flex-grow: 1;
-    }
-
-    /* === MOBİL İÇİN NAVİGASYON BUTONU DÜZELTMESİ === */
-    /* Detay görünümü için buton konumu (SADECE MOBİL EKRANLAR - Kuralı Ezme) */
-    /* Panelin yüksekliğine yetecek daha güvenli bir mesafe belirliyoruz */
-    .bottom-panel:not(.liste-acik):not([style*="display: none"]) ~ #navigation-toggle-btn {
-        bottom: 240px; 
-    }
+/* Panel açıkken FAB butonunu yukarı kaydır */
+.panel-open ~ .fab-btn {
+    bottom: calc(40vh + 20px); /* Panel yüksekliğine göre değişir */
 }
-
