@@ -15,33 +15,28 @@
 
     <!-- YENİ ÜST PANEL (FLOATING / YÜZEN TASARIM) -->
     <header class="floating-header">
-        <!-- SOL HAP: Başlık ve Sayaç -->
+        <!-- SOL HAP -->
         <div class="header-pill left-pill">
-            <span class="material-icons text-gray">menu</span> <!-- Görsel Süsleme -->
+            <span class="material-icons text-gray">menu</span>
             <div class="title-info">
                 <h1 id="gorev-baslik">Yükleniyor</h1>
                 <span id="kalan-gorev-sayaci">Kalan: --</span>
             </div>
         </div>
 
-        <!-- SAĞ GRUP: Butonlar ve Mahalle -->
+        <!-- SAĞ GRUP -->
         <div class="header-right-group">
-            <!-- Güzergah Butonu (JS ile açılıp kapanır) -->
+            <!-- Güzergah Butonu -->
             <button id="guzergah-toggle-btn" class="circle-btn" style="display: none;" title="Güzergah">
                 <span class="material-icons-outlined">route</span>
             </button>
             
-            <!-- Liste Görünümüne Geçiş Butonu -->
-            <button id="gorunum-degistir-btn" class="circle-btn" title="Görünümü Değiştir">
-                <span class="material-icons-outlined">list</span>
-            </button>
+            <!-- LİSTE BUTONU (gorunum-degistir-btn) BURADAN SİLİNDİ -->
 
             <!-- SAĞ HAP: Mahalle Filtresi -->
-            <!-- Tasarımı korumak için özel bir yapı kuruyoruz -->
-            <div class="header-pill right-pill dropdown-wrapper">
+            <div class="header-pill dropdown-wrapper">
                 <span id="mahalle-display-text">Tüm Mahalleler</span>
                 <span class="material-icons text-gray">arrow_drop_down</span>
-                <!-- Gerçek select, görünmez olarak üstte duracak -->
                 <select id="mahalle-filtresi" disabled></select>
             </div>
         </div>
@@ -73,3 +68,4 @@
     <script src="./script.js" type="module"></script>
 </body>
 </html>
+
