@@ -385,3 +385,14 @@ html, body, #app {
 }
 
 
+.user-marker {
+    width: 24px;
+    height: 24px;
+    background-image: url('https://cdn-icons-png.flaticon.com/512/31/31068.png'); /* Basit bir ok ikonu */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* JS ile transform uygulanacak, bu yüzden transition ekliyoruz */
+    transition: transform 0.3s linear; 
+    z-index: 100; /* En üstte görünsün */
+}
