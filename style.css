@@ -1,40 +1,56 @@
-/* DOSYA: style.css */
+/* ================================================================================ */
+/* DOSYA YOLU: style.css (TAM SÜRÜM - MODERN MOBİL ARAYÜZ) */
+/* ================================================================================ */
 
+/* --- 1. Temel Değişkenler ve Ayarlar --- */
 :root {
-    --primary-color: #3b82f6; /* Stitch Görselindeki Mavi */
-    --text-dark: #1e293b;     /* Slate-800 */
-    --text-gray: #64748b;     /* Slate-500 */
-    --bg-color: #f1f5f9;      /* Slate-100 */
+    /* Renk Paleti (Stitch Tasarımı) */
+    --primary-color: #3b82f6; /* Ana Mavi */
+    --primary-dark: #2563eb;
+    --secondary-bg: #f1f5f9;  /* Arka Plan Gri */
+    --text-dark: #1e293b;     /* Koyu Yazı */
+    --text-gray: #64748b;     /* Gri Yazı */
     --white: #ffffff;
+    --danger-color: #ef4444;
+    --success-color: #22c55e;
+    --border-color: #e2e8f0;
+
+    /* Gölgeler */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-up: 0 -4px 20px rgba(0, 0, 0, 0.1);
+
+    /* Animasyon Eğrileri */
+    --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-body, html, #app {
+html, body, #app {
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: 'Roboto', sans-serif;
-    overflow: hidden;
-    background-color: var(--bg-color);
-    -webkit-tap-highlight-color: transparent;
+    overflow: hidden; /* Sayfanın kendisi kaymasın, harita yönetsin */
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background-color: var(--secondary-bg);
+    -webkit-tap-highlight-color: transparent; /* Mobilde tıklama mavisini kaldır */
+    touch-action: none; /* Tarayıcı varsayılan sürüklemelerini engelle */
 }
 
-/* === YÜZEN ÜST PANEL (FLOATING HEADER) === */
+/* --- 2. Yüzen Üst Panel (Floating Header / Pills) --- */
 .floating-header {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    padding: 16px;
+    padding: 12px 16px; /* Kenar boşlukları */
     z-index: 100;
     pointer-events: none; /* Tıklamalar haritaya geçsin */
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Sola ve sağa yasla */
     align-items: flex-start;
 }
 
-/* Genel Hap Stili */
+/* Ortak Hap Tasarımı */
 .header-pill {
     background: var(--white);
     border-radius: 9999px; /* Tam yuvarlak kenarlar */
@@ -44,32 +60,37 @@ body, html, #app {
     gap: 10px;
     box-shadow: var(--shadow-float);
     pointer-events: auto; /* Haplara tıklanabilsin */
-    height: 44px;
+    height: 48px; /* Sabit yükseklik */
     box-sizing: border-box;
 }
 
-/* Sol Hap (Başlık) */
+/* Sol Hap: Başlık ve Sayaç */
 .left-pill {
     padding-right: 20px;
+    max-width: 55%; /* Ekranın yarısından fazlasını kaplamasın */
 }
 
-.text-gray {
+.left-pill .material-icons {
     color: var(--text-gray);
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .title-info {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    line-height: 1.1;
+    line-height: 1.2;
+    overflow: hidden;
 }
 
 .title-info h1 {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .title-info span {
@@ -77,7 +98,7 @@ body, html, #app {
     color: var(--text-gray);
 }
 
-/* Sağ Grup (Butonlar + Filtre) */
+/* Sağ Grup: Butonlar ve Dropdown */
 .header-right-group {
     display: flex;
     align-items: center;
@@ -85,10 +106,10 @@ body, html, #app {
     pointer-events: auto;
 }
 
-/* Küçük Yuvarlak Butonlar */
+/* Yuvarlak İkon Butonlar (Güzergah, Liste vb.) */
 .circle-btn {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: var(--white);
     border: none;
@@ -98,45 +119,51 @@ body, html, #app {
     justify-content: center;
     color: var(--text-gray);
     cursor: pointer;
-    transition: transform 0.1s;
+    transition: transform 0.1s, background-color 0.2s;
 }
 
 .circle-btn:active {
     transform: scale(0.95);
+    background-color: var(--secondary-bg);
 }
 
-/* Dropdown Özel Yapısı */
+.circle-btn .material-icons-outlined {
+    font-size: 24px;
+}
+
+/* Sağ Hap: Mahalle Filtresi (Özel Dropdown Yapısı) */
 .dropdown-wrapper {
     position: relative;
     padding: 8px 12px 8px 16px;
-    min-width: 120px;
+    min-width: 130px; /* Minimum genişlik */
     justify-content: space-between;
     cursor: pointer;
 }
 
 #mahalle-display-text {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-dark);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100px;
+    max-width: 100px; /* Çok uzun isimler taşmasın */
 }
 
-/* Gerçek select elementini görünmez yapıp üstüne seriyoruz */
+/* Görünmez Select Elementi (Hile) */
 #mahalle-filtresi {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    opacity: 0;
+    opacity: 0; /* Görünmez */
     cursor: pointer;
-    z-index: 2;
+    z-index: 2; /* Yazının üstünde olsun */
+    -webkit-appearance: none; /* Mobilde varsayılan stili kaldır */
 }
 
-/* === ALT PANEL (Bottom Sheet) === */
+/* --- 3. Alt Panel (Bottom Sheet - Draggable) --- */
 .bottom-sheet {
     position: absolute;
     bottom: 0;
@@ -146,42 +173,49 @@ body, html, #app {
     background: var(--white);
     border-top-left-radius: 24px;
     border-top-right-radius: 24px;
-    box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.1);
-    display: none;
+    box-shadow: var(--shadow-up);
+    
+    display: none; /* JS ile flex yapılacak */
     flex-direction: column;
-    max-height: 80vh;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden; /* İçeriğin taşmasını engelle */
+    
+    /* Yükseklik animasyonu JS ile yönetilecek */
+    height: 0; 
+    transition: height 0.3s var(--ease-spring);
 }
 
-@keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-}
-
+/* Tutamaç Çubuğu */
 .sheet-handle {
-    width: 40px;
+    width: 48px;
     height: 6px;
-    background: #e2e8f0;
+    background: var(--border-color);
     border-radius: 10px;
     margin: 12px auto 8px auto;
+    cursor: grab;
+    flex-shrink: 0; /* Asla küçülmesin */
 }
 
+/* Panelin İçeriği */
 .sheet-content {
-    padding: 0 20px 20px 20px;
+    padding: 0 20px 30px 20px; /* Alt kısımdan biraz boşluk */
     overflow-y: auto;
+    flex-grow: 1;
+    -webkit-overflow-scrolling: touch; /* iOS'ta yumuşak kaydırma */
 }
 
+/* Detay Başlık Kısmı */
 .detail-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .detail-header h2 {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     margin: 0 0 4px 0;
     color: var(--text-dark);
+    line-height: 1.3;
 }
 
 .detail-header p {
@@ -191,10 +225,19 @@ body, html, #app {
     line-height: 1.4;
 }
 
-/* GRID BUTONLAR */
+.close-btn-mini {
+    background: transparent;
+    border: none;
+    color: var(--text-gray);
+    padding: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* Buton Izgarası (Grid) */
 .action-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, 1fr); /* 5 eşit sütun */
     gap: 8px;
 }
 
@@ -203,17 +246,20 @@ body, html, #app {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #f8fafc; /* slate-50 */
+    background: var(--secondary-bg);
     border: none;
     border-radius: 12px;
     padding: 12px 4px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background-color 0.2s;
+    min-height: 70px;
 }
 
-.action-btn:hover { background: #f1f5f9; }
+.action-btn:active {
+    background-color: #e2e8f0;
+    transform: scale(0.98);
+}
 
-.action-btn span.material-icons, 
 .action-btn span.material-icons-outlined {
     font-size: 24px;
     color: var(--primary-color);
@@ -224,24 +270,33 @@ body, html, #app {
     font-size: 0.7rem;
     color: var(--text-dark);
     font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
 }
 
-/* Renkli Buton Varyasyonları */
+/* Özel Renkli Butonlar */
 .btn-green { background: #dcfce7; }
 .btn-green span.material-icons-outlined { color: #16a34a; }
-.btn-green span.label { color: #15803d; }
+.btn-green span.label { color: #14532d; }
 
 .btn-red { background: #fee2e2; }
 .btn-red span.material-icons-outlined { color: #dc2626; }
-.btn-red span.label { color: #b91c1c; }
+.btn-red span.label { color: #7f1d1d; }
 
-/* Liste Elemanları */
+/* Liste Görünümü Elemanları */
 .gorev-list-item {
     padding: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     margin-bottom: 10px;
     background: var(--white);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.gorev-list-item:hover {
+    background-color: #fafafa;
+    border-color: var(--primary-color);
 }
 
 .gorev-list-item h4 {
@@ -249,16 +304,17 @@ body, html, #app {
     font-size: 0.95rem;
     color: var(--text-dark);
 }
+
 .gorev-list-item p {
     margin: 4px 0 0 0;
     font-size: 0.8rem;
     color: var(--text-gray);
 }
 
-/* Navigation FAB */
+/* --- 4. Navigasyon Butonu (FAB) --- */
 .fab-btn {
     position: absolute;
-    bottom: 24px;
+    bottom: 24px; /* Varsayılan konum */
     right: 20px;
     width: 56px;
     height: 56px;
@@ -271,32 +327,60 @@ body, html, #app {
     align-items: center;
     justify-content: center;
     z-index: 90;
-    transition: transform 0.3s ease;
+    cursor: pointer;
+    /* JS ile translateY uygulanacağı için transition ekliyoruz */
+    transition: transform 0.3s var(--ease-spring), background-color 0.3s;
 }
+
+.fab-btn .material-icons {
+    font-size: 28px;
+}
+
 .fab-btn.active {
-    background: var(--primary-color);
+    background-color: var(--primary-color);
     color: var(--white);
 }
 
-/* Panel açıldığında buton yukarı kaysın */
-.panel-open ~ .fab-btn {
-    transform: translateY(-240px); 
-}
-
-/* Markerlar */
+/* --- 5. Harita İşaretçileri (Placemarks) --- */
 .ymaps3x0--marker .placemark {
     width: 24px;
     height: 24px;
-    background-color: #ef4444;
-    border: 2px solid white;
+    background-color: var(--danger-color);
+    border: 3px solid var(--white);
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s;
+    box-sizing: border-box;
 }
+
 .ymaps3x0--marker .placemark.selected {
-    background-color: #3b82f6;
-    transform: scale(1.2);
+    background-color: var(--primary-color);
+    transform: scale(1.4); /* Seçilince büyüsün */
     z-index: 50;
+    border-color: var(--white);
 }
+
 .ymaps3x0--marker .placemark.filtered-out {
-    opacity: 0.2;
+    opacity: 0; /* Filtrelenenleri tamamen gizle */
+    pointer-events: none;
+}
+
+/* Kullanıcı Konumu (Mavi Nokta) */
+.user-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    border: 3px solid var(--white);
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}
+
+/* --- 6. Responsive İnce Ayarlar --- */
+@media (max-width: 380px) {
+    /* Çok küçük telefonlar için fontları biraz daha küçült */
+    .header-pill { padding: 8px 12px; }
+    .title-info h1 { font-size: 0.8rem; }
+    .action-grid { gap: 4px; }
+    .action-btn span.label { font-size: 0.6rem; }
 }
