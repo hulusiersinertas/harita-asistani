@@ -197,10 +197,13 @@ html, body, #app {
 
 /* Panelin İçeriği */
 .sheet-content {
-    padding: 0 20px 30px 20px; /* Alt kısımdan biraz boşluk */
+    padding: 0 20px 30px 20px;
     overflow-y: auto;
     flex-grow: 1;
-    -webkit-overflow-scrolling: touch; /* iOS'ta yumuşak kaydırma */
+    -webkit-overflow-scrolling: touch;
+    
+    /* ÇÖZÜM 3 DESTEK: İçerik bittiğinde üstteki paneli sürüklemeye çalışma */
+    overscroll-behavior: contain; 
 }
 
 /* Detay Başlık Kısmı */
@@ -384,3 +387,4 @@ html, body, #app {
     .action-grid { gap: 4px; }
     .action-btn span.label { font-size: 0.6rem; }
 }
+
