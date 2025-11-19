@@ -115,45 +115,22 @@ function setupEventListeners() {
 function focusOnGorev(gorevId) {
     const gorev = gorevlerData.find(g => g.id === gorevId);
     if (gorev?.hasCoords) {
-        mapInstance.update({ location: { center: [gorev.boylam, gorev.enlem], zoom: 16, duration: 500 } });
+        // DİNAMİK ZOOM AYARI:
+        // Ekran genişliği 600px'den küçükse (Mobil) Zoom 15, değilse 16 olsun.
+        const zoomLevel = window.innerWidth < 600 ? 15 : 16;
+
+        mapInstance.update({ 
+            location: { 
+                center: [gorev.boylam, gorev.enlem], 
+                zoom: zoomLevel, // 16 yerine hesapladığımız değeri kullanıyoruz
+                duration: 500 
+            } 
+        });
         selectGorev(gorevId);
     } else {
         alert('Bu görevin koordinat bilgisi bulunmuyor.');
     }
 }
-
-function zoomToMahalle(mahalle) {
-    if (mahalle === 'TÜMÜ') return;
-
-    const mahalleGorevleri = gorevlerData.filter(g => g.mahalle === mahalle && g.hasCoords);
-    if (mahalleGorevleri.length === 0) return;
-
-    // Bounds Hesapla
-    let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
-    mahalleGorevleri.forEach(g => {
-        if (g.enlem < minLat) minLat = g.enlem;
-        if (g.enlem > maxLat) maxLat = g.enlem;
-        if (g.boylam < minLon) minLon = g.boylam;
-        if (g.boylam > maxLon) maxLon = g.boylam;
-    });
-
-    // %15 Tampon Bölge (Padding) Ekle
-    const latBuffer = (maxLat - minLat) * 0.15; 
-    const lonBuffer = (maxLon - minLon) * 0.15;
-    const safeLatBuffer = latBuffer === 0 ? 0.005 : latBuffer;
-    const safeLonBuffer = lonBuffer === 0 ? 0.005 : lonBuffer;
-
-    mapInstance.update({
-        location: {
-            bounds: [
-                [minLon - safeLonBuffer, minLat - safeLatBuffer], 
-                [maxLon + safeLonBuffer, maxLat + safeLatBuffer]
-            ],
-            duration: 1000
-        }
-    });
-}
-
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
 
@@ -235,7 +212,18 @@ async function findAndSelectNextGorev() {
             stopNavigation();
             selectGorev(nextGorev.id);
             await drawRouteToTask(nextGorev, null);
-            mapInstance.update({ location: { center: [nextGorev.boylam, nextGorev.enlem], zoom: 16, duration: 800 } });
+
+            // DİNAMİK ZOOM AYARI BURADA DA GEÇERLİ
+            const zoomLevel = window.innerWidth < 600 ? 15 : 16;
+
+            mapInstance.update({ 
+                location: { 
+                    center: [nextGorev.boylam, nextGorev.enlem], 
+                    zoom: zoomLevel, // 16 yerine dinamik değer
+                    duration: 800 
+                } 
+            });
+
             setTimeout(() => { startNavigation(); }, 2000);
         } else {
             alert("Tebrikler! Güzergahtaki tüm görevler tamamlandı.");
