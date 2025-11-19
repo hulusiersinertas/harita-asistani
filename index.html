@@ -1,50 +1,67 @@
+<!-- DOSYA: index.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dağıtım Asistanı v3</title>
-    <!-- Yandex Maps API v3 -->
+    <!-- Yandex Maps -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
-    <!-- Stil Dosyası -->
+    <!-- Google Material Icons (Tasarım için gerekli) -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <!-- Google Fonts (Roboto) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Haritanın render edileceği ana container -->
+    <!-- Harita -->
     <div id="app"></div>
 
-    <!-- Üst Panel -->
-    <header class="panel top-panel">
-        <div class="panel-left">
-            <h1 id="gorev-baslik">Yükleniyor...</h1>
-            <span id="kalan-gorev-sayaci"></span>
+    <!-- Üst Panel (Mobil Uygulama Tarzı) -->
+    <header class="mobile-header">
+        <div class="header-top-row">
+            <div class="header-info">
+                <h1 id="gorev-baslik">Yükleniyor...</h1>
+                <span id="kalan-gorev-sayaci" class="badge">Kalan: --</span>
+            </div>
+            <div class="header-actions">
+                <!-- Butonlar JS ile kontrol edilecek -->
+                 <button id="guzergah-toggle-btn" class="icon-btn" style="display: none;">
+                    <span class="material-icons-outlined">route</span>
+                </button>
+                <button id="gorunum-degistir-btn" class="icon-btn">
+                    <span class="material-icons-outlined">list</span>
+                </button>
+            </div>
         </div>
-        <div class="panel-right">
-            <select id="mahalle-filtresi" disabled>
-                <option value="TÜMÜ">Tüm Mahalleler</option>
-            </select>
-            <button id="guzergah-toggle-btn" style="display: none;">Güzergahı Başlat</button>
-            <button id="gorunum-degistir-btn">Listeyi Göster</button>
+        <div class="header-bottom-row">
+            <div class="select-wrapper">
+                <select id="mahalle-filtresi" disabled>
+                    <option value="TÜMÜ">Tüm Mahalleler</option>
+                </select>
+                <span class="material-icons-outlined dropdown-icon">expand_more</span>
+            </div>
         </div>
     </header>
 
-    <!-- Alt Panel -->
-    <footer id="alt-panel" class="panel bottom-panel">
-        <!-- İçerik JavaScript tarafından dinamik olarak eklenecek -->
-    </footer>
-
-    <!-- NAVİGASYON VE KONTROL BUTONLARI -->
-    <div class="custom-controls">
-        <div class="control-group">
-            <button id="rotate-left" title="Sola Döndür (Basılı Tut)">↶</button>
-        </div>
-        <div class="control-group">
-            <button id="rotate-right" title="Sağa Döndür (Basılı Tut)">↷</button>
-        </div>
+    <!-- Alt Panel (Bottom Sheet) -->
+    <div id="alt-panel" class="bottom-sheet">
+        <!-- İçerik JS ile dolacak -->
     </div>
-    <button id="navigation-toggle-btn" title="Navigasyon Modu">🛰️</button>
 
-    <!-- Modüler JavaScript Dosyaları -->
+    <!-- Navigasyon Kontrol Butonu (Yüzen Buton) -->
+    <button id="navigation-toggle-btn" class="fab-btn" title="Navigasyon Modu">
+        <span class="material-icons-outlined">near_me</span>
+    </button>
+
+    <!-- Gizli Kontroller (Rotasyon vb. - İstersen kaldırabilirsin, kodda hata vermemesi için bıraktım) -->
+    <div style="display:none;">
+        <button id="rotate-left">L</button>
+        <button id="rotate-right">R</button>
+    </div>
+
+    <!-- Scriptler -->
     <script src="./modules/config.js" type="module"></script>
     <script src="./modules/api.js" type="module"></script>
     <script src="./modules/map.js" type="module"></script>
@@ -52,10 +69,7 @@
     <script src="./modules/navigation.js" type="module"></script>
     <script src="./modules/route.js" type="module"></script>
     <script src="./modules/panelManager.js" type="module"></script>
-    <!-- Orkestratör UI modülü -->
     <script src="./modules/ui.js" type="module"></script>
-    <!-- Ana Başlatıcı -->
     <script src="./script.js" type="module"></script>
 </body>
-
 </html>
