@@ -42,33 +42,29 @@ export function clearCurrentRoute() {
  * Kullanıcının mevcut konumundan belirtilen göreve bir rota çizer.
  */
 export async function drawRouteToTask(gorev, clickedButton) {
-    let originalText = '';
+    let originalContent = ''; // Değişken adını 'content' yaptık
+
     if (clickedButton) {
-        originalText = clickedButton.textContent;
-        clickedButton.textContent = 'Hesaplanıyor...';
+        // HATA BURADAYDI: textContent yerine innerHTML kullanıyoruz.
+        // Böylece <span class="material-icons">...</span> yapısını da hafızaya alıyoruz.
+        originalContent = clickedButton.innerHTML; 
+        
+        // Butonu geçici olarak değiştir
+        clickedButton.innerHTML = '<span class="material-icons-outlined">hourglass_empty</span> Hesap..';
         clickedButton.disabled = true;
     }
 
     clearCurrentRoute();
 
     try {
-        // 1. Koordinatları al ve doğrula
         const startPoint = await getUserLocation();
         const endPoint = [gorev.boylam, gorev.enlem];
 
-        if (!startPoint || !Array.isArray(startPoint) || startPoint.length !== 2) {
-            throw new Error('Geçerli bir başlangıç konumu alınamadı.');
-        }
-        if (!endPoint || !Array.isArray(endPoint) || endPoint.length !== 2 || !endPoint[0] || !endPoint[1]) {
-            throw new Error(`Hedef görevin (${gorev.adSoyad}) koordinatları geçersiz.`);
-        }
-        console.log('Rota çizim isteği:', { from: startPoint, to: endPoint });
+        if (!startPoint || !Array.isArray(startPoint)) throw new Error('Konum alınamadı.');
 
-        // 2. API isteğini yap
-        const requestBody = {
-            coordinates: [startPoint, endPoint]
-        };
-
+        // ... API istekleri aynı kalıyor ...
+        const requestBody = { coordinates: [startPoint, endPoint] };
+        
         const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
             method: 'POST',
             headers: {
@@ -79,35 +75,28 @@ export async function drawRouteToTask(gorev, clickedButton) {
         });
 
         const data = await response.json();
-
-        // 3. Hata kontrolünü iyileştir
-        if (!response.ok) {
-            const errorMessage = data.error?.message || JSON.stringify(data);
-            throw new Error(`API Hatası: ${errorMessage}`);
-        }
+        if (!response.ok) throw new Error(data.error?.message || 'API Hatası');
 
         if (data.routes && data.routes.length > 0) {
-            const encodedRoute = data.routes[0].geometry;
-            const routeCoordinates = decodePolyline(encodedRoute);
-
+            // ... Rota çizim kodları aynı ...
+            const routeCoordinates = decodePolyline(data.routes[0].geometry);
             const routeFeature = new ymaps3.YMapFeature({
                 geometry: { type: 'LineString', coordinates: routeCoordinates },
                 style: { stroke: [{ color: '#007BFF', width: 5 }] }
             });
-
             currentRouteFeature = routeFeature;
             mapInstance.addChild(currentRouteFeature);
         } else {
-            throw new Error("Bu iki nokta arasında bir rota bulunamadı.");
+            throw new Error("Rota bulunamadı.");
         }
 
     } catch (error) {
-        // Hata mesajını daha net göster
         alert(`Rota çizilemedi: ${error.message}`);
-        console.error("Rota çizim hatası detayı:", error);
+        console.error("Hata:", error);
     } finally {
         if (clickedButton) {
-            clickedButton.textContent = originalText;
+            // DÜZELTME: innerHTML ile orijinal ikonu ve metni geri yüklüyoruz.
+            clickedButton.innerHTML = originalContent; 
             clickedButton.disabled = false;
         }
     }
