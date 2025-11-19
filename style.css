@@ -1,14 +1,12 @@
 /* DOSYA: style.css */
 
 :root {
-    --primary-color: #2563eb; /* Stitch Mavisi */
-    --bg-light: #f4f4f5;
-    --text-dark: #18181b;
-    --text-gray: #71717a;
+    --primary-color: #3b82f6; /* Stitch Görselindeki Mavi */
+    --text-dark: #1e293b;     /* Slate-800 */
+    --text-gray: #64748b;     /* Slate-500 */
+    --bg-color: #f1f5f9;      /* Slate-100 */
     --white: #ffffff;
-    --border-color: #e4e4e7;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 body, html, #app {
@@ -18,95 +16,127 @@ body, html, #app {
     padding: 0;
     font-family: 'Roboto', sans-serif;
     overflow: hidden;
-    background-color: var(--bg-light);
+    background-color: var(--bg-color);
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* === Üst Panel (Header) === */
-.mobile-header {
+/* === YÜZEN ÜST PANEL (FLOATING HEADER) === */
+.floating-header {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
+    padding: 16px;
     z-index: 100;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border-color);
-    padding: 12px 16px;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.header-top-row {
+    pointer-events: none; /* Tıklamalar haritaya geçsin */
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
 }
 
-.header-info h1 {
-    font-size: 1.1rem;
+/* Genel Hap Stili */
+.header-pill {
+    background: var(--white);
+    border-radius: 9999px; /* Tam yuvarlak kenarlar */
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--shadow-float);
+    pointer-events: auto; /* Haplara tıklanabilsin */
+    height: 44px;
+    box-sizing: border-box;
+}
+
+/* Sol Hap (Başlık) */
+.left-pill {
+    padding-right: 20px;
+}
+
+.text-gray {
+    color: var(--text-gray);
+    font-size: 20px;
+}
+
+.title-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.1;
+}
+
+.title-info h1 {
+    margin: 0;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text-dark);
-    margin: 0;
 }
 
-.badge {
-    font-size: 0.85rem;
+.title-info span {
+    font-size: 0.75rem;
     color: var(--text-gray);
 }
 
-.header-actions {
+/* Sağ Grup (Butonlar + Filtre) */
+.header-right-group {
     display: flex;
+    align-items: center;
     gap: 8px;
+    pointer-events: auto;
 }
 
-/* İkonlu Header Butonları */
-.icon-btn {
+/* Küçük Yuvarlak Butonlar */
+.circle-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
     background: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 6px 10px;
-    cursor: pointer;
-    color: var(--text-dark);
+    border: none;
+    box-shadow: var(--shadow-float);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
-}
-
-.icon-btn:hover {
-    background: #f4f4f5;
-}
-
-/* Dropdown Tasarımı */
-.select-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-#mahalle-filtresi {
-    width: 100%;
-    appearance: none;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.95rem;
-    color: var(--text-dark);
-    font-weight: 500;
-}
-
-.dropdown-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
     color: var(--text-gray);
+    cursor: pointer;
+    transition: transform 0.1s;
 }
 
-/* === Alt Panel (Bottom Sheet) === */
+.circle-btn:active {
+    transform: scale(0.95);
+}
+
+/* Dropdown Özel Yapısı */
+.dropdown-wrapper {
+    position: relative;
+    padding: 8px 12px 8px 16px;
+    min-width: 120px;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+#mahalle-display-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+/* Gerçek select elementini görünmez yapıp üstüne seriyoruz */
+#mahalle-filtresi {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* === ALT PANEL (Bottom Sheet) === */
 .bottom-sheet {
     position: absolute;
     bottom: 0;
@@ -114,14 +144,13 @@ body, html, #app {
     right: 0;
     z-index: 100;
     background: var(--white);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    max-height: 80vh;
-    display: none; /* JS ile açılacak */
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.1);
+    display: none;
     flex-direction: column;
-    animation: slideUp 0.3s ease-out;
+    max-height: 80vh;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideUp {
@@ -131,71 +160,42 @@ body, html, #app {
 
 .sheet-handle {
     width: 40px;
-    height: 5px;
-    background: #e4e4e7;
+    height: 6px;
+    background: #e2e8f0;
     border-radius: 10px;
     margin: 12px auto 8px auto;
 }
 
 .sheet-content {
-    padding: 16px;
+    padding: 0 20px 20px 20px;
     overflow-y: auto;
 }
 
-/* Liste Görünümü Kartları */
-.gorev-list-item {
-    background: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.gorev-list-item:hover {
-    background-color: #fafafa;
-    border-color: var(--primary-color);
-}
-
-.gorev-list-item h4 {
-    margin: 0 0 4px 0;
-    color: var(--text-dark);
-    font-size: 0.95rem;
-}
-
-.gorev-list-item p {
-    margin: 0;
-    color: var(--text-gray);
-    font-size: 0.8rem;
-}
-
-/* Detay Görünümü Başlıkları */
 .detail-header {
     display: flex;
     justify-content: space-between;
-    align-items: start;
-    margin-bottom: 16px;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
 .detail-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     margin: 0 0 4px 0;
     color: var(--text-dark);
 }
 
 .detail-header p {
+    font-size: 0.85rem;
     color: var(--text-gray);
-    font-size: 0.9rem;
     margin: 0;
+    line-height: 1.4;
 }
 
-/* Aksiyon Butonları Grid Yapısı (Stitch Tasarımı) */
+/* GRID BUTONLAR */
 .action-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 8px;
-    margin-top: 10px;
 }
 
 .action-btn {
@@ -203,92 +203,100 @@ body, html, #app {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--bg-light);
+    background: #f8fafc; /* slate-50 */
     border: none;
     border-radius: 12px;
     padding: 12px 4px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
 
-.action-btn:active {
-    transform: scale(0.95);
-}
+.action-btn:hover { background: #f1f5f9; }
 
+.action-btn span.material-icons, 
 .action-btn span.material-icons-outlined {
     font-size: 24px;
-    margin-bottom: 4px;
     color: var(--primary-color);
+    margin-bottom: 6px;
 }
 
 .action-btn span.label {
     font-size: 0.7rem;
-    color: var(--text-gray);
+    color: var(--text-dark);
     font-weight: 500;
 }
 
-/* Renkli Butonlar */
+/* Renkli Buton Varyasyonları */
 .btn-green { background: #dcfce7; }
 .btn-green span.material-icons-outlined { color: #16a34a; }
-.btn-green span.label { color: #166534; }
+.btn-green span.label { color: #15803d; }
 
 .btn-red { background: #fee2e2; }
 .btn-red span.material-icons-outlined { color: #dc2626; }
-.btn-red span.label { color: #991b1b; }
+.btn-red span.label { color: #b91c1c; }
 
-/* FAB Navigasyon Butonu */
+/* Liste Elemanları */
+.gorev-list-item {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: var(--white);
+}
+
+.gorev-list-item h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+.gorev-list-item p {
+    margin: 4px 0 0 0;
+    font-size: 0.8rem;
+    color: var(--text-gray);
+}
+
+/* Navigation FAB */
 .fab-btn {
     position: absolute;
-    bottom: 24px; /* Panel kapalıyken */
-    right: 16px;
+    bottom: 24px;
+    right: 20px;
     width: 56px;
     height: 56px;
+    background: var(--white);
     border-radius: 50%;
-    background: var(--primary-color);
-    color: white;
     border: none;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    box-shadow: var(--shadow-float);
+    color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 90; /* Header ve Sheet'in altında kalabilir, duruma göre ayarla */
-    transition: all 0.3s;
+    z-index: 90;
+    transition: transform 0.3s ease;
 }
-
 .fab-btn.active {
-    background: #dc2626;
-    transform: rotate(45deg); /* İkonun çarpı olması yerine dönmesi efekti */
+    background: var(--primary-color);
+    color: var(--white);
 }
 
-.close-btn-mini {
-    background: transparent;
-    border: none;
-    color: var(--text-gray);
-    padding: 4px;
-    cursor: pointer;
+/* Panel açıldığında buton yukarı kaysın */
+.panel-open ~ .fab-btn {
+    transform: translateY(-240px); 
 }
 
-/* === Harita Markerları === */
+/* Markerlar */
 .ymaps3x0--marker .placemark {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     background-color: #ef4444;
     border: 2px solid white;
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .ymaps3x0--marker .placemark.selected {
-    background-color: #2563eb;
-    transform: scale(1.3);
+    background-color: #3b82f6;
+    transform: scale(1.2);
     z-index: 50;
-    border-width: 3px;
 }
 .ymaps3x0--marker .placemark.filtered-out {
-    background-color: #fbbf24;
-    opacity: 0.6;
-}
-
-/* Panel açıkken FAB butonunu yukarı kaydır */
-.panel-open ~ .fab-btn {
-    bottom: calc(40vh + 20px); /* Panel yüksekliğine göre değişir */
+    opacity: 0.2;
 }
