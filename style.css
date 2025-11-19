@@ -484,3 +484,32 @@ html, body, #app {
 .rotate-control:active .material-icons {
     color: white;
 }
+
+/* 1. Üst Panel için Çentik Ayarı */
+.floating-header {
+    /* Mevcut padding 12px idi. Çentik varsa onun boyutunu, yoksa 12px'i kullan diyoruz */
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+}
+
+/* 2. Alt Panel İçeriği için Alt Çubuk Ayarı */
+.sheet-content {
+    /* iPhone'larda alttaki siyah çizgi (home bar) butonların üstüne gelmesin */
+    padding-bottom: max(30px, env(safe-area-inset-bottom)) !important;
+}
+
+/* 3. Navigasyon Butonu (FAB) Ayarı */
+.fab-btn {
+    /* Alt bardan biraz daha yukarıda dursun */
+    bottom: max(24px, env(safe-area-inset-bottom) + 10px);
+}
+
+/* 4. Harita Döndürme Butonları */
+.rotate-control.left-edge {
+    left: max(12px, env(safe-area-inset-left));
+}
+
+.rotate-control.right-edge {
+    right: max(12px, env(safe-area-inset-right));
+}
