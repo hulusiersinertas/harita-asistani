@@ -1,3 +1,5 @@
+// DOSYA YOLU: modules/navigation.js
+
 // Harita kamerası, GPS takibi ve kullanıcı konumuyla ilgili tüm mantığı yönetir.
 
 let mapInstance = null;
@@ -8,12 +10,17 @@ let isNavigationModeActive = false;
 // YENİ EKLENDİ: Navigasyon modundayken en son bilinen konumu saklamak için.
 let lastKnownLocation = null;
 
+// AYARLAR (Tuning)
+const MIN_SPEED_FOR_ROTATION = 1.5; // m/s (Yaklaşık 5.4 km/s altındaki hızlarda haritayı döndürme)
+const MAX_ZOOM = 18; // Dururken veya yavaşken kullanılacak zoom
+const MIN_ZOOM = 16; // Yüksek hızda düşülecek en az zoom seviyesi
+
 // Harita döndürme değişkenleri
 let rotationDirection = 0;
 const ROTATION_SPEED = 0.2;
 let currentCameraState = { tilt: 0, azimuth: 0 };
 
-// Manuel kontrol butonları (daha sonra erişmek için)
+// Manuel kontrol butonları
 let rotateLeftBtn, rotateRightBtn;
 
 /**
@@ -29,8 +36,7 @@ export function updateExternalCameraState(newCamera) {
  * Kullanıcının mevcut konumunu bir Promise olarak döndürür.
  */
 export function getUserLocation() {
-    // GÜNCELLENDİ: Eğer navigasyon modu aktifse ve bir konumumuz varsa,
-    // yeni bir istek atmak yerine direkt onu kullanıyoruz. Bu, zaman aşımını engeller.
+    // Eğer navigasyon modu aktifse ve elimizde zaten güncel bir konum varsa onu kullan
     if (isNavigationModeActive && lastKnownLocation) {
         return Promise.resolve(lastKnownLocation);
     }
@@ -51,7 +57,7 @@ export function getUserLocation() {
                         message = 'Konum bilgisine ulaşılamıyor. Cihazınızın konum servislerinin açık olduğundan emin olun.';
                         break;
                     case error.TIMEOUT:
-                        message = 'Konum alımı zaman aşımına uğradı. Lütfen sinyalin daha iyi olduğu bir yerde tekrar deneyin.';
+                        message = 'Konum alımı zaman aşımına uğradı.';
                         break;
                 }
                 reject(new Error(message));
@@ -85,43 +91,85 @@ export const startNavigation = () => {
 
     isNavigationModeActive = true;
     document.getElementById('navigation-toggle-btn').classList.add('active');
+    
+    // Navigasyon modunda manuel döndürme butonlarını devre dışı bırak
     if (rotateLeftBtn) rotateLeftBtn.disabled = true;
     if (rotateRightBtn) rotateRightBtn.disabled = true;
 
     locationWatcherId = navigator.geolocation.watchPosition(
         (position) => {
-            const { longitude, latitude, heading } = position.coords;
+            const { longitude, latitude, heading, speed } = position.coords;
             const userCoordinates = [longitude, latitude];
 
-            // YENİ EKLENDİ: En son konumu her geldiğinde saklıyoruz.
+            // En son konumu sakla
             lastKnownLocation = userCoordinates;
 
+            // 1. Marker Oluşturma veya Güncelleme
             if (!userMarker) {
-                const markerElement = document.createElement('div');
-                markerElement.className = 'user-marker';
-                userMarker = new ymaps3.YMapMarker({ coordinates: userCoordinates }, markerElement);
+                // Marker için HTML elementi oluştur
+                const markerContainer = document.createElement('div');
+                markerContainer.className = 'user-marker-container';
+                // İçine ikon veya şekil koyabiliriz. CSS'de .user-marker ok şeklindeyse:
+                const markerArrow = document.createElement('div');
+                markerArrow.className = 'user-marker'; 
+                markerContainer.appendChild(markerArrow);
+
+                userMarker = new ymaps3.YMapMarker({ coordinates: userCoordinates }, markerContainer);
                 mapInstance.addChild(userMarker);
             } else {
                 userMarker.update({ coordinates: userCoordinates });
             }
-            
-            const cameraUpdate = {
-                tilt: 60,
-                azimuth: heading ?? currentCameraState.azimuth,
-                duration: 400
-            };
 
+            // 2. Marker'ın Kendi Dönüşü (Haritadan Bağımsız)
+            // Harita dönmese bile ikonumuz her zaman gidilen yöne baksın.
+            const markerArrowElement = userMarker.element.querySelector('.user-marker');
+            if (markerArrowElement && heading !== null && !isNaN(heading)) {
+                markerArrowElement.style.transform = `rotate(${heading}deg)`;
+                // Geçişin yumuşak olması için CSS'de transition tanımlı olmalı
+                markerArrowElement.style.transition = 'transform 0.3s ease';
+            }
+            
+            // 3. Akıllı Kamera Mantığı (Pervane Sorunu Çözümü)
+            let targetAzimuth = currentCameraState.azimuth; // Varsayılan: Mevcut açıyı koru
+            
+            // Eğer hız yeterliyse (yaklaşık 5km/s üstü) VE heading bilgisi varsa haritayı döndür
+            if (speed !== null && speed > MIN_SPEED_FOR_ROTATION && heading !== null && !isNaN(heading)) {
+                targetAzimuth = heading;
+            }
+
+            // 4. Dinamik Zoom (Hıza Göre)
+            // 0 km/s -> Zoom 18
+            // 90 km/s (25m/s) -> Zoom 16
+            let targetZoom = MAX_ZOOM;
+            if (speed !== null && speed > 0) {
+                const speedFactor = Math.min(speed / 25, 1); // 25 m/s üst limit
+                targetZoom = MAX_ZOOM - (speedFactor * (MAX_ZOOM - MIN_ZOOM));
+            }
+
+            // Kamerayı güncelle
+            // duration: 1000 yaparak GPS güncellemeleri arasındaki hareketi akıcı hale getiriyoruz
             mapInstance.update({
-                location: { center: userCoordinates, zoom: 18, duration: 400 },
-                camera: cameraUpdate
+                location: { center: userCoordinates, zoom: targetZoom, duration: 1000 },
+                camera: {
+                    tilt: 60, // Navigasyon eğimi
+                    azimuth: targetAzimuth,
+                    duration: 1000
+                }
             });
+            
+            // State'i güncelle ki manuel moda geçilirse saçmalamasın
+            currentCameraState = { tilt: 60, azimuth: targetAzimuth };
         },
         (error) => {
-            alert("Konum izlenirken bir hata oluştu. Lütfen konum servislerini kontrol edin.");
             console.error("Konum izleme hatası:", error);
+            alert("GPS sinyali alınamıyor veya izleme hatası oluştu.");
             stopNavigation();
         },
-        { enableHighAccuracy: true }
+        { 
+            enableHighAccuracy: true, // GPS'i zorla
+            timeout: 10000,           // Veri gelmezse bekleme süresi
+            maximumAge: 0             // Önbellekten eski veri kullanma
+        }
     );
 };
 
@@ -131,14 +179,16 @@ export const stopNavigation = () => {
         locationWatcherId = null;
     }
     isNavigationModeActive = false;
-    // YENİ EKLENDİ: Navigasyon durunca son konumu temizle.
-    lastKnownLocation = null;
+    lastKnownLocation = null; // Son konumu temizle (isteğe bağlı)
+    
     document.getElementById('navigation-toggle-btn').classList.remove('active');
     if (rotateLeftBtn) rotateLeftBtn.disabled = false;
     if (rotateRightBtn) rotateRightBtn.disabled = false;
     
+    // Navigasyon bitince haritayı düzelt (Kuş bakışı)
     mapInstance.update({
-        camera: { tilt: 0, duration: 500 }
+        camera: { tilt: 0, azimuth: 0, duration: 800 },
+        location: { zoom: 16, duration: 800 } // Standart zooma dön
     });
 };
 
@@ -163,18 +213,26 @@ export function initNavigation(map) {
     };
     const stopRotation = () => { rotationDirection = 0; };
 
-    rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
-    rotateLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(-1); });
-    rotateRightBtn.addEventListener('mousedown', () => startRotation(1));
-    rotateRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(1); });
+    if(rotateLeftBtn) {
+        rotateLeftBtn.addEventListener('mousedown', () => startRotation(-1));
+        rotateLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(-1); });
+    }
+    
+    if(rotateRightBtn) {
+        rotateRightBtn.addEventListener('mousedown', () => startRotation(1));
+        rotateRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRotation(1); });
+    }
+    
     document.addEventListener('mouseup', stopRotation);
     document.addEventListener('touchend', stopRotation);
 
-    navigationBtn.addEventListener('click', () => {
-        if (isNavigationModeActive) {
-            stopNavigation();
-        } else {
-            startNavigation();
-        }
-    });
+    if(navigationBtn) {
+        navigationBtn.addEventListener('click', () => {
+            if (isNavigationModeActive) {
+                stopNavigation();
+            } else {
+                startNavigation();
+            }
+        });
+    }
 }
