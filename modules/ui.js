@@ -120,12 +120,22 @@ function zoomToMahalle(mahalle) {
         if (g.boylam > maxLon) maxLon = g.boylam;
     });
 
-    // Haritayı bu sınırlara oturt (biraz boşluk/padding bırakarak)
-    // Yandex Maps v3'te bounds: [[minLon, minLat], [maxLon, maxLat]] formatındadır.
+    // SORUN 1 ÇÖZÜMÜ: Tampon Bölge (Padding) Ekleme
+    // Haritanın kenarlarına yapışmaması için sınırları %15 genişletiyoruz.
+    const latBuffer = (maxLat - minLat) * 0.15; 
+    const lonBuffer = (maxLon - minLon) * 0.15;
+
+    // Eğer tek bir nokta varsa (min=max) buffer 0 olacağından manuel ekleme yap
+    const safeLatBuffer = latBuffer === 0 ? 0.005 : latBuffer;
+    const safeLonBuffer = lonBuffer === 0 ? 0.005 : lonBuffer;
+
     mapInstance.update({
         location: {
-            bounds: [[minLon, minLat], [maxLon, maxLat]],
-            duration: 800
+            bounds: [
+                [minLon - safeLonBuffer, minLat - safeLatBuffer], // Sol Alt
+                [maxLon + safeLonBuffer, maxLat + safeLatBuffer]  // Sağ Üst
+            ],
+            duration: 1000 // Daha yumuşak bir geçiş
         }
     });
 }
