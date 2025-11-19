@@ -1,61 +1,61 @@
-<!-- DOSYA: index.html -->
+<!-- DOSYA: index.html (Sadece body içini güncellemen yeterli ama tamamını veriyorum) -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dağıtım Asistanı v3</title>
-    <!-- Yandex Maps -->
     <script src="https://api-maps.yandex.ru/v3/?apikey=b0e9e934-4234-409b-9414-a486ede76f0c&lang=tr_TR"></script>
-    <!-- Google Material Icons (Tasarım için gerekli) -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-    <!-- Google Fonts (Roboto) -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined|Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Harita -->
     <div id="app"></div>
 
-    <!-- Üst Panel (Mobil Uygulama Tarzı) -->
-    <header class="mobile-header">
-        <div class="header-top-row">
-            <div class="header-info">
-                <h1 id="gorev-baslik">Yükleniyor...</h1>
-                <span id="kalan-gorev-sayaci" class="badge">Kalan: --</span>
-            </div>
-            <div class="header-actions">
-                <!-- Butonlar JS ile kontrol edilecek -->
-                 <button id="guzergah-toggle-btn" class="icon-btn" style="display: none;">
-                    <span class="material-icons-outlined">route</span>
-                </button>
-                <button id="gorunum-degistir-btn" class="icon-btn">
-                    <span class="material-icons-outlined">list</span>
-                </button>
+    <!-- YENİ ÜST PANEL (FLOATING / YÜZEN TASARIM) -->
+    <header class="floating-header">
+        <!-- SOL HAP: Başlık ve Sayaç -->
+        <div class="header-pill left-pill">
+            <span class="material-icons text-gray">menu</span> <!-- Görsel Süsleme -->
+            <div class="title-info">
+                <h1 id="gorev-baslik">Yükleniyor</h1>
+                <span id="kalan-gorev-sayaci">Kalan: --</span>
             </div>
         </div>
-        <div class="header-bottom-row">
-            <div class="select-wrapper">
-                <select id="mahalle-filtresi" disabled>
-                    <option value="TÜMÜ">Tüm Mahalleler</option>
-                </select>
-                <span class="material-icons-outlined dropdown-icon">expand_more</span>
+
+        <!-- SAĞ GRUP: Butonlar ve Mahalle -->
+        <div class="header-right-group">
+            <!-- Güzergah Butonu (JS ile açılıp kapanır) -->
+            <button id="guzergah-toggle-btn" class="circle-btn" style="display: none;" title="Güzergah">
+                <span class="material-icons-outlined">route</span>
+            </button>
+            
+            <!-- Liste Görünümüne Geçiş Butonu -->
+            <button id="gorunum-degistir-btn" class="circle-btn" title="Görünümü Değiştir">
+                <span class="material-icons-outlined">list</span>
+            </button>
+
+            <!-- SAĞ HAP: Mahalle Filtresi -->
+            <!-- Tasarımı korumak için özel bir yapı kuruyoruz -->
+            <div class="header-pill right-pill dropdown-wrapper">
+                <span id="mahalle-display-text">Tüm Mahalleler</span>
+                <span class="material-icons text-gray">arrow_drop_down</span>
+                <!-- Gerçek select, görünmez olarak üstte duracak -->
+                <select id="mahalle-filtresi" disabled></select>
             </div>
         </div>
     </header>
 
-    <!-- Alt Panel (Bottom Sheet) -->
-    <div id="alt-panel" class="bottom-sheet">
-        <!-- İçerik JS ile dolacak -->
-    </div>
+    <!-- ALT PANEL (Bottom Sheet) -->
+    <div id="alt-panel" class="bottom-sheet"></div>
 
-    <!-- Navigasyon Kontrol Butonu (Yüzen Buton) -->
-    <button id="navigation-toggle-btn" class="fab-btn" title="Navigasyon Modu">
-        <span class="material-icons-outlined">near_me</span>
+    <!-- NAVİGASYON BUTONU (FAB) -->
+    <button id="navigation-toggle-btn" class="fab-btn">
+        <span class="material-icons">near_me</span>
     </button>
 
-    <!-- Gizli Kontroller (Rotasyon vb. - İstersen kaldırabilirsin, kodda hata vermemesi için bıraktım) -->
+    <!-- Gizli Kontroller -->
     <div style="display:none;">
         <button id="rotate-left">L</button>
         <button id="rotate-right">R</button>
