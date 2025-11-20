@@ -1,41 +1,75 @@
-import { fetchSheetData, fetchGuzergahData } from './modules/api.js'; // fetchGuzergahData eklendi
+import { fetchSheetData, fetchGuzergahData } from './modules/api.js';
 import { initMap } from './modules/map.js';
 import { initUI } from './modules/ui.js';
 
-async function main() {
-    const params = new URLSearchParams(window.location.search);
-    const aracAdi = params.get('arac');
+// GLOBAL FONKSİYON: Buton tıklanınca çalışır
+window.aracSec = function(secilenArac) {
+    if (!secilenArac) return;
 
-    if (!aracAdi) {
-        document.getElementById('gorev-baslik').textContent = "HATA";
-        alert("Lütfen geçerli bir araç parametresi ile giriş yapın. (Örn: ?arac=OP-1)");
-        return;
+    // NOT: localStorage satırlarını sildik. Artık kaydetmeyecek.
+
+    // 1. Modalı Efektli Gizle
+    const modal = document.getElementById('arac-secim-modal');
+    if (modal) {
+        modal.style.opacity = '0';
+        // Animasyon bitince (300ms) display none yap
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
     }
-    
-    document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri Yükleniyor...`;
 
-    // Görevleri ve Güzergah verisini AYNI ANDA çekmek için Promise.all kullanıyoruz.
-    // Bu, bekleme süresini kısaltır.
-    const [gorevler, guzergahSiralamasi] = await Promise.all([
-        fetchSheetData(aracAdi),
-        fetchGuzergahData(aracAdi)
-    ]);
-    
-    if (gorevler.length === 0) {
-        document.getElementById('gorev-baslik').textContent = `Görev Yok`;
-        document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: 0`;
-        return;
+    // 2. Uygulamayı Seçilen Araçla Başlat
+    baslat(secilenArac);
+};
+
+// Uygulamanın Ana Başlatma Mantığı
+async function baslat(aracAdi) {
+    console.log("Uygulama başlatılıyor, Araç:", aracAdi);
+
+    document.getElementById('gorev-baslik').textContent = `${aracAdi} Yükleniyor...`;
+
+    try {
+        const [gorevler, guzergahSiralamasi] = await Promise.all([
+            fetchSheetData(aracAdi),
+            fetchGuzergahData(aracAdi)
+        ]);
+        
+        if (gorevler.length === 0) {
+            document.getElementById('gorev-baslik').textContent = `Görev Yok`;
+            document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: 0`;
+            return;
+        }
+        
+        document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
+        document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
+        
+        const { map, placemarks } = await initMap(gorevler);
+        initUI(gorevler, map, placemarks, aracAdi, guzergahSiralamasi);
+
+    } catch (error) {
+        console.error("Başlatma hatası:", error);
+        alert("Veriler yüklenirken hata oluştu. İnternet bağlantınızı kontrol edin.");
+        // Hata olursa sayfayı yenilemek isteyebilirler
+        location.reload();
     }
-    
-    document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
-    document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
-    console.log("Başarıyla çekilen ve işlenen görevler:", gorevler);
-    console.log("Çekilen güzergah sırası:", guzergahSiralamasi);
-
-    const { map, placemarks } = await initMap(gorevler);
-    
-    // Arayüzü başlatırken artık güzergah verisini de gönderiyoruz.
-    initUI(gorevler, map, placemarks, aracAdi, guzergahSiralamasi);
 }
 
-main();
+// Uygulama ilk açıldığında çalışacak kod
+function initApp() {
+    // Sadece Web sürümü testi için URL kontrolü bırakıyoruz.
+    // APK'da URL parametresi olmayacağı için burası her zaman es geçilecek
+    // ve direkt Modal ekranda kalacaktır.
+    const params = new URLSearchParams(window.location.search);
+    const urlArac = params.get('arac');
+
+    if (urlArac) {
+        // Eğer web tarayıcısında ?arac=OP-1 diye elle yazıldıysa modalı gösterme
+        document.getElementById('arac-secim-modal').style.display = 'none';
+        baslat(urlArac);
+    } 
+    
+    // APK modunda 'else' durumuna düşer. 
+    // HTML'de modal varsayılan olarak açık olduğu için (display: flex),
+    // kullanıcı seçim yapana kadar ekran öylece bekler.
+}
+
+// Başlat
+initApp();

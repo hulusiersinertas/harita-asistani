@@ -1,12 +1,12 @@
-// ================================================================================
-// DOSYA YOLU: modules/ui.js (FİNAL SÜRÜM)
-// ================================================================================
-
 import { updateGorevStatus } from './api.js';
 import { initPanelManager, showDetailView, showListView, hidePanel } from './panelManager.js';
 import { initNavigation, getUserLocation, updateExternalCameraState, startNavigation, stopNavigation } from './navigation.js';
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
 import { findNextGorev } from './guzergahManager.js';
+
+// --- AYARLAR ---
+const ZOOM_GENIS = 14;  // "Yüksekten" bakış (Mahalle veya Genel görünüm için)
+const ZOOM_YAKIN = 16;  // Detay bakış (Navigasyon modu için)
 
 // DOM Elementleri
 const mahalleFiltresi = document.getElementById('mahalle-filtresi');
@@ -22,13 +22,9 @@ let mapInstance = null;
 let currentAracAdi = '';
 let currentSelectedGorevId = null;
 
-// Güzergah Modu Durumu
 let isGuzergahActive = false;
 let guzergahSiralamasi = [];
 
-/**
- * Tüm UI modüllerini başlatır.
- */
 export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     gorevlerData = gorevler;
     placemarksMap = placemarks;
@@ -39,7 +35,6 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     populateMahalleFiltresi(gorevler);
     setupEventListeners();
 
-    // Panel Yöneticisine Bağlan
     initPanelManager({
         onGorevSelect: (gorevId) => {
             if (isGuzergahActive) return;
@@ -50,7 +45,7 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
             if (isGuzergahActive) return;
             drawRouteToTask(gorev, button);
         },
-        onDeselect: deselectGorev, // İşte bu eksik fonksiyon buraya bağlanıyor
+        onDeselect: deselectGorev,
         onShowListView: () => displayListView(mahalleFiltresi.value)
     });
     
@@ -66,22 +61,15 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
 function setupEventListeners() {
     const { YMapListener } = ymaps3;
 
-    // Harita Tıklama Dinleyicisi (Sürükleme sorunu için onClick kullanıldı)
     const mapListener = new YMapListener({
         layer: 'any',
         onClick: (event) => {
             if (isGuzergahActive) return;
             
-            // Tıklanan element bir placemark mı?
             if (event?.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 focusOnGorev(gorevId);
             } 
-            // Boşluğa tıklanırsa seçimi kaldır
-            else {
-                // Harita etkileşimini bozmamak için burayı boş bırakabiliriz
-                // veya deselectGorev() çağırabiliriz. Kullanım alışkanlığına bağlı.
-            }
         },
         onUpdate: ({ camera }) => {
             updateExternalCameraState(camera);
@@ -91,54 +79,100 @@ function setupEventListeners() {
 
     // Mahalle Filtresi Değişimi
     mahalleFiltresi.addEventListener('change', () => {
-        // Görsel yazıyı güncelle
-        const selectedText = mahalleFiltresi.options[mahalleFiltresi.selectedIndex].text;
-        const displayText = selectedText.length > 15 ? selectedText.substring(0, 13) + '...' : selectedText;
-        if (mahalleDisplayText) mahalleDisplayText.textContent = displayText;
+        // 1. Yazıyı Güncelle
+        updateDropdownText(mahalleFiltresi.value);
 
-        // Varsa seçimi kaldır
-        if (currentSelectedGorevId) {
-            deselectGorev();
-        }
+        // 2. Seçimi kaldır (Temiz sayfa)
+        if (currentSelectedGorevId) deselectGorev();
 
-        // Listeyi güncelle, haritayı boya ve zoom yap
+        // 3. Listeyi güncelle
         const selectedMahalle = mahalleFiltresi.value;
         displayListView(selectedMahalle);
+
+        // 4. SORUN 3 ve 4 ÇÖZÜMÜ: Haritayı o mahalleye uçur
         zoomToMahalle(selectedMahalle);
     });
 
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
 }
 
-// --- YARDIMCI FONKSİYONLAR ---
+// --- EKSİK OLAN FONKSİYON EKLENDİ ---
+function zoomToMahalle(mahalleAdi) {
+    let targets = [];
+
+    if (mahalleAdi === 'TÜMÜ') {
+        targets = gorevlerData.filter(g => g.hasCoords);
+    } else {
+        targets = gorevlerData.filter(g => g.mahalle === mahalleAdi && g.hasCoords);
+    }
+
+    if (targets.length === 0) return;
+
+    // Ortalama koordinatı bul
+    let totalLat = 0, totalLon = 0;
+    targets.forEach(t => {
+        totalLat += t.enlem;
+        totalLon += t.boylam;
+    });
+    
+    const centerLat = totalLat / targets.length;
+    const centerLon = totalLon / targets.length;
+
+    // Haritayı oraya kaydır (Wide Zoom / Geniş Açı ile)
+    mapInstance.update({
+        location: {
+            center: [centerLon, centerLat],
+            zoom: ZOOM_GENIS, // SORUN 4: Daha yüksekten bakış
+            duration: 800 // Akıcı geçiş
+        }
+    });
+}
 
 function focusOnGorev(gorevId) {
     const gorev = gorevlerData.find(g => g.id === gorevId);
     if (gorev?.hasCoords) {
-        // DİNAMİK ZOOM AYARI:
-        // Ekran genişliği 600px'den küçükse (Mobil) Zoom 15, değilse 16 olsun.
-        const zoomLevel = window.innerWidth < 600 ? 15 : 16;
+        
+        // SORUN 2 ÇÖZÜMÜ: Haritadan pini seçince Header'daki yazı da değişsin
+        if (mahalleFiltresi.value !== gorev.mahalle) {
+            mahalleFiltresi.value = gorev.mahalle; // Select'i güncelle
+            updateDropdownText(gorev.mahalle);     // Görünür yazıyı güncelle
+            // Not: filterPinsOnMap çağırmıyoruz ki diğer mahalleler kaybolmasın, 
+            // sadece kullanıcı nerede olduğunu bilsin.
+        }
 
+        // Haritayı odakla (Biraz daha geniş açı ile - ZOOM_GENIS)
+        // Kullanıcı "Yüksekten" istediği için ZOOM_GENIS (14) kullanıyoruz.
+        // Tam dibine girmek isterse ZOOM_YAKIN (16) yapabilirsin.
         mapInstance.update({ 
             location: { 
                 center: [gorev.boylam, gorev.enlem], 
-                zoom: zoomLevel, // 16 yerine hesapladığımız değeri kullanıyoruz
-                duration: 500 
+                zoom: 15, // Tekil görev için orta karar bir zoom (14 çok uzak, 16 çok yakın)
+                duration: 600 
             } 
         });
         selectGorev(gorevId);
     } else {
-        alert('Bu görevin koordinat bilgisi bulunmuyor.');
+        alert('Koordinat yok.');
     }
 }
+
+// Helper: Dropdown yazısını güvenli güncelleme
+function updateDropdownText(mahalleAdi) {
+    if (!mahalleDisplayText) return;
+    
+    let text = mahalleAdi;
+    if (mahalleAdi === 'TÜMÜ') text = "Tüm Mahalleler";
+    
+    // Uzun isimleri kısalt (CSS de yapıyor ama JS ile garantiye alalım)
+    const finalText = text.length > 18 ? text.substring(0, 16) + '...' : text;
+    mahalleDisplayText.textContent = finalText;
+}
+
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
-    if (!confirm(`${adSoyad} için durumu "${newStatus}" olarak işaretlemek istediğinize emin misiniz?`)) return;
+    if (!confirm(`${adSoyad} durumu "${newStatus}" olacak. Onaylıyor musunuz?`)) return;
 
     const parentDiv = clickedButton.parentElement;
-    if(parentDiv) {
-        const allButtons = parentDiv.querySelectorAll('button');
-        allButtons.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.5'; });
-    }
+    if(parentDiv) parentDiv.querySelectorAll('button').forEach(b => b.disabled = true);
     
     const originalContent = clickedButton.innerHTML;
     clickedButton.textContent = '...';
@@ -148,11 +182,8 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     if (success) {
         removeGorev(gorevId);
     } else {
-        alert('Hata oluştu.');
-        if(parentDiv) {
-            const allButtons = parentDiv.querySelectorAll('button');
-            allButtons.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; });
-        }
+        alert('Güncelleme hatası.');
+        if(parentDiv) parentDiv.querySelectorAll('button').forEach(b => b.disabled = false);
         clickedButton.innerHTML = originalContent;
     }
 }
@@ -171,9 +202,7 @@ function removeGorev(gorevId) {
         findAndSelectNextGorev(); 
     } else {
         deselectGorev();
-        if (document.getElementById('alt-panel').classList.contains('panel-open')) {
-            displayListView(mahalleFiltresi.value);
-        }
+        displayListView(mahalleFiltresi.value);
     }
 }
 
@@ -185,9 +214,7 @@ function toggleGuzergahModu() {
 async function startGuzergah() {
     isGuzergahActive = true;
     guzergahBtn.innerHTML = '<span class="material-icons-outlined" style="color: #dc2626;">stop_circle</span>';
-    guzergahBtn.title = "Güzergahı Durdur";
     mahalleFiltresi.disabled = true;
-    // Liste butonu kaldırıldığı için buradaki disable işlemini sildik
     navigationBtn.classList.remove('active');
     startNavigation();
     await findAndSelectNextGorev();
@@ -197,10 +224,9 @@ function stopGuzergah() {
     stopNavigation();
     isGuzergahActive = false;
     guzergahBtn.innerHTML = '<span class="material-icons-outlined">route</span>';
-    guzergahBtn.title = "Güzergahı Başlat";
     mahalleFiltresi.disabled = false;
     deselectGorev();
-    alert("Güzergah modu durduruldu.");
+    alert("Güzergah durduruldu.");
 }
 
 async function findAndSelectNextGorev() {
@@ -211,26 +237,27 @@ async function findAndSelectNextGorev() {
         if (nextGorev) {
             stopNavigation();
             selectGorev(nextGorev.id);
-            await drawRouteToTask(nextGorev, null);
+            // Güzergahta da yazıyı güncelle
+            updateDropdownText(nextGorev.mahalle);
+            mahalleFiltresi.value = nextGorev.mahalle;
 
-            // DİNAMİK ZOOM AYARI BURADA DA GEÇERLİ
-            const zoomLevel = window.innerWidth < 600 ? 15 : 16;
+            await drawRouteToTask(nextGorev, null);
 
             mapInstance.update({ 
                 location: { 
                     center: [nextGorev.boylam, nextGorev.enlem], 
-                    zoom: zoomLevel, // 16 yerine dinamik değer
+                    zoom: ZOOM_YAKIN, // Güzergahta daha yakın olabilir
                     duration: 800 
                 } 
             });
 
             setTimeout(() => { startNavigation(); }, 2000);
         } else {
-            alert("Tebrikler! Güzergahtaki tüm görevler tamamlandı.");
+            alert("Güzergah tamamlandı!");
             stopGuzergah();
         }
     } catch (error) {
-        alert(`Konum hatası: ${error.message}`);
+        console.error(error);
         stopGuzergah();
     }
 }
@@ -242,13 +269,8 @@ function populateMahalleFiltresi(gorevler) {
     mahalleFiltresi.innerHTML = '<option value="TÜMÜ">Tüm Mahalleler</option>';
     sortedMahalleler.forEach(mahalle => mahalleFiltresi.add(new Option(mahalle, mahalle)));
     mahalleFiltresi.disabled = false;
-    
-    if (mahalleDisplayText) {
-        mahalleDisplayText.textContent = "Tüm Mahalleler";
-    }
+    updateDropdownText("TÜMÜ");
 }
-
-// --- PİN SEÇİM VE RENKLENDİRME MANTIĞI ---
 
 function selectGorev(gorevId) {
     if (currentSelectedGorevId) {
@@ -261,18 +283,14 @@ function selectGorev(gorevId) {
 
     if (!gorev || !pin) return;
 
-    // 1. Seçili pini Mavi Yap
     pin.element.classList.add('selected');
     
-    // 2. Sadece o mahallenin pinlerini Kırmızı, diğerlerini Sarı yap
-    if (gorev.mahalle) {
-        filterPinsOnMap(gorev.mahalle);
-    }
+    // Sadece o mahallenin pinlerini vurgula (Kırmızı), diğerlerini soldur (Sarı)
+    filterPinsOnMap(gorev.mahalle);
 
     showDetailView(gorev);
 }
 
-// BURASI SENİN EKSİK OLAN FONKSİYONUN
 export function deselectGorev() {
     if (currentSelectedGorevId) {
         placemarksMap.get(currentSelectedGorevId)?.element.classList.remove('selected');
@@ -280,7 +298,7 @@ export function deselectGorev() {
     }
     clearCurrentRoute();
 
-    // Seçim kalkınca renkleri Dropdown'da ne seçiliyse ona döndür
+    // Seçim kalkınca harita renkleri, filtrede ne seçiliyse ona dönsün
     filterPinsOnMap(mahalleFiltresi.value);
 
     hidePanel();
@@ -296,13 +314,9 @@ function filterPinsOnMap(secilenMahalle) {
     placemarksMap.forEach((pin, gorevId) => {
         const gorev = gorevlerData.find(g => g.id === gorevId);
         if (gorev) {
-            // Seçilen mahalledekilere (veya Tümü ise hepsine) dokunma (Kırmızı kalır)
-            // Diğerlerine 'filtered-out' sınıfı ekle (Sarı olur)
+            // Eğer dropdown'da TÜMÜ seçiliyse veya pin'in mahallesi seçiliyse aktif kalır.
             const isMatch = (secilenMahalle === 'TÜMÜ' || gorev.mahalle === secilenMahalle);
-            
             pin.element.classList.toggle('filtered-out', !isMatch);
-            
-            // Hepsi görünür olsun, sadece renkleri değişsin
             pin.element.style.display = 'block'; 
         }
     });

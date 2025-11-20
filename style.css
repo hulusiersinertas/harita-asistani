@@ -98,12 +98,15 @@ html, body, #app {
     color: var(--text-gray);
 }
 
-/* Sağ Grup: Butonlar ve Dropdown */
+/* Sağ Grup: Ekranın sağına yapışık, gerekirse küçülsün */
 .header-right-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px; /* Boşluğu biraz azalttık */
     pointer-events: auto;
+    flex-shrink: 1; /* Alan daralırsa küçülmeye izin ver */
+    min-width: 0; /* Flexbox taşma koruması */
+    max-width: 65%; /* Sol tarafa (Başlığa) saygı duysun */
 }
 
 /* Yuvarlak İkon Butonlar (Güzergah, Liste vb.) */
@@ -131,23 +134,28 @@ html, body, #app {
     font-size: 24px;
 }
 
-/* Sağ Hap: Mahalle Filtresi (Özel Dropdown Yapısı) */
+/* Dropdown Hapı: Çok geniş olmasın, yazı sığmazsa '...' koysun */
 .dropdown-wrapper {
     position: relative;
-    padding: 8px 12px 8px 16px;
-    min-width: 130px; /* Minimum genişlik */
+    padding: 8px 12px 8px 12px;
+    /* Sabit min-width yerine esnek yapı */
+    min-width: 80px; 
+    max-width: 140px; /* Maksimum genişlik sınırı */
     justify-content: space-between;
     cursor: pointer;
+    flex-shrink: 1; /* Küçülebilir */
 }
 
+/* İçindeki Yazı */
 #mahalle-display-text {
-    font-size: 0.85rem;
+    font-size: 0.80rem; /* Yazıyı bir tık küçülttük */
     font-weight: 600;
     color: var(--text-dark);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100px; /* Çok uzun isimler taşmasın */
+    text-overflow: ellipsis; /* Sığmayan yazı '...' olur */
+    display: block;
+    width: 100%;
 }
 
 /* Görünmez Select Elementi (Hile) */
@@ -512,4 +520,123 @@ html, body, #app {
 
 .rotate-control.right-edge {
     right: max(12px, env(safe-area-inset-right));
+}
+
+/* 1. Üst Panel için Çentik Ayarı */
+.floating-header {
+    /* Mevcut padding 12px idi. Çentik varsa onun boyutunu, yoksa 12px'i kullan diyoruz */
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+}
+
+/* 2. Alt Panel İçeriği için Alt Çubuk Ayarı */
+.sheet-content {
+    /* iPhone'larda alttaki siyah çizgi (home bar) butonların üstüne gelmesin */
+    padding-bottom: max(30px, env(safe-area-inset-bottom)) !important;
+}
+
+/* 3. Navigasyon Butonu (FAB) Ayarı */
+.fab-btn {
+    /* Alt bardan biraz daha yukarıda dursun */
+    bottom: max(24px, env(safe-area-inset-bottom) + 10px);
+}
+
+/* 4. Harita Döndürme Butonları */
+.rotate-control.left-edge {
+    left: max(12px, env(safe-area-inset-left));
+}
+
+.rotate-control.right-edge {
+    right: max(12px, env(safe-area-inset-right));
+}
+
+/* --- Araç Seçim Modalı --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.9); /* Koyu arka plan */
+    backdrop-filter: blur(5px); /* Arkadaki haritayı bulanıklaştır */
+    z-index: 9999999 !important; /* En üstte */
+    display: flex; /* JS ile 'none' yapılınca gizlenir */
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-content {
+    background: var(--white);
+    width: 90%;
+    max-width: 340px;
+    border-radius: 24px;
+    padding: 30px 24px;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popUp {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-icon {
+    width: 64px;
+    height: 64px;
+    background-color: #eff6ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px auto;
+}
+
+.modal-icon .material-icons {
+    font-size: 32px;
+    color: var(--primary-color);
+}
+
+.modal-content h2 {
+    margin: 0 0 8px 0;
+    color: var(--text-dark);
+    font-size: 1.5rem;
+}
+
+.modal-content p {
+    margin: 0 0 24px 0;
+    color: var(--text-gray);
+    font-size: 0.95rem;
+}
+
+.arac-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 sütun */
+    gap: 12px;
+}
+
+.arac-btn {
+    background: var(--secondary-bg);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.arac-btn:active {
+    transform: scale(0.95);
+}
+
+/* Seçildiğinde (Mavi olsun istersen hover/active ekleyebilirsin) */
+.arac-btn:hover {
+    border-color: var(--primary-color);
+    background: #eff6ff;
+    color: var(--primary-color);
 }
