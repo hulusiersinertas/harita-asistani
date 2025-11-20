@@ -65,7 +65,7 @@ export async function drawRouteToTask(gorev, clickedButton) {
         // ... API istekleri aynı kalıyor ...
         const requestBody = { coordinates: [startPoint, endPoint] };
         
-        const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
+        const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-hgv', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -101,3 +101,4 @@ export async function drawRouteToTask(gorev, clickedButton) {
         }
     }
 }
+
