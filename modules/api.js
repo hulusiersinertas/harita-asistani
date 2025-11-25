@@ -5,7 +5,8 @@ import { config } from './config.js';
  */
 export async function fetchSheetData(sheetName) {
     const range = `${sheetName}!A4:P`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
+    // Sonuna '&_t=' + zaman damgası ekliyoruz. Bu, tarayıcıyı her seferinde yeni veri çekmeye zorlar.
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&_t=${new Date().getTime()}`;
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Google Sheets API Hatası: ${response.statusText}`);
@@ -135,3 +136,4 @@ export async function fetchGuzergahData(aracAdi) {
         return []; // Hata durumunda boş güzergah döndür
     }
 }
+
