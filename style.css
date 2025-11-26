@@ -676,4 +676,54 @@ html, body, #app {
     color: var(--primary-color);
 }
 
+/* ================================================================= */
+/* === BUTON POZİSYONLARI İÇİN KESİN ÇÖZÜM (EN ALTA EKLEYİN) === */
+/* ================================================================= */
+
+/* 1. Mavi Navigasyon Butonu (En Altta) */
+#navigation-toggle-btn {
+    position: absolute !important;
+    right: 20px !important;
+    bottom: 30px !important; /* Alt kenardan 30px yukarıda */
+    width: 56px;
+    height: 56px;
+    z-index: 90;
+    
+    /* iPhone Çentik Ayarı */
+    bottom: max(30px, env(safe-area-inset-bottom) + 10px) !important;
+}
+
+/* 2. Turuncu Ünlem Butonu (Onun Üstünde) */
+#no-coords-btn {
+    position: absolute !important;
+    right: 20px !important;
+    /* 30px (alttaki buton) + 56px (boyut) + 24px (boşluk) = 110px */
+    bottom: 110px !important; 
+    width: 56px;
+    height: 56px;
+    z-index: 95;
+    background-color: #f59e0b;
+    color: white;
+    
+    /* iPhone Çentik Ayarı (Alttakine göre orantılı artırdık) */
+    bottom: max(110px, env(safe-area-inset-bottom) + 90px) !important;
+}
+
+/* Uyarı butonu içindeki sayı balonu */
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
 
