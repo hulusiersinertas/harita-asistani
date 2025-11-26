@@ -9,7 +9,7 @@ export async function fetchSheetData(sheetName) {
     const range = `'${sheetName}'!A1:P`;
     
     // 3. CACHE ÖNLEME: _t parametresini ekliyoruz.
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&_t=${Date.now()}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&=${Date.now()}`;
     
     try {
         const response = await fetch(url);
@@ -140,7 +140,7 @@ export async function fetchGuzergahData(aracAdi) {
     const sheetName = 'Mahalleler Guzergah';
     // Burada da güvenli aralık kullanıyoruz
     const headerRange = `'${sheetName}'!A1:Z1`;
-    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
+    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}&=${Date.now()}`;
 
     try {
         const headerResponse = await fetch(headerUrl);
@@ -167,3 +167,4 @@ export async function fetchGuzergahData(aracAdi) {
         return [];
     }
 }
+
