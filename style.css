@@ -727,3 +727,34 @@ html, body, #app {
     border: 2px solid white;
 }
 
+/* --- style.css --- */
+
+/* Başlık alanının alt boşluğunu azalt */
+.detail-header {
+    margin-bottom: 10px !important; /* Eskiden 16px idi */
+    padding-top: 5px;
+}
+
+/* İsim boyutunu ve boşluğunu ayarla */
+.detail-header h2 {
+    font-size: 1.05rem !important;
+    margin: 0 0 2px 0 !important;
+    line-height: 1.2;
+}
+
+/* Adres ve Not satırlarının satır aralığını sıkılaştır */
+.detail-header p {
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.3 !important;
+}
+
+/* Not satırını (Turuncu yazı) daha kompakt yap */
+.adres-notu-stili {
+    color: #d97706; 
+    font-size: 0.8rem !important; 
+    font-weight: 500;
+    margin-top: 2px !important;
+    display: block;
+}
+
