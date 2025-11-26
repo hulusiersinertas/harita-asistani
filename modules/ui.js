@@ -292,6 +292,7 @@ function selectGorev(gorevId) {
     pin.element.classList.add('selected');
     filterPinsOnMap(gorev.mahalle);
     showDetailView(gorev);
+    adjustFabPosition(true); // Butonları yukarı kaldır
 }
 
 export function deselectGorev() {
@@ -302,6 +303,7 @@ export function deselectGorev() {
     clearCurrentRoute();
     filterPinsOnMap(mahalleFiltresi.value);
     hidePanel();
+    adjustFabPosition(false); // Butonları aşağı indir
 }
 
 function displayListView(mahalleFilter = 'TÜMÜ') {
@@ -319,4 +321,24 @@ function filterPinsOnMap(secilenMahalle) {
             pin.element.style.display = 'block'; 
         }
     });
+}
+// --- BUTON POZİSYONUNU AYARLAYAN FONKSİYON ---
+function adjustFabPosition(isOpen) {
+    const navBtn = document.getElementById('navigation-toggle-btn');
+    const warnBtn = document.getElementById('no-coords-btn');
+
+    // Panel açılınca 200px yukarı kaysınlar
+    const transformValue = isOpen ? 'translateY(-200px)' : 'translateY(0)';
+
+    // Navigasyon Butonunu Kaydır
+    if (navBtn) {
+        navBtn.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+        navBtn.style.transform = transformValue;
+    }
+    
+    // Turuncu Butonu Kaydır
+    if (warnBtn) {
+        warnBtn.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+        warnBtn.style.transform = transformValue;
+    }
 }
