@@ -9,7 +9,7 @@ let startY = 0;
 let startHeight = 0;
 let isDragging = false;
 
-const SHEET_PEEK_HEIGHT = 180; 
+const SHEET_PEEK_HEIGHT = 240; 
 const SHEET_MAX_HEIGHT_PERCENT = 60; // Yarıdan biraz fazla olsun
 
 export function initPanelManager(cbs) {
@@ -194,4 +194,5 @@ function adjustFabPosition(isOpen) {
         fab.style.transform = 'translateY(0)';
     }
 }
+
 
