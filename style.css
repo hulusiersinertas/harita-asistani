@@ -352,6 +352,41 @@ html, body, #app {
     color: var(--white);
 }
 
+/* Uyarı Butonu (Koordinatsızlar) */
+.warning-fab {
+    background-color: #f59e0b; /* Turuncu */
+    color: white;
+    bottom: 90px; /* Navigasyon butonunun (24px) üstünde dursun */
+    z-index: 95; /* Harita üstü, nav butonu altı */
+}
+
+/* iPhone çentik desteği (Mevcut kodun altına ekle veya güncelle) */
+.warning-fab {
+    bottom: max(90px, env(safe-area-inset-bottom) + 70px);
+}
+
+.warning-fab:active {
+    background-color: #d97706;
+}
+
+/* Sağ üstteki küçük sayı balonu */
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ef4444; /* Kırmızı */
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
 /* --- 5. Harita İşaretçileri (Placemarks) - RENK GÜNCELLEMESİ --- */
 .ymaps3x0--marker .placemark {
     width: 24px;
@@ -640,3 +675,4 @@ html, body, #app {
     background: #eff6ff;
     color: var(--primary-color);
 }
+
