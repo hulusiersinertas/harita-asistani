@@ -141,19 +141,25 @@ export function showDetailView(gorev) {
     if (gorev.telefon) document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
 }
 
-export function showListView(filtrelenmisGorevler) {
+export function showListView(filtrelenmisGorevler, title = null) {
+    // Eğer başlık gönderilmediyse varsayılan başlığı oluştur
+    const displayTitle = title ? title : `Görev Listesi (${filtrelenmisGorevler.length})`;
+
     const html = `
         <div class="sheet-handle"></div>
         <div class="sheet-content">
             <div class="detail-header">
-                <h2 style="font-size:1rem;">Görev Listesi (${filtrelenmisGorevler.length})</h2>
+                <h2 style="font-size:1rem;">${displayTitle}</h2>
                 <button id="close-list-btn" class="close-btn-mini"><span class="material-icons-outlined">close</span></button>
             </div>
             <div id="list-container" style="padding-bottom: 20px;">
+                ${filtrelenmisGorevler.length === 0 ? '<p style="text-align:center; color:#999; margin-top:20px;">Görev bulunamadı.</p>' : ''}
+                
                 ${filtrelenmisGorevler.map(gorev => `
                     <div class="gorev-list-item" data-id="${gorev.id}">
                         <h4>${gorev.adSoyad} (${gorev.miktar})</h4>
-                        <p>${gorev.mahalle} - ${gorev.tamAdres.substring(0, 30)}...</p>
+                        <p>${gorev.mahalle} - ${gorev.tamAdres}</p>
+                        ${!gorev.hasCoords ? '<span style="font-size:0.7rem; color:red; font-weight:bold;">KOORDİNAT YOK</span>' : ''}
                     </div>
                 `).join('')}
             </div>
@@ -188,3 +194,4 @@ function adjustFabPosition(isOpen) {
         fab.style.transform = 'translateY(0)';
     }
 }
+
