@@ -6,8 +6,6 @@ import { initUI } from './modules/ui.js';
 window.aracSec = function(secilenArac) {
     if (!secilenArac) return;
 
-    // NOT: localStorage satırlarını sildik. Artık kaydetmeyecek.
-
     // 1. Modalı Efektli Gizle
     const modal = document.getElementById('arac-secim-modal');
     if (modal) {
@@ -35,6 +33,7 @@ async function baslat(aracAdi) {
         if (gorevler.length === 0) {
             document.getElementById('gorev-baslik').textContent = `Görev Yok`;
             document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: 0`;
+            alert("Bu araç için kayıtlı görev bulunamadı.");
             return;
         }
         
@@ -46,29 +45,22 @@ async function baslat(aracAdi) {
 
     } catch (error) {
         console.error("Başlatma hatası:", error);
-        alert("Veriler yüklenirken hata oluştu. İnternet bağlantınızı kontrol edin.");
-        // Hata olursa sayfayı yenilemek isteyebilirler
+        // Hatayı ekranda da gösterelim ki ne olduğunu anlayalım
+        alert("Veriler yüklenirken hata oluştu: " + error.message);
         location.reload();
     }
 }
 
 // Uygulama ilk açıldığında çalışacak kod
 function initApp() {
-    // Sadece Web sürümü testi için URL kontrolü bırakıyoruz.
-    // APK'da URL parametresi olmayacağı için burası her zaman es geçilecek
-    // ve direkt Modal ekranda kalacaktır.
     const params = new URLSearchParams(window.location.search);
     const urlArac = params.get('arac');
 
     if (urlArac) {
-        // Eğer web tarayıcısında ?arac=OP-1 diye elle yazıldıysa modalı gösterme
         document.getElementById('arac-secim-modal').style.display = 'none';
         baslat(urlArac);
     } 
-    
-    // APK modunda 'else' durumuna düşer. 
-    // HTML'de modal varsayılan olarak açık olduğu için (display: flex),
-    // kullanıcı seçim yapana kadar ekran öylece bekler.
+    // APK veya normal web girişinde modal açık kalır, kullanıcı butona basınca window.aracSec çalışır.
 }
 
 // Başlat
