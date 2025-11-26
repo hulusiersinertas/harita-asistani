@@ -8,7 +8,7 @@ export async function fetchSheetData(sheetName) {
     const range = `${sheetName}!A4:P`;
     
     // Sadece cache önlemek için _t ekliyoruz, bu zararsızdır.
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&_t=${Date.now()}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&=${Date.now()}`;
     
     try {
         const response = await fetch(url);
@@ -130,7 +130,7 @@ export async function fetchGuzergahData(aracAdi) {
     const sheetName = 'Mahalleler Guzergah';
     // Eski yöntem: Tırnak yok, encode yok
     const headerRange = `${sheetName}!A1:Z1`;
-    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
+    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}&=${Date.now()}`;
 
     try {
         const headerResponse = await fetch(headerUrl);
@@ -144,7 +144,7 @@ export async function fetchGuzergahData(aracAdi) {
         const aracColumn = String.fromCharCode(65 + aracIndex);
         
         const dataRange = `${sheetName}!${aracColumn}2:${aracColumn}`;
-        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${dataRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
+        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${dataRange}?key=${config.googleApiKey}&=${Date.now()}`;
         
         const response = await fetch(dataUrl);
         if (!response.ok) return [];
@@ -158,3 +158,4 @@ export async function fetchGuzergahData(aracAdi) {
         return [];
     }
 }
+
