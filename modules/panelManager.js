@@ -118,7 +118,7 @@ export function showDetailView(gorev) {
                 <div>
                     <h2>${gorev.adSoyad} (${gorev.miktar})</h2>
                     <p>${gorev.tamAdres}</p>
-                    ${gorev.adresNotu ? `<p style="color:#d97706; font-size:0.8rem; margin-top:4px;">Not: ${gorev.adresNotu}</p>` : ''}
+                    ${gorev.adresNotu ? `<span class="adres-notu-stili">Not: ${gorev.adresNotu}</span>` : ''}
                 </div>
                 <button id="close-panel-btn" class="close-btn-mini"><span class="material-icons-outlined">close</span></button>
             </div>
@@ -194,5 +194,6 @@ function adjustFabPosition(isOpen) {
         fab.style.transform = 'translateY(0)';
     }
 }
+
 
 
