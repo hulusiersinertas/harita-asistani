@@ -5,9 +5,13 @@ let startY = 0;
 let startHeight = 0;
 let isDragging = false;
 
-// ARTIK SABİT DEĞİL, DEĞİŞKEN (Otomatik Hesaplanacak)
-let currentPeekHeight = 180; 
-const SHEET_MAX_HEIGHT_PERCENT = 85; // Ekranın %85'ine kadar çıkabilsin
+// --- AYARLAR ---
+const INITIAL_MAX_PERCENT = 50; // Yarım ekran yüzdesi
+const FULL_MAX_PERCENT = 95;    // Tam ekran yüzdesi
+const MINI_HEIGHT = 160;        // YENİ: En küçük durabileceği yükseklik (Mini Mod)
+
+// O anki "Yarım" yüksekliğin kaç piksel olduğu
+let currentPeekHeight = 0;
 
 export function initPanelManager(cbs) {
     callbacks = cbs;
@@ -15,12 +19,12 @@ export function initPanelManager(cbs) {
 }
 
 function setupDragListeners() {
-    // --- MOBİL (TOUCH) ---
+    // Mobil Dokunmatik
     altPanel.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientY, e.target), { passive: false });
     document.addEventListener('touchmove', (e) => onDrag(e.touches[0].clientY, e), { passive: false });
     document.addEventListener('touchend', endDrag);
 
-    // --- PC (MOUSE) ---
+    // Mouse (PC)
     altPanel.addEventListener('mousedown', (e) => startDrag(e.clientY, e.target));
     document.addEventListener('mousemove', (e) => {
         if (isDragging) {
@@ -40,19 +44,20 @@ function startDrag(clientY, target) {
     isDragging = true;
     startY = clientY;
     startHeight = altPanel.offsetHeight;
-    altPanel.style.transition = 'none';
+    altPanel.style.transition = 'none'; // Sürüklerken animasyonu kapat
 }
 
 function onDrag(clientY, event) {
     if (!isDragging) return;
     if(event.cancelable) event.preventDefault();
 
-    const deltaY = startY - clientY;
+    const deltaY = startY - clientY; // Yukarı hareket pozitiftir
     const newHeight = startHeight + deltaY;
     
-    const maxHeight = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
+    const maxH = (window.innerHeight * FULL_MAX_PERCENT) / 100;
     
-    if (newHeight > 50 && newHeight < maxHeight + 50) {
+    // Aşağı inerken 50px'e kadar inebilsin (Kapanma hissi için)
+    if (newHeight > 50 && newHeight < maxH + 50) {
          altPanel.style.height = `${newHeight}px`;
     }
 }
@@ -64,50 +69,64 @@ function endDrag() {
     snapSheet();
 }
 
+/**
+ * MIKNATIS MANTIĞI (SNAP LOGIC)
+ * Paneli bıraktığında en yakın durağa yapışır.
+ */
 function snapSheet() {
     const currentH = altPanel.offsetHeight;
-    const maxH = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
+    const fullH = (window.innerHeight * FULL_MAX_PERCENT) / 100;
+    const midH = currentPeekHeight; // %50 veya içerik boyutu
+    const miniH = MINI_HEIGHT;      // ~160px
     
-    // Çok aşağı çekildiyse kapat
-    if (currentH < 100) {
+    // 1. KAPANMA: Eğer 80px'den daha küçükse kapat
+    if (currentH < 80) {
         callbacks.onDeselect();
-    } 
-    // Mevcut içerik boyutundan (peek) fazlaysa tam aç
-    else if (currentH > currentPeekHeight + 60) {
-        altPanel.style.height = `${maxH}px`;
-    } 
-    // Değilse, içeriğin boyutu neyse ona geri dön
-    else {
-        altPanel.style.height = `${currentPeekHeight}px`;
+        return;
+    }
+
+    // 2. HANGİ DURAĞA DAHA YAKIN?
+    const distToFull = Math.abs(currentH - fullH);
+    const distToMid = Math.abs(currentH - midH);
+    const distToMini = Math.abs(currentH - miniH);
+
+    // En küçük mesafeyi bul
+    const minDist = Math.min(distToFull, distToMid, distToMini);
+
+    if (minDist === distToFull) {
+        // Tam Ekrana git
+        altPanel.style.height = `${fullH}px`;
+    } else if (minDist === distToMid) {
+        // Yarım Ekrana git
+        altPanel.style.height = `${midH}px`;
+    } else {
+        // Mini Moda git (Aşağı çektin, burada dur)
+        altPanel.style.height = `${miniH}px`;
     }
 }
 
-function setPanelContent(htmlContent, heightMode = 'peek') {
+function setPanelContent(htmlContent) {
     altPanel.innerHTML = htmlContent;
     altPanel.style.display = 'flex';
     altPanel.classList.add('panel-open');
     
-    // 1. Önce yüksekliği "auto" yapıp gerçek içeriği ölçüyoruz
+    // İçeriği ölç
     altPanel.style.height = 'auto';
     const contentHeight = altPanel.offsetHeight;
     
-    // 2. Maksimum sınırı belirle
-    const maxH = (window.innerHeight * SHEET_MAX_HEIGHT_PERCENT) / 100;
+    // Ekranın %50'si
+    const halfScreen = (window.innerHeight * INITIAL_MAX_PERCENT) / 100;
     
-    // 3. Peek yüksekliğini içeriğe göre ayarla (Ne az ne çok)
-    // En az 140px olsun, en fazla MaxH kadar olsun.
-    currentPeekHeight = Math.min(Math.max(contentHeight, 140), maxH);
+    // Yarım ekran yüksekliğini belirle (İçerik küçükse içerik kadar, büyükse %50)
+    currentPeekHeight = Math.min(contentHeight, halfScreen);
+    // Ama Mini moddan küçük olmasın, yoksa hesap şaşar
+    currentPeekHeight = Math.max(currentPeekHeight, MINI_HEIGHT + 20);
 
-    // 4. Hedef yüksekliği belirle
-    // Eğer 'full' mod isteniyorsa maxH, yoksa hesapladığımız içerik boyutu
-    const targetHeight = heightMode === 'full' ? maxH : currentPeekHeight;
-    
-    // 5. Animasyonla uygula
+    // İlk açılışta Yarım Ekrana (Peek) git
     requestAnimationFrame(() => {
-        altPanel.style.height = `${targetHeight}px`;
+        altPanel.style.height = `${currentPeekHeight}px`;
     });
     
-    // UI dosyasındaki buton pozisyonunu güncelleme fonksiyonu varsa çağır
     if (typeof window.adjustFabPosition === 'function') {
         window.adjustFabPosition(true);
     }
@@ -134,7 +153,7 @@ export function showDetailView(gorev) {
             </div>
         </div>
     `;
-    setPanelContent(html, 'peek');
+    setPanelContent(html);
     
     document.getElementById('close-panel-btn').addEventListener('click', () => callbacks.onDeselect());
     document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
@@ -167,7 +186,7 @@ export function showListView(filtrelenmisGorevler, title = null) {
             </div>
         </div>
     `;
-    setPanelContent(html, 'peek');
+    setPanelContent(html);
 
     document.getElementById('close-list-btn').addEventListener('click', () => callbacks.onDeselect());
     altPanel.querySelectorAll('.gorev-list-item').forEach(item => {
@@ -185,7 +204,6 @@ export function hidePanel() {
         if(!altPanel.classList.contains('panel-open')) altPanel.style.display = 'none';
     }, 300);
     
-    // Butonları aşağı indir
     if (typeof window.adjustFabPosition === 'function') {
         window.adjustFabPosition(false);
     }
