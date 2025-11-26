@@ -4,12 +4,14 @@ import { config } from './config.js';
  * Belirtilen Google E-Tablosu sayfasından görev verilerini çeker.
  */
 export async function fetchSheetData(sheetName) {
-    // DÜZELTME: Tırnak işaretlerini kaldırdık. Eski çalışan yönteme döndük.
-    // Ancak A1'den çekiyoruz ki satır eksikliği hatası vermesin.
-    const range = `${sheetName}!A1:P`;
+    // 1. ARALIK TANIMI: Güvenlik için tırnak ekliyoruz.
+    const rawRange = `'${sheetName}'!A1:P`;
     
-    // Cache önlemek için zaman damgası
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&_t=${Date.now()}`;
+    // 2. KRİTİK DÜZELTME: URL'yi "encode" ediyoruz. 
+    // Bu işlem ! işaretini %21, boşluğu %20 yapar. Google bunu sever.
+    const encodedRange = encodeURIComponent(rawRange);
+    
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodedRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
     
     try {
         const response = await fetch(url);
@@ -17,7 +19,8 @@ export async function fetchSheetData(sheetName) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error("API Hatası Detayı:", errorData);
-            throw new Error(`Google Hatası (${response.status}): ${errorData.error?.message || response.statusText}`);
+            // Hatayı net görelim
+            throw new Error(`Google API Hatası (${response.status}): ${errorData.error?.message}`);
         }
         
         const data = await response.json();
@@ -25,7 +28,16 @@ export async function fetchSheetData(sheetName) {
 
     } catch (error) {
         console.error("Veri çekme hatası:", error);
-        alert(`Veriler Yüklenemedi!\n\nOlası Sebepler:\n1. İnternet bağlantısı yok.\n2. 'config.js' dosyasındaki API Key yanlış.\n3. Tabloda '${sheetName}' isminde bir sekme yok.\n\nHata Detayı: ${error.message}`);
+        
+        // Kullanıcıya olası sebepleri söyleyelim
+        let mesaj = `Veriler Yüklenemedi!\n\nHata: ${error.message}`;
+        if (error.message.includes('INVALID_ARGUMENT') || error.message.includes('400')) {
+             mesaj += `\n\nSebep: Sekme ismi ('${sheetName}') hatalı veya bulunamadı.`;
+        } else if (error.message.includes('key')) {
+             mesaj += `\n\nSebep: API Anahtarı hatalı. config.js dosyasını kontrol edin.`;
+        }
+        
+        alert(mesaj);
         return [];
     }
 }
@@ -37,19 +49,17 @@ function processSheetData(rows) {
     const processedData = [];
     const CM = config.COLUMN_MAPPING;
 
-    // --- TELEFON FORMATLAYICI ---
+    // Telefon Formatlayıcı
     const formatTelefon = (raw) => {
         if (!raw) return '';
         let clean = raw.toString().replace(/[^0-9]/g, '');
-        
         if (clean.length === 10 && clean.startsWith('5')) return '0' + clean;
         if (clean.length === 12 && clean.startsWith('90')) return '0' + clean.substring(2);
         if (clean.length === 11 && clean.startsWith('0')) return clean;
-        
         return clean;
     };
 
-    // --- KOORDİNAT FORMATLAYICI ---
+    // Koordinat Formatlayıcı
     const formatCoordinate = (coord) => {
         if (!coord) return null;
         let str = String(coord).replace(/,/g, '').trim();
@@ -61,7 +71,7 @@ function processSheetData(rows) {
     };
 
     rows.forEach((row, index) => {
-        // İlk 3 satır başlık olduğu için atlıyoruz (A1'den çektiğimiz için)
+        // A1'den çektiğimiz için ilk 3 satır başlıktır, atla.
         if (index < 3) return;
 
         if (row[CM.DURUM] && row[CM.DURUM].toLowerCase() === 'bekliyor') {
@@ -82,9 +92,7 @@ function processSheetData(rows) {
                 adSoyad: row[CM.AD_SOYAD] || 'İsim Yok',
                 adresNotu: row[CM.ADRES_NOTU] || '',
                 miktar: row[CM.MIKTAR] || '',
-                
-                telefon: formatTelefon(row[CM.TELEFON]), // Telefon düzeltme aktif
-                
+                telefon: formatTelefon(row[CM.TELEFON]),
                 tamAdres: tamAdres,
                 mahalle: mahalle,
                 enlem: formatCoordinate(row[CM.ENLEM]),
@@ -124,9 +132,11 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
 
 export async function fetchGuzergahData(aracAdi) {
     const sheetName = 'Mahalleler Guzergah';
-    // Burada da tırnakları kaldırdık
-    const headerRange = `${sheetName}!A1:Z1`;
-    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
+    // Güzergah için de encodeURIComponent kullanıyoruz
+    const rawRange = `'${sheetName}'!A1:Z1`;
+    const encodedRange = encodeURIComponent(rawRange);
+    
+    const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodedRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
 
     try {
         const headerResponse = await fetch(headerUrl);
@@ -138,8 +148,11 @@ export async function fetchGuzergahData(aracAdi) {
         if (aracIndex === -1) return [];
 
         const aracColumn = String.fromCharCode(65 + aracIndex);
-        const dataRange = `${sheetName}!${aracColumn}2:${aracColumn}`;
-        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${dataRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
+        
+        const rawDataRange = `'${sheetName}'!${aracColumn}2:${aracColumn}`;
+        const encodedDataRange = encodeURIComponent(rawDataRange);
+        
+        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodedDataRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
         
         const response = await fetch(dataUrl);
         if (!response.ok) return [];
