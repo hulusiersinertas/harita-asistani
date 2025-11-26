@@ -356,13 +356,13 @@ html, body, #app {
 .warning-fab {
     background-color: #f59e0b; /* Turuncu */
     color: white;
-    bottom: 90px; /* Navigasyon butonunun (24px) üstünde dursun */
+    bottom: 110px; /* Navigasyon butonunun (24px) üstünde dursun */
     z-index: 95; /* Harita üstü, nav butonu altı */
 }
 
 /* iPhone çentik desteği (Mevcut kodun altına ekle veya güncelle) */
 .warning-fab {
-    bottom: max(90px, env(safe-area-inset-bottom) + 70px);
+    bottom: max(110px, env(safe-area-inset-bottom) + 70px);
 }
 
 .warning-fab:active {
@@ -675,4 +675,5 @@ html, body, #app {
     background: #eff6ff;
     color: var(--primary-color);
 }
+
 
