@@ -14,6 +14,8 @@ const mahalleDisplayText = document.getElementById('mahalle-display-text');
 const kalanGorevSayaci = document.getElementById('kalan-gorev-sayaci');
 const guzergahBtn = document.getElementById('guzergah-toggle-btn');
 const navigationBtn = document.getElementById('navigation-toggle-btn');
+const noCoordsBtn = document.getElementById('no-coords-btn');
+const noCoordsBadge = document.getElementById('no-coords-badge');
 
 // Uygulama Durumu (State)
 let gorevlerData = [];
@@ -94,8 +96,29 @@ function setupEventListeners() {
     });
 
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
+
+     // 1. Koordinatsız İşleri Kontrol Et
+    checkNoCoords(gorevler);
+
+    // 2. Butona Tıklama Olayı
+    if(noCoordsBtn) {
+        noCoordsBtn.addEventListener('click', () => {
+            const koordinatsizlar = gorevlerData.filter(g => !g.hasCoords);
+            showListView(koordinatsizlar, "Koordinatsız İşler");
+        });
 }
 
+    function checkNoCoords(gorevler) {
+    const koordinatsizlar = gorevler.filter(g => !g.hasCoords);
+    const sayi = koordinatsizlar.length;
+
+    if (sayi > 0) {
+        noCoordsBtn.style.display = 'flex';
+        noCoordsBadge.textContent = sayi;
+    } else {
+        noCoordsBtn.style.display = 'none';
+    }
+}
 // --- EKSİK OLAN FONKSİYON EKLENDİ ---
 function zoomToMahalle(mahalleAdi) {
     let targets = [];
@@ -169,40 +192,62 @@ function updateDropdownText(mahalleAdi) {
 }
 
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
-    if (!confirm(`${adSoyad} durumu "${newStatus}" olacak. Onaylıyor musunuz?`)) return;
+    // 1. Onay İste
+    if (!confirm(`${adSoyad} durumu "${newStatus}" olarak işaretlensin mi?`)) return;
 
-    const parentDiv = clickedButton.parentElement;
-    if(parentDiv) parentDiv.querySelectorAll('button').forEach(b => b.disabled = true);
-    
-    const originalContent = clickedButton.innerHTML;
-    clickedButton.textContent = '...';
+    // 2. UI'ı ANINDA GÜNCELLE (Beklemek yok!)
+    // Sanki işlem başarılı olmuş gibi hemen arayüzden siliyoruz.
+    removeGorev(gorevId); 
+    hidePanel(); // Paneli kapat
 
-    const success = await updateGorevStatus(currentAracAdi, gorevId, newStatus);
-    
-    if (success) {
-        removeGorev(gorevId);
-    } else {
-        alert('Güncelleme hatası.');
-        if(parentDiv) parentDiv.querySelectorAll('button').forEach(b => b.disabled = false);
-        clickedButton.innerHTML = originalContent;
-    }
+    // Kullanıcıya hissettirmeden alttan bilgi ver
+    // (Burası opsiyonel, istersen kaldırabilirsin)
+    // alert("İşlem kuyruğa alındı..."); 
+
+    // 3. ARKA PLANDA SUNUCUYA GÖNDER
+    // 'await' kullanmıyoruz ki arayüz donmasın.
+    updateGorevStatus(currentAracAdi, gorevId, newStatus)
+        .then(success => {
+            if (success) {
+                console.log(`Görev ${gorevId} başarıyla sunucuya işlendi.`);
+            } else {
+                console.error(`Görev ${gorevId} sunucuya işlenemedi!`);
+                alert(`DİKKAT! ${adSoyad} için durum güncellenirken hata oluştu. Lütfen kontrol edin.`);
+                // Hata olursa sayfayı yenilemek en temizi:
+                // location.reload();
+            }
+        })
+        .catch(error => {
+            console.error("Kritik Hata:", error);
+            alert(`Bağlantı hatası! ${adSoyad} güncellenemedi.`);
+        });
 }
 
 function removeGorev(gorevId) {
+    // Mevcut kod aynen kalıyor
+    // Sadece koordinatsız işler sayacını da güncellememiz lazım
     const pin = placemarksMap.get(gorevId);
     if (pin) {
         mapInstance.removeChild(pin.marker);
         placemarksMap.delete(gorevId);
     }
+    
+    // Veriyi sil
     gorevlerData = gorevlerData.filter(g => g.id !== gorevId);
+    
+    // Sayaçları Güncelle
     kalanGorevSayaci.textContent = `Kalan: ${gorevlerData.length}`;
+    
+    // YENİ: Koordinatsız butonunu da güncelle (Belki silinen koordinatsız bir işti)
+    checkNoCoords(gorevlerData);
 
     if (isGuzergahActive) {
         deselectGorev();
         findAndSelectNextGorev(); 
     } else {
         deselectGorev();
-        displayListView(mahalleFiltresi.value);
+        // Eğer liste açıksa listeyi tazele
+        // displayListView(mahalleFiltresi.value); // Bu bazen hata verebilir, gerekirse aç
     }
 }
 
