@@ -7,7 +7,7 @@ let isDragging = false;
 
 // --- AYARLAR ---
 const INITIAL_MAX_PERCENT = 50; // Yarım ekran yüzdesi
-const FULL_MAX_PERCENT = 95;    // Tam ekran yüzdesi
+const FULL_MAX_PERCENT = 60;    // Tam ekran yüzdesi
 const MINI_HEIGHT = 160;        // YENİ: En küçük durabileceği yükseklik (Mini Mod)
 
 // O anki "Yarım" yüksekliğin kaç piksel olduğu
@@ -208,3 +208,4 @@ export function hidePanel() {
         window.adjustFabPosition(false);
     }
 }
+
