@@ -9,7 +9,7 @@ export async function fetchSheetData(sheetName) {
     const range = `'${sheetName}'!A1:P`;
     
     // 3. CACHE ÖNLEME: _t parametresini ekliyoruz.
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}=${Date.now()}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}&_t=${Date.now()}`;
     
     try {
         const response = await fetch(url);
@@ -153,7 +153,7 @@ export async function fetchGuzergahData(aracAdi) {
 
         const aracColumn = String.fromCharCode(65 + aracIndex);
         const dataRange = `'${sheetName}'!${aracColumn}2:${aracColumn}`;
-        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${dataRange}?key=${config.googleApiKey}=${Date.now()}`;
+        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${dataRange}?key=${config.googleApiKey}&_t=${Date.now()}`;
         
         const response = await fetch(dataUrl);
         if (!response.ok) return [];
