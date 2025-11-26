@@ -124,6 +124,7 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
     // 1. UI'dan hemen sil (Beklemek yok)
     removeGorev(gorevId);
     hidePanel();
+    adjustFabPosition(false); // Butonları aşağı indir
 
     // 2. Arka planda sunucuya gönder
     updateGorevStatus(currentAracAdi, gorevId, newStatus)
