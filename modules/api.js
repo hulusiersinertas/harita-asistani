@@ -1,7 +1,7 @@
 import { config } from './config.js';
 
 export async function fetchSheetData(sheetName) {
-    const range = `${sheetName}!A4:P`;
+    const range = `${sheetName}!A4:P`; // P sütununa kadar çekiyoruz, bu doğru.
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
     
     try {
@@ -38,7 +38,6 @@ function processSheetData(rows) {
     };
 
     rows.forEach((row, index) => {
-        // DÜZELTME: "Bekliyor" şartını kaldırdık. Sadece Ad Soyad varsa alıyoruz.
         if (row[CM.AD_SOYAD]) {
             
             const tamAdres = row[CM.TAM_ADRES] || 'Adres Yok';
@@ -52,8 +51,10 @@ function processSheetData(rows) {
                 if (adresParcalari[0]) mahalle = adresParcalari[0].trim();
             }
 
-            // Durumu normalize et (Boşsa veya Bekliyor ise 'bekliyor' yap)
             let durum = row[CM.DURUM] ? row[CM.DURUM].toLowerCase() : 'bekliyor';
+
+            // Zaman verisini P sütunundan alıyoruz (Eğer yoksa boş string)
+            let zaman = row[CM.ZAMAN] || '';
 
             processedData.push({
                 id: index + 4,
@@ -66,7 +67,8 @@ function processSheetData(rows) {
                 enlem: formatCoordinate(row[CM.ENLEM]),
                 boylam: formatCoordinate(row[CM.BOYLAM]),
                 hasCoords: !!(row[CM.ENLEM] && row[CM.BOYLAM]),
-                durum: durum // Durumu olduğu gibi kaydediyoruz
+                durum: durum,
+                tamamlanmaZamani: zaman // YENİ EKLENEN VERİ
             });
         }
     });
@@ -94,8 +96,6 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
 }
 
 export async function fetchGuzergahData(aracAdi) {
-    // (Bu fonksiyon değişmedi, aynen kalabilir veya önceki koddan kopyalayabilirsin)
-    // Yer kaplamaması için buraya tekrar yazmıyorum, eski hali geçerli.
     const sheetName = 'Mahalleler Guzergah';
     const headerRange = `${sheetName}!A1:Z1`;
     const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}`;
