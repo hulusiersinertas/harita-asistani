@@ -1,10 +1,9 @@
+// ... (Önceki değişkenler ve drag fonksiyonları aynı) ...
 const altPanel = document.getElementById('alt-panel');
-
 let callbacks = {};
 let startY = 0;
 let startHeight = 0;
 let isDragging = false;
-
 const INITIAL_MAX_PERCENT = 50; 
 const FULL_MAX_PERCENT = 60;    
 const MINI_HEIGHT = 160;        
@@ -14,6 +13,12 @@ export function initPanelManager(cbs) {
     callbacks = cbs;
     setupDragListeners();
 }
+
+// ... (setupDragListeners, startDrag, onDrag, endDrag, snapSheet, setPanelContent AYNI) ...
+// (Buraya kadar olan fonksiyonları mevcut dosyanızdan koruyun, yer kaplamasın diye tekrar yazmıyorum)
+
+// Sadece setupDragListeners, startDrag, onDrag, endDrag, snapSheet ve setPanelContent fonksiyonlarının 
+// önceki versiyondaki gibi olduğundan emin olun.
 
 function setupDragListeners() {
     altPanel.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientY, e.target), { passive: false });
@@ -33,9 +38,7 @@ function setupDragListeners() {
 function startDrag(clientY, target) {
     const isHandle = target.closest('.sheet-handle');
     const isHeader = target.closest('.detail-header');
-
     if (!isHandle && !isHeader) return;
-
     isDragging = true;
     startY = clientY;
     startHeight = altPanel.offsetHeight;
@@ -45,12 +48,9 @@ function startDrag(clientY, target) {
 function onDrag(clientY, event) {
     if (!isDragging) return;
     if(event.cancelable) event.preventDefault();
-
     const deltaY = startY - clientY; 
     const newHeight = startHeight + deltaY;
-    
     const maxH = (window.innerHeight * FULL_MAX_PERCENT) / 100;
-    
     if (newHeight > 50 && newHeight < maxH + 50) {
          altPanel.style.height = `${newHeight}px`;
     }
@@ -68,50 +68,53 @@ function snapSheet() {
     const fullH = (window.innerHeight * FULL_MAX_PERCENT) / 100;
     const midH = currentPeekHeight; 
     const miniH = MINI_HEIGHT;      
-    
     if (currentH < 80) {
         callbacks.onDeselect();
         return;
     }
-
     const distToFull = Math.abs(currentH - fullH);
     const distToMid = Math.abs(currentH - midH);
     const distToMini = Math.abs(currentH - miniH);
-
     const minDist = Math.min(distToFull, distToMid, distToMini);
-
-    if (minDist === distToFull) {
-        altPanel.style.height = `${fullH}px`;
-    } else if (minDist === distToMid) {
-        altPanel.style.height = `${midH}px`;
-    } else {
-        altPanel.style.height = `${miniH}px`;
-    }
+    if (minDist === distToFull) altPanel.style.height = `${fullH}px`;
+    else if (minDist === distToMid) altPanel.style.height = `${midH}px`;
+    else altPanel.style.height = `${miniH}px`;
 }
 
 function setPanelContent(htmlContent) {
     altPanel.innerHTML = htmlContent;
     altPanel.style.display = 'flex';
     altPanel.classList.add('panel-open');
-    
     altPanel.style.height = 'auto';
     const contentHeight = altPanel.offsetHeight;
-    
     const halfScreen = (window.innerHeight * INITIAL_MAX_PERCENT) / 100;
-    
     currentPeekHeight = Math.min(contentHeight, halfScreen);
     currentPeekHeight = Math.max(currentPeekHeight, MINI_HEIGHT + 20);
-
     requestAnimationFrame(() => {
         altPanel.style.height = `${currentPeekHeight}px`;
     });
-    
     if (typeof window.adjustFabPosition === 'function') {
         window.adjustFabPosition(true);
     }
 }
 
 export function showDetailView(gorev) {
+    // Not girmek için basit bir prompt kullanılabilir veya 
+    // daha gelişmiş bir UI yapılabilir. Şimdilik prompt ile not alalım.
+    const getNoteAndUpdate = (status, button) => {
+        // İsteğe bağlı not sorma
+        // Basitlik için burada direkt gönderiyoruz, eğer not istenirse
+        // handleStatusUpdate'e not parametresi eklenebilir.
+        // Web arayüzünde not girmek için "prompt" kullanmak en kolayı:
+        
+        let note = "";
+        // Sadece 'Verildi' veya 'Evde Yok' ise not sorabiliriz
+        const userNote = prompt("Varsa teslimat notu girin (İsteğe bağlı):");
+        if (userNote) note = userNote;
+        
+        callbacks.onStatusUpdate(status, gorev.id, gorev.adSoyad, button, note);
+    };
+
     const html = `
         <div class="sheet-handle"></div>
         <div class="sheet-content">
@@ -137,8 +140,11 @@ export function showDetailView(gorev) {
     document.getElementById('close-panel-btn').addEventListener('click', () => callbacks.onDeselect());
     document.getElementById('nav-btn').addEventListener('click', () => window.open(`https://yandex.com.tr/maps/?rtext=~${gorev.enlem},${gorev.boylam}`, '_blank'));
     document.getElementById('route-btn').addEventListener('click', (e) => callbacks.onRouteClick(gorev, e.currentTarget));
-    document.getElementById('delivered-btn').addEventListener('click', (e) => callbacks.onStatusUpdate('Verildi', gorev.id, gorev.adSoyad, e.currentTarget));
-    document.getElementById('not-home-btn').addEventListener('click', (e) => callbacks.onStatusUpdate('Evde Yok', gorev.id, gorev.adSoyad, e.currentTarget));
+    
+    // Not prompt'u ile güncelleme
+    document.getElementById('delivered-btn').addEventListener('click', (e) => getNoteAndUpdate('Verildi', e.currentTarget));
+    document.getElementById('not-home-btn').addEventListener('click', (e) => getNoteAndUpdate('Evde Yok', e.currentTarget));
+    
     if (gorev.telefon) document.getElementById('call-btn').addEventListener('click', () => window.location.href = `tel:${gorev.telefon}`);
 }
 
@@ -176,7 +182,6 @@ export function showListView(filtrelenmisGorevler, title = null) {
     });
 }
 
-// --- GÜNCELLENEN GEÇMİŞ GÖRÜNÜMÜ (ZAMAN DAMGASI EKLENDİ) ---
 export function showHistoryView(completedTasks) {
     const html = `
         <div class="sheet-handle"></div>
@@ -218,7 +223,6 @@ export function showHistoryView(completedTasks) {
         });
     });
 }
-// -----------------------------------------------------------
 
 export function hidePanel() {
     altPanel.style.height = '0px';
@@ -231,4 +235,3 @@ export function hidePanel() {
         window.adjustFabPosition(false);
     }
 }
-
