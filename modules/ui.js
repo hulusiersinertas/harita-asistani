@@ -95,18 +95,26 @@ function distributeTasks() {
     pendingTasks = allTasks.filter(t => t.durum === 'bekliyor');
     completedTasks = allTasks.filter(t => t.durum !== 'bekliyor');
     
-    // YENİ SIRALAMA MANTIĞI:
-    // Tamamlananları, "tamamlanmaZamani" verisine göre YENİDEN ESKİYE sırala
-    completedTasks.sort((a, b) => {
-        const timeA = parseDateString(a.tamamlanmaZamani);
-        const timeB = parseDateString(b.tamamlanmaZamani);
-        return timeB - timeA; // Büyük olan (yeni olan) başa gelir
-    });
+    // Tarih formatı: dd.MM.yyyy HH:mm:ss
+    // Bunu JS Date objesine çevirip sıralayalım
+    const parseDate = (str) => {
+        if(!str) return 0;
+        try {
+            const [datePart, timePart] = str.split(' ');
+            const [day, month, year] = datePart.split('.');
+            const [hour, min, sec] = timePart.split(':');
+            return new Date(year, month - 1, day, hour, min, sec).getTime();
+        } catch(e) { return 0; }
+    };
 
+    // Yeniden eskiye (B - A)
+    completedTasks.sort((a, b) => parseDate(b.tamamlanmaZamani) - parseDate(a.tamamlanmaZamani));
+    
     if (kalanGorevSayaci) {
         kalanGorevSayaci.textContent = `Kalan: ${pendingTasks.length}`;
     }
 }
+
 function setupEventListeners() {
     const { YMapListener } = ymaps3;
 
