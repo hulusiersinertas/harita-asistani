@@ -1,4 +1,3 @@
-<!-- DOSYA: index.html (Sadece body içini güncellemen yeterli ama tamamını veriyorum) -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -13,7 +12,7 @@
 <body>
     <div id="app"></div>
 
-    <!-- YENİ ÜST PANEL (FLOATING / YÜZEN TASARIM) -->
+    <!-- ÜST PANEL -->
     <header class="floating-header">
         <!-- SOL HAP -->
         <div class="header-pill left-pill">
@@ -26,18 +25,15 @@
 
         <!-- SAĞ GRUP -->
         <div class="header-right-group">
-            <!-- Güzergah Butonu -->
             <button id="guzergah-toggle-btn" class="circle-btn" style="display: none;" title="Güzergah">
                 <span class="material-icons-outlined">route</span>
             </button>
             
-            <!-- YENİ EKLENEN: GEÇMİŞ BUTONU -->
             <button id="history-btn" class="circle-btn" title="Tamamlananlar">
                 <span class="material-icons-outlined">history</span>
             </button>
-            <!-- ----------------------------- -->
 
-            <!-- SAĞ HAP: Mahalle Filtresi -->
+            <!-- Filtre -->
             <div class="header-pill dropdown-wrapper">
                 <span id="mahalle-display-text">Tüm Mahalleler</span>
                 <span class="material-icons text-gray">arrow_drop_down</span>
@@ -46,29 +42,30 @@
         </div>
     </header>
 
-    <!-- ALT PANEL (Bottom Sheet) -->
+    <!-- ALT PANEL -->
     <div id="alt-panel" class="bottom-sheet"></div>
 
-    <!-- NAVİGASYON BUTONU (FAB) -->
+    <!-- NAVİGASYON BUTONU -->
     <button id="navigation-toggle-btn" class="fab-btn">
         <span class="material-icons">near_me</span>
     </button>
-   <!-- koordinatsizlar butonu -->
+    
+    <!-- KOORDİNATSIZLAR BUTONU -->
     <button id="no-coords-btn" class="fab-btn warning-fab" style="display: none;">
-    <span class="material-icons">priority_high</span>
-    <span class="badge" id="no-coords-badge">0</span>
-</button>
+        <span class="material-icons">priority_high</span>
+        <span class="badge" id="no-coords-badge">0</span>
+    </button>
 
-    <!-- HARİTA DÖNDÜRME BUTONLARI (EKRANIN ORTA KENARLARI) -->
-<button id="rotate-left" class="circle-btn rotate-control left-edge" title="Sola Döndür">
-    <span class="material-icons">rotate_left</span>
-</button>
+    <!-- HARİTA DÖNDÜRME BUTONLARI -->
+    <button id="rotate-left" class="circle-btn rotate-control left-edge" title="Sola Döndür">
+        <span class="material-icons">rotate_left</span>
+    </button>
 
-<button id="rotate-right" class="circle-btn rotate-control right-edge" title="Sağa Döndür">
-    <span class="material-icons">rotate_right</span>
-</button>
+    <button id="rotate-right" class="circle-btn rotate-control right-edge" title="Sağa Döndür">
+        <span class="material-icons">rotate_right</span>
+    </button>
 
-    <!-- Scriptler -->
+    <!-- SCRIPTLER -->
     <script src="./modules/config.js" type="module"></script>
     <script src="./modules/api.js" type="module"></script>
     <script src="./modules/map.js" type="module"></script>
@@ -79,26 +76,23 @@
     <script src="./modules/ui.js" type="module"></script>
     <script src="./script.js" type="module"></script>
 
-<!-- ARAÇ SEÇİM MODALI -->
-<div id="arac-secim-modal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-icon">
-            <span class="material-icons">local_shipping</span>
-        </div>
-        <h2>Araç Seçimi</h2>
-        <p>Lütfen dağıtıma çıkacağınız aracı seçiniz.</p>
-        
-        <div class="arac-grid">
-            <button onclick="window.aracSec('OP-1')" class="arac-btn">OP-1</button>
-            <button onclick="window.aracSec('OP-2')" class="arac-btn">OP-2</button>
-            <button onclick="window.aracSec('TP-1')" class="arac-btn">TP-1</button>
-            <button onclick="window.aracSec('TP-2')" class="arac-btn">TP-2</button>
+    <!-- ARAÇ SEÇİM MODALI -->
+    <div id="arac-secim-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <span class="material-icons">local_shipping</span>
+            </div>
+            <h2>Araç Seçimi</h2>
+            <p>Lütfen dağıtıma çıkacağınız aracı seçiniz.</p>
+            
+            <div class="arac-grid">
+                <!-- onclick kaldırıldı, data-arac eklendi -->
+                <button class="arac-btn" data-arac="OP-1">OP-1</button>
+                <button class="arac-btn" data-arac="OP-2">OP-2</button>
+                <button class="arac-btn" data-arac="TP-1">TP-1</button>
+                <button class="arac-btn" data-arac="TP-2">TP-2</button>
+            </div>
         </div>
     </div>
-</div>
 </body>
 </html>
-
-
-
-
