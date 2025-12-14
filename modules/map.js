@@ -1,11 +1,7 @@
-// Global değişkenler bu modül içinde saklanacak
+// Global değişkenler
 let map;
-const placemarks = new Map(); // Oluşturulan marker'ları saklamak için
+const placemarks = new Map(); 
 
-/**
- * Yandex Haritasını başlatır, görevlerin merkezine odaklar ve pinleri ekler.
- * @param {Array} gorevler - İşlenmiş görev nesnelerinden oluşan dizi.
- */
 export async function initMap(gorevler) {
     await ymaps3.ready;
 
@@ -18,38 +14,21 @@ export async function initMap(gorevler) {
 
     const centerCoordinates = calculateCenter(gorevler);
 
-    map = new YMap(document.getElementById('app'), {
-        location: {
-            center: centerCoordinates,
-            zoom: 12
-        }
-    });
-
-    // 1. Haritanın zeminini (yollar, binalar) ekliyoruz. Bu standart bir adım.
-    map.addChild(new YMapDefaultSchemeLayer());
-
-    // 2. EN ÖNEMLİ ADIM: İşaretçi (marker) gibi "özellikleri" çizecek olan
-    // standart katmanı haritaya ekliyoruz. Bu katman olmadan marker'lar render edilemez.
-    map.addChild(new YMapDefaultFeaturesLayer({}));
-
+    // Harita zaten varsa tekrar oluşturma (Hata önleyici)
+    if (!map) {
+        map = new YMap(document.getElementById('app'), {
+            location: {
+                center: centerCoordinates,
+                zoom: 12
+            }
+        });
+        map.addChild(new YMapDefaultSchemeLayer());
+        map.addChild(new YMapDefaultFeaturesLayer({}));
+    }
 
     gorevler.forEach(gorev => {
         if (gorev.hasCoords) {
-            const placemarkElement = createPlacemarkElement(gorev.id);
-            
-            const marker = new YMapMarker(
-                {
-                    // Sadece en temel özellik olan koordinatları veriyoruz.
-                    coordinates: [gorev.boylam, gorev.enlem]
-                },
-                placemarkElement
-            );
-            
-            // 3. İşaretçiyi, özellik katmanına değil, doğrudan haritanın kendisine ekliyoruz.
-            // API, bu marker'ı otomatik olarak YMapDefaultFeaturesLayer üzerinde çizeceğini anlar.
-            map.addChild(marker);
-            
-            placemarks.set(gorev.id, { marker, element: placemarkElement });
+            addSingleMarker(gorev); // Kod tekrarını önlemek için burayı da güncelledik
         }
     });
 
@@ -58,10 +37,32 @@ export async function initMap(gorevler) {
 }
 
 /**
- * Her bir görev için tıklanabilir bir HTML elementi oluşturur.
- * @param {number} gorevId - Görevin benzersiz kimliği.
- * @returns {HTMLElement}
+ * Haritaya tek bir marker ekler ve referansını döner.
+ * (Geri alma işlemi için gereklidir)
  */
+export function addSingleMarker(gorev) {
+    if (!map || !gorev.hasCoords) return null;
+
+    const { YMapMarker } = ymaps3;
+    const placemarkElement = createPlacemarkElement(gorev.id);
+    
+    const marker = new YMapMarker(
+        {
+            coordinates: [gorev.boylam, gorev.enlem],
+            zIndex: 10 // Varsayılan z-index
+        },
+        placemarkElement
+    );
+    
+    map.addChild(marker);
+    
+    // Map'e kaydet
+    const pinData = { marker, element: placemarkElement };
+    placemarks.set(gorev.id, pinData);
+    
+    return pinData;
+}
+
 function createPlacemarkElement(gorevId) {
     const element = document.createElement('div');
     element.className = 'placemark';
@@ -69,11 +70,6 @@ function createPlacemarkElement(gorevId) {
     return element;
 }
 
-/**
- * Verilen görev listesindeki koordinatların aritmetik ortalamasını (merkezini) bulur.
- * @param {Array} gorevler - Görev nesneleri dizisi.
- * @returns {[number, number]} - [ortalama_boylam, ortalama_enlem]
- */
 function calculateCenter(gorevler) {
     let totalLat = 0;
     let totalLng = 0;
