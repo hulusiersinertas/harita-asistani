@@ -209,3 +209,41 @@ export function hidePanel() {
     }
 }
 
+export function showHistoryView(completedTasks) {
+    const html = `
+        <div class="sheet-handle"></div>
+        <div class="sheet-content">
+            <div class="detail-header">
+                <h2 style="font-size:1rem;">Tamamlananlar (${completedTasks.length})</h2>
+                <button id="close-history-btn" class="close-btn-mini"><span class="material-icons-outlined">close</span></button>
+            </div>
+            <div id="history-list-container" style="padding-bottom: 20px;">
+                ${completedTasks.length === 0 ? '<p style="text-align:center; color:#999; margin-top:20px;">Henüz tamamlanan görev yok.</p>' : ''}
+                
+                ${completedTasks.map(gorev => `
+                    <div class="gorev-list-item history-item" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h4 style="color:#888; text-decoration: line-through;">${gorev.adSoyad}</h4>
+                            <p style="font-size:0.75rem;">${gorev.mahalle} • <strong style="color:${gorev.durum === 'Verildi' ? 'green' : 'red'}">${gorev.durum}</strong></p>
+                        </div>
+                        <button class="undo-btn circle-btn" style="width:36px; height:36px; box-shadow:none; border:1px solid #eee;" data-id="${gorev.id}" title="Geri Al">
+                            <span class="material-icons-outlined" style="font-size:18px; color:orange;">undo</span>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    setPanelContent(html);
+
+    document.getElementById('close-history-btn').addEventListener('click', () => callbacks.onDeselect());
+    
+    // Geri Al butonlarına listener ekle
+    altPanel.querySelectorAll('.undo-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = parseInt(e.currentTarget.dataset.id);
+            callbacks.onUndo(id);
+        });
+    });
+}
+
