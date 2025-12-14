@@ -5,12 +5,9 @@ let startY = 0;
 let startHeight = 0;
 let isDragging = false;
 
-// --- AYARLAR ---
-const INITIAL_MAX_PERCENT = 50; // Yarım ekran yüzdesi
-const FULL_MAX_PERCENT = 60;    // Tam ekran yüzdesi
-const MINI_HEIGHT = 160;        // YENİ: En küçük durabileceği yükseklik (Mini Mod)
-
-// O anki "Yarım" yüksekliğin kaç piksel olduğu
+const INITIAL_MAX_PERCENT = 50; 
+const FULL_MAX_PERCENT = 60;    
+const MINI_HEIGHT = 160;        
 let currentPeekHeight = 0;
 
 export function initPanelManager(cbs) {
@@ -19,12 +16,10 @@ export function initPanelManager(cbs) {
 }
 
 function setupDragListeners() {
-    // Mobil Dokunmatik
     altPanel.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientY, e.target), { passive: false });
     document.addEventListener('touchmove', (e) => onDrag(e.touches[0].clientY, e), { passive: false });
     document.addEventListener('touchend', endDrag);
 
-    // Mouse (PC)
     altPanel.addEventListener('mousedown', (e) => startDrag(e.clientY, e.target));
     document.addEventListener('mousemove', (e) => {
         if (isDragging) {
@@ -44,19 +39,18 @@ function startDrag(clientY, target) {
     isDragging = true;
     startY = clientY;
     startHeight = altPanel.offsetHeight;
-    altPanel.style.transition = 'none'; // Sürüklerken animasyonu kapat
+    altPanel.style.transition = 'none'; 
 }
 
 function onDrag(clientY, event) {
     if (!isDragging) return;
     if(event.cancelable) event.preventDefault();
 
-    const deltaY = startY - clientY; // Yukarı hareket pozitiftir
+    const deltaY = startY - clientY; 
     const newHeight = startHeight + deltaY;
     
     const maxH = (window.innerHeight * FULL_MAX_PERCENT) / 100;
     
-    // Aşağı inerken 50px'e kadar inebilsin (Kapanma hissi için)
     if (newHeight > 50 && newHeight < maxH + 50) {
          altPanel.style.height = `${newHeight}px`;
     }
@@ -69,38 +63,28 @@ function endDrag() {
     snapSheet();
 }
 
-/**
- * MIKNATIS MANTIĞI (SNAP LOGIC)
- * Paneli bıraktığında en yakın durağa yapışır.
- */
 function snapSheet() {
     const currentH = altPanel.offsetHeight;
     const fullH = (window.innerHeight * FULL_MAX_PERCENT) / 100;
-    const midH = currentPeekHeight; // %50 veya içerik boyutu
-    const miniH = MINI_HEIGHT;      // ~160px
+    const midH = currentPeekHeight; 
+    const miniH = MINI_HEIGHT;      
     
-    // 1. KAPANMA: Eğer 80px'den daha küçükse kapat
     if (currentH < 80) {
         callbacks.onDeselect();
         return;
     }
 
-    // 2. HANGİ DURAĞA DAHA YAKIN?
     const distToFull = Math.abs(currentH - fullH);
     const distToMid = Math.abs(currentH - midH);
     const distToMini = Math.abs(currentH - miniH);
 
-    // En küçük mesafeyi bul
     const minDist = Math.min(distToFull, distToMid, distToMini);
 
     if (minDist === distToFull) {
-        // Tam Ekrana git
         altPanel.style.height = `${fullH}px`;
     } else if (minDist === distToMid) {
-        // Yarım Ekrana git
         altPanel.style.height = `${midH}px`;
     } else {
-        // Mini Moda git (Aşağı çektin, burada dur)
         altPanel.style.height = `${miniH}px`;
     }
 }
@@ -110,19 +94,14 @@ function setPanelContent(htmlContent) {
     altPanel.style.display = 'flex';
     altPanel.classList.add('panel-open');
     
-    // İçeriği ölç
     altPanel.style.height = 'auto';
     const contentHeight = altPanel.offsetHeight;
     
-    // Ekranın %50'si
     const halfScreen = (window.innerHeight * INITIAL_MAX_PERCENT) / 100;
     
-    // Yarım ekran yüksekliğini belirle (İçerik küçükse içerik kadar, büyükse %50)
     currentPeekHeight = Math.min(contentHeight, halfScreen);
-    // Ama Mini moddan küçük olmasın, yoksa hesap şaşar
     currentPeekHeight = Math.max(currentPeekHeight, MINI_HEIGHT + 20);
 
-    // İlk açılışta Yarım Ekrana (Peek) git
     requestAnimationFrame(() => {
         altPanel.style.height = `${currentPeekHeight}px`;
     });
@@ -197,18 +176,7 @@ export function showListView(filtrelenmisGorevler, title = null) {
     });
 }
 
-export function hidePanel() {
-    altPanel.style.height = '0px';
-    altPanel.classList.remove('panel-open');
-    setTimeout(() => {
-        if(!altPanel.classList.contains('panel-open')) altPanel.style.display = 'none';
-    }, 300);
-    
-    if (typeof window.adjustFabPosition === 'function') {
-        window.adjustFabPosition(false);
-    }
-}
-
+// --- GÜNCELLENEN GEÇMİŞ GÖRÜNÜMÜ (ZAMAN DAMGASI EKLENDİ) ---
 export function showHistoryView(completedTasks) {
     const html = `
         <div class="sheet-handle"></div>
@@ -224,7 +192,12 @@ export function showHistoryView(completedTasks) {
                     <div class="gorev-list-item history-item" style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <h4 style="color:#888; text-decoration: line-through;">${gorev.adSoyad}</h4>
-                            <p style="font-size:0.75rem;">${gorev.mahalle} • <strong style="color:${gorev.durum === 'Verildi' ? 'green' : 'red'}">${gorev.durum}</strong></p>
+                            <p style="font-size:0.75rem;">
+                                ${gorev.mahalle} • 
+                                <strong style="color:${gorev.durum === 'Verildi' ? 'green' : 'red'}">${gorev.durum}</strong>
+                                <!-- ZAMAN DAMGASI BURADA -->
+                                ${gorev.tamamlanmaZamani ? ` • <span style="color:#777; font-size:0.7rem;">${gorev.tamamlanmaZamani}</span>` : ''}
+                            </p>
                         </div>
                         <button class="undo-btn circle-btn" style="width:36px; height:36px; box-shadow:none; border:1px solid #eee;" data-id="${gorev.id}" title="Geri Al">
                             <span class="material-icons-outlined" style="font-size:18px; color:orange;">undo</span>
@@ -238,7 +211,6 @@ export function showHistoryView(completedTasks) {
 
     document.getElementById('close-history-btn').addEventListener('click', () => callbacks.onDeselect());
     
-    // Geri Al butonlarına listener ekle
     altPanel.querySelectorAll('.undo-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -246,4 +218,16 @@ export function showHistoryView(completedTasks) {
         });
     });
 }
+// -----------------------------------------------------------
 
+export function hidePanel() {
+    altPanel.style.height = '0px';
+    altPanel.classList.remove('panel-open');
+    setTimeout(() => {
+        if(!altPanel.classList.contains('panel-open')) altPanel.style.display = 'none';
+    }, 300);
+    
+    if (typeof window.adjustFabPosition === 'function') {
+        window.adjustFabPosition(false);
+    }
+}
