@@ -1,9 +1,5 @@
 import { config } from './config.js';
 
-/**
- * Belirtilen Google E-Tablosu sayfasından görev verilerini çeker.
- * BU KISIM SİZİN GÖNDERDİĞİNİZ VE "ÇALIŞIYOR" DEDİĞİNİZ KODUN AYNISIDIR.
- */
 export async function fetchSheetData(sheetName) {
     const range = `${sheetName}!A4:P`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
@@ -15,36 +11,24 @@ export async function fetchSheetData(sheetName) {
         return processSheetData(data.values || []);
     } catch (error) {
         console.error("Veri çekme hatası:", error);
-        alert("Görev verileri yüklenemedi. İnternet bağlantınızı kontrol edin ve sayfayı yenileyin.");
+        alert("Görev verileri yüklenemedi.");
         return [];
     }
 }
 
-/**
- * Ham E-Tablo verisini işler.
- * TELEFON DÜZELTME BURADA YAPILIYOR
- */
 function processSheetData(rows) {
     const processedData = [];
     const CM = config.COLUMN_MAPPING;
 
-    // --- TELEFON FORMATLAYICI (83 SORUNUNU ÇÖZER) ---
     const formatTelefon = (raw) => {
         if (!raw) return '';
-        
-        // 1. İçindeki her şeyi sil, sadece rakamları al
         let clean = raw.toString().replace(/[^0-9]/g, '');
-
-        // 2. Başındaki gereksiz kodları (90, +90 vs) temizle ve 0 ekle
         if (clean.length === 10 && clean.startsWith('5')) return '0' + clean;
         if (clean.length === 12 && clean.startsWith('90')) return '0' + clean.substring(2);
         if (clean.length === 11 && clean.startsWith('0')) return clean;
-        
-        // Standart dışıysa bile en azından sadece rakam döndür
         return clean;
     };
 
-    // Koordinat Formatlayıcı
     const formatCoordinate = (coord) => {
         if (!coord) return null;
         let str = String(coord).replace(/,/g, '').trim();
@@ -54,7 +38,8 @@ function processSheetData(rows) {
     };
 
     rows.forEach((row, index) => {
-        if (row[CM.DURUM] && row[CM.DURUM].toLowerCase() === 'bekliyor') {
+        // DÜZELTME: "Bekliyor" şartını kaldırdık. Sadece Ad Soyad varsa alıyoruz.
+        if (row[CM.AD_SOYAD]) {
             
             const tamAdres = row[CM.TAM_ADRES] || 'Adres Yok';
             let mahalle = 'Diğer';
@@ -67,21 +52,21 @@ function processSheetData(rows) {
                 if (adresParcalari[0]) mahalle = adresParcalari[0].trim();
             }
 
+            // Durumu normalize et (Boşsa veya Bekliyor ise 'bekliyor' yap)
+            let durum = row[CM.DURUM] ? row[CM.DURUM].toLowerCase() : 'bekliyor';
+
             processedData.push({
                 id: index + 4,
-                adSoyad: row[CM.AD_SOYAD] || 'İsim Yok',
+                adSoyad: row[CM.AD_SOYAD],
                 adresNotu: row[CM.ADRES_NOTU] || '',
                 miktar: row[CM.MIKTAR] || '',
-                
-                // İŞTE BURASI: Numarayı temizleyerek kaydediyoruz
                 telefon: formatTelefon(row[CM.TELEFON]),
-                
                 tamAdres: tamAdres,
                 mahalle: mahalle,
                 enlem: formatCoordinate(row[CM.ENLEM]),
                 boylam: formatCoordinate(row[CM.BOYLAM]),
                 hasCoords: !!(row[CM.ENLEM] && row[CM.BOYLAM]),
-                durum: row[CM.DURUM]
+                durum: durum // Durumu olduğu gibi kaydediyoruz
             });
         }
     });
@@ -89,9 +74,6 @@ function processSheetData(rows) {
     return processedData;
 }
 
-/**
- * Durum güncelleme
- */
 export async function updateGorevStatus(sheetName, rowId, newStatus) {
     const formData = new FormData();
     formData.append('sheet', sheetName);
@@ -103,23 +85,17 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
             method: 'POST',
             body: formData,
         });
-        
-        if (response.ok || response.type === 'opaque' || response.type === 'cors') {
-            return true;
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Sunucu hatası');
-        }
+        if (response.ok || response.type === 'opaque' || response.type === 'cors') return true;
+        else throw new Error('Sunucu hatası');
     } catch (error) {
         console.error('Durum güncelleme hatası:', error);
         return false;
     }
 }
 
-/**
- * Güzergah verisini çeker (Eski Yöntemle)
- */
 export async function fetchGuzergahData(aracAdi) {
+    // (Bu fonksiyon değişmedi, aynen kalabilir veya önceki koddan kopyalayabilirsin)
+    // Yer kaplamaması için buraya tekrar yazmıyorum, eski hali geçerli.
     const sheetName = 'Mahalleler Guzergah';
     const headerRange = `${sheetName}!A1:Z1`;
     const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${headerRange}?key=${config.googleApiKey}`;
