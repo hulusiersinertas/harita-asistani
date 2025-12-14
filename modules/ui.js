@@ -4,7 +4,6 @@ import { initNavigation, updateExternalCameraState, startNavigation, stopNavigat
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
 import { findNextGorev } from './guzergahManager.js';
 
-// --- AYARLAR ---
 const ZOOM_GENIS = 14;
 const ZOOM_YAKIN = 16;
 
@@ -13,15 +12,13 @@ const mahalleFiltresi = document.getElementById('mahalle-filtresi');
 const mahalleDisplayText = document.getElementById('mahalle-display-text');
 const kalanGorevSayaci = document.getElementById('kalan-gorev-sayaci');
 const guzergahBtn = document.getElementById('guzergah-toggle-btn');
-const navigationBtn = document.getElementById('navigation-toggle-btn');
 const historyBtn = document.getElementById('history-btn');
 const noCoordsBtn = document.getElementById('no-coords-btn');
 const noCoordsBadge = document.getElementById('no-coords-badge');
 
-// Uygulama Durumu (State)
-let allTasks = [];       // Tüm veriler
-let pendingTasks = [];   // Bekleyenler
-let completedTasks = []; // Tamamlananlar
+let allTasks = [];
+let pendingTasks = [];
+let completedTasks = [];
 
 let placemarksMap = new Map();
 let mapInstance = null;
@@ -38,12 +35,8 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     currentAracAdi = aracAdi;
     guzergahSiralamasi = guzergahData;
 
-    // Verileri ayır (Bekleyen / Biten)
     distributeTasks();
-
-    // Filtreleri doldur
     populateMahalleFiltresi(pendingTasks);
-    
     setupEventListeners();
     checkNoCoords(pendingTasks);
 
@@ -78,36 +71,28 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     }
 }
 
-function parseDateString(dateStr) {
-    if (!dateStr) return 0;
-    // Format: "14.12.2025 15:30:45"
-    const [datePart, timePart] = dateStr.split(' ');
-    if (!datePart || !timePart) return 0;
-
-    const [day, month, year] = datePart.split('.');
-    const [hour, minute, second] = timePart.split(':');
-
-    // Date objesi oluştur ve timestamp (sayı) döndür
-    return new Date(year, month - 1, day, hour, minute, second).getTime();
-}
-
+// --- VERİ AYRIŞTIRMA VE SIRALAMA (Flutter ile Eşlendi) ---
 function distributeTasks() {
-    pendingTasks = allTasks.filter(t => t.durum === 'bekliyor');
-    completedTasks = allTasks.filter(t => t.durum !== 'bekliyor');
+    // "bekliyor" olanları ayır (Case insensitive)
+    pendingTasks = allTasks.filter(t => t.durum.toLowerCase() === 'bekliyor');
+    // "bekliyor" OLMAYANLARI (Verildi, Evde Yok) ayır
+    completedTasks = allTasks.filter(t => t.durum.toLowerCase() !== 'bekliyor');
     
-    // Tarih formatı: dd.MM.yyyy HH:mm:ss
-    // Bunu JS Date objesine çevirip sıralayalım
+    // 1. Bekleyenleri SIRA NO'ya göre artan (1, 2, 3...) sırala
+    pendingTasks.sort((a, b) => a.siraNo - b.siraNo);
+
+    // 2. Tamamlananları ZAMANA göre azalan (En yeni en üstte) sırala
+    // Tarih formatı: "14.12.2025 15:30:00"
     const parseDate = (str) => {
         if(!str) return 0;
         try {
             const [datePart, timePart] = str.split(' ');
             const [day, month, year] = datePart.split('.');
-            const [hour, min, sec] = timePart.split(':');
-            return new Date(year, month - 1, day, hour, min, sec).getTime();
+            const [hour, min, sec] = (timePart || "00:00:00").split(':');
+            return new Date(year, month - 1, day, hour, min, sec || 0).getTime();
         } catch(e) { return 0; }
     };
 
-    // Yeniden eskiye (B - A)
     completedTasks.sort((a, b) => parseDate(b.tamamlanmaZamani) - parseDate(a.tamamlanmaZamani));
     
     if (kalanGorevSayaci) {
@@ -122,8 +107,6 @@ function setupEventListeners() {
         layer: 'any',
         onClick: (event) => {
             if (isGuzergahActive) return;
-            
-            // Tıklanan elementin placemark olup olmadığını kontrol et
             if (event?.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 focusOnGorev(gorevId);
@@ -146,7 +129,6 @@ function setupEventListeners() {
     
     if (historyBtn) {
         historyBtn.addEventListener('click', () => {
-            // Tamamlananları göster
             showHistoryView(completedTasks);
         });
     }
@@ -156,7 +138,6 @@ function checkNoCoords(gorevler) {
     if (!noCoordsBtn || !noCoordsBadge) return;
     const koordinatsizlar = gorevler.filter(g => !g.hasCoords);
     const sayi = koordinatsizlar.length;
-
     if (sayi > 0) {
         noCoordsBtn.style.display = 'flex';
         noCoordsBadge.textContent = sayi;
@@ -165,61 +146,48 @@ function checkNoCoords(gorevler) {
     }
 }
 
-// --- EKSİK OLAN FONKSİYON BU ---
 function updateDropdownText(mahalleAdi) {
     if (!mahalleDisplayText) return;
     let text = mahalleAdi;
     if (mahalleAdi === 'TÜMÜ') text = "Tüm Mahalleler";
-    
-    // Uzun isimleri kısalt
     const finalText = text.length > 18 ? text.substring(0, 16) + '...' : text;
     mahalleDisplayText.textContent = finalText;
 }
-// ------------------------------
 
-async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton) {
+// --- DURUM GÜNCELLEME (Optimistic Update) ---
+async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton, note = "") {
     if (!confirm(`${adSoyad} durumu "${newStatus}" olarak işaretlensin mi?`)) return;
 
-    // UI Güncelleme (Optimistic)
     const gorevIndex = allTasks.findIndex(g => g.id === gorevId);
     if (gorevIndex > -1) {
+        // Yerel güncellemeler
         allTasks[gorevIndex].durum = newStatus;
+        if(note) allTasks[gorevIndex].not = note;
         
-        // Marker'ı haritadan kaldır (ama Map nesnesinden silmiyoruz, referansı kalsın)
+        // Anlık zamanı ata
+        const now = new Date();
+        const formattedDate = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth()+1).padStart(2, '0')}.${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        allTasks[gorevIndex].tamamlanmaZamani = formattedDate;
+
+        // Marker'ı kaldır
         const pin = placemarksMap.get(gorevId);
         if (pin) {
-            // Sadece görsel olarak kaldırıyoruz, veriden silmiyoruz
-            // Çünkü "Geri Al" yapılınca geri gelmesi lazım.
-            // Yandex MapKit'te removeChild yeterli.
             mapInstance.removeChild(pin.marker);
         }
     }
     
-    distributeTasks(); // Listeleri yenile
+    distributeTasks(); // Sıralamaları yenile
     checkNoCoords(pendingTasks);
     
-    // Eğer o an seçili olan görevse paneli kapat
-    if (currentSelectedGorevId === gorevId) {
-        deselectGorev();
-    } else {
-        hidePanel();
-    }
+    if (currentSelectedGorevId === gorevId) deselectGorev();
+    else hidePanel();
 
-    // Güzergah modundaysak bir sonrakine geç
-    if (isGuzergahActive) {
-        findAndSelectNextGorev();
-    }
+    if (isGuzergahActive) findAndSelectNextGorev();
 
-    // Sunucuya Gönder
-    updateGorevStatus(currentAracAdi, gorevId, newStatus)
-        .then(success => { 
-            if (success) console.log(`${gorevId} sunucuya işlendi.`);
-            else alert("Sunucu hatası! Sayfayı yenileyip kontrol edin.");
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Bağlantı hatası! İşlem sunucuya gitmedi.");
-        });
+    // Sunucuya gönder
+    updateGorevStatus(currentAracAdi, gorevId, newStatus, note)
+        .then(success => { if (!success) alert("Sunucu hatası!"); })
+        .catch(err => alert("Bağlantı hatası!"));
 }
 
 async function handleUndo(gorevId) {
@@ -228,18 +196,23 @@ async function handleUndo(gorevId) {
 
     if (!confirm(`${gorev.adSoyad} tekrar "Bekliyor" listesine alınsın mı?`)) return;
 
-    // UI Güncelleme
     gorev.durum = 'bekliyor';
+    // Notu ve zamanı temizle
+    gorev.not = "";
+    gorev.tamamlanmaZamani = "";
+
     distributeTasks();
     checkNoCoords(pendingTasks);
     
-    // Uygulamayı yenilemek en temiz yöntem (Markerları geri getirmek için)
-    // Manuel marker eklemek karmaşık olabilir.
-    alert("Görev geri alındı. Liste güncelleniyor...");
-    
+    alert("Görev geri alındı. Harita güncelleniyor...");
     await updateGorevStatus(currentAracAdi, gorevId, "Bekliyor");
     window.location.reload(); 
 }
+
+// ... (Diğer standart fonksiyonlar: zoomToMahalle, focusOnGorev, populateMahalleFiltresi vb. AYNI)
+// (Dosyanın geri kalanını önceki gönderiden kopyalayabilirsin, değişmedi)
+// ÖNEMLİ: populateMahalleFiltresi, displayListView, filterPinsOnMap fonksiyonları
+// artık 'pendingTasks' kullanmalı. (Önceki kodda zaten düzeltmiştim)
 
 function zoomToMahalle(mahalleAdi) {
     let targets = [];
@@ -286,15 +259,6 @@ function focusOnGorev(gorevId) {
         selectGorev(gorevId);
     } else {
         alert('Koordinat yok.');
-    }
-}
-
-function removeGorev(gorevId) {
-    // Bu fonksiyon artık handleStatusUpdate içinde yönetiliyor, 
-    // ama eski referanslar için tutuyoruz, gerekirse kullanılabilir.
-    const pin = placemarksMap.get(gorevId);
-    if (pin) {
-        mapInstance.removeChild(pin.marker);
     }
 }
 
@@ -378,7 +342,6 @@ function selectGorev(gorevId) {
     filterPinsOnMap(gorev.mahalle);
     showDetailView(gorev);
     
-    // Butonları yukarı kaydır (CSS class veya style ile)
     if (typeof window.adjustFabPosition === 'function') {
         window.adjustFabPosition(true);
     }
@@ -406,16 +369,14 @@ function displayListView(mahalleFilter = 'TÜMÜ') {
 
 function filterPinsOnMap(secilenMahalle) {
     placemarksMap.forEach((pin, gorevId) => {
-        // Sadece Bekleyenleri kontrol et
         const gorev = pendingTasks.find(g => g.id === gorevId);
         
         if (gorev) {
             const isMatch = (secilenMahalle === 'TÜMÜ' || gorev.mahalle === secilenMahalle);
             pin.element.classList.toggle('filtered-out', !isMatch);
-            // Eğer daha önce "none" yapılmışsa (tamamlandığı için), tekrar "block" yap
             pin.element.style.display = 'block'; 
         } else {
-            // Görev pending listesinde yoksa (tamamlandıysa) gizle
+            // Tamamlanmışsa haritadan gizle
             pin.element.style.display = 'none';
         }
     });
