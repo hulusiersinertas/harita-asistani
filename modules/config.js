@@ -24,6 +24,8 @@ export const config = {
         ENLEM: 12,       // M Sütunu
         BOYLAM: 13,      // N Sütunu
         SONUC: 14,       // O Sütunu
-        ZAMAN: 15        // P Sütunu (YENİ EKLENDİ - İşlem Zamanı)
+        ZAMAN: 15,        // P Sütunu (YENİ EKLENDİ - İşlem Zamanı)
+        NOT: 17          // R
     }
 };
+
