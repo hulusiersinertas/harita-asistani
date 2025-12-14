@@ -55,6 +55,7 @@ function processSheetData(rows) {
 
             // Zaman verisini P sütunundan alıyoruz (Eğer yoksa boş string)
             let zaman = row[CM.ZAMAN] || '';
+            let not = row[CM.NOT] || ''; // Notu oku
 
             processedData.push({
                 id: index + 4,
@@ -69,6 +70,7 @@ function processSheetData(rows) {
                 hasCoords: !!(row[CM.ENLEM] && row[CM.BOYLAM]),
                 durum: durum,
                 tamamlanmaZamani: zaman // YENİ EKLENEN VERİ
+                not: not, // Objeye ekle
             });
         }
     });
@@ -125,4 +127,5 @@ export async function fetchGuzergahData(aracAdi) {
         return [];
     }
 }
+
 
