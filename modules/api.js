@@ -1,7 +1,7 @@
 import { config } from './config.js';
 
 export async function fetchSheetData(sheetName) {
-    const range = `${sheetName}!A4:P`; // P sütununa kadar çekiyoruz, bu doğru.
+    const range = `${sheetName}!A4:R`; // R sütununa kadar çekiyoruz, bu doğru.
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
     
     try {
@@ -125,3 +125,4 @@ export async function fetchGuzergahData(aracAdi) {
         return [];
     }
 }
+
