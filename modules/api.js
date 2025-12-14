@@ -1,7 +1,7 @@
 import { config } from './config.js';
 
 export async function fetchSheetData(sheetName) {
-    const range = `${sheetName}!A4:R`; // R sütununa kadar çekiyoruz, bu doğru.
+    const range = `${sheetName}!A4:R`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
     
     try {
@@ -39,7 +39,6 @@ function processSheetData(rows) {
 
     rows.forEach((row, index) => {
         if (row[CM.AD_SOYAD]) {
-            
             const tamAdres = row[CM.TAM_ADRES] || 'Adres Yok';
             let mahalle = 'Diğer';
             
@@ -52,10 +51,8 @@ function processSheetData(rows) {
             }
 
             let durum = row[CM.DURUM] ? row[CM.DURUM].toLowerCase() : 'bekliyor';
-
-            // Zaman verisini P sütunundan alıyoruz (Eğer yoksa boş string)
             let zaman = row[CM.ZAMAN] || '';
-            let not = row[CM.NOT] || ''; // Notu oku
+            let not = row[CM.NOT] || ''; // <<< HATA BURADA OLMALI, 'not' yerine 'NOT' olmalı
 
             processedData.push({
                 id: index + 4,
@@ -69,8 +66,8 @@ function processSheetData(rows) {
                 boylam: formatCoordinate(row[CM.BOYLAM]),
                 hasCoords: !!(row[CM.ENLEM] && row[CM.BOYLAM]),
                 durum: durum,
-                tamamlanmaZamani: zaman // YENİ EKLENEN VERİ
-                not: not, // Objeye ekle
+                tamamlanmaZamani: zaman,
+                not: not, // <<< YENİ EKLENDİ
             });
         }
     });
@@ -127,5 +124,3 @@ export async function fetchGuzergahData(aracAdi) {
         return [];
     }
 }
-
-
