@@ -78,15 +78,35 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     }
 }
 
+function parseDateString(dateStr) {
+    if (!dateStr) return 0;
+    // Format: "14.12.2025 15:30:45"
+    const [datePart, timePart] = dateStr.split(' ');
+    if (!datePart || !timePart) return 0;
+
+    const [day, month, year] = datePart.split('.');
+    const [hour, minute, second] = timePart.split(':');
+
+    // Date objesi oluştur ve timestamp (sayı) döndür
+    return new Date(year, month - 1, day, hour, minute, second).getTime();
+}
+
 function distributeTasks() {
     pendingTasks = allTasks.filter(t => t.durum === 'bekliyor');
     completedTasks = allTasks.filter(t => t.durum !== 'bekliyor');
     
+    // YENİ SIRALAMA MANTIĞI:
+    // Tamamlananları, "tamamlanmaZamani" verisine göre YENİDEN ESKİYE sırala
+    completedTasks.sort((a, b) => {
+        const timeA = parseDateString(a.tamamlanmaZamani);
+        const timeB = parseDateString(b.tamamlanmaZamani);
+        return timeB - timeA; // Büyük olan (yeni olan) başa gelir
+    });
+
     if (kalanGorevSayaci) {
         kalanGorevSayaci.textContent = `Kalan: ${pendingTasks.length}`;
     }
 }
-
 function setupEventListeners() {
     const { YMapListener } = ymaps3;
 
