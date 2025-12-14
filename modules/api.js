@@ -1,6 +1,7 @@
 import { config } from './config.js';
 
 export async function fetchSheetData(sheetName) {
+    // Aralığı R sütununa kadar genişlettik
     const range = `${sheetName}!A4:R`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}?key=${config.googleApiKey}`;
     
@@ -38,6 +39,7 @@ function processSheetData(rows) {
     };
 
     rows.forEach((row, index) => {
+        // İsmi olan her satırı al
         if (row[CM.AD_SOYAD]) {
             const tamAdres = row[CM.TAM_ADRES] || 'Adres Yok';
             let mahalle = 'Diğer';
@@ -50,9 +52,22 @@ function processSheetData(rows) {
                 if (adresParcalari[0]) mahalle = adresParcalari[0].trim();
             }
 
-            let durum = row[CM.DURUM] ? row[CM.DURUM].toLowerCase() : 'bekliyor';
+            // --- DURUM MANTIĞI (Flutter ile Eşlendi) ---
+            const kDurum = row[CM.DURUM] ? row[CM.DURUM].trim() : '';
+            const oSonuc = row[CM.SONUC] ? row[CM.SONUC].trim() : '';
+            
+            let finalDurum = 'bekliyor';
+            
+            if (kDurum.toLowerCase() === 'tamamlandı' && oSonuc !== '') {
+                finalDurum = oSonuc; // "Verildi" veya "Evde Yok"
+            } else if (kDurum !== '') {
+                finalDurum = kDurum;
+            }
+            // -------------------------------------------
+
             let zaman = row[CM.ZAMAN] || '';
-            let not = row[CM.NOT] || ''; // <<< HATA BURADA OLMALI, 'not' yerine 'NOT' olmalı
+            let not = row[CM.NOT] || '';
+            let sira = parseInt(row[CM.SIRA]) || 9999;
 
             processedData.push({
                 id: index + 4,
@@ -65,9 +80,11 @@ function processSheetData(rows) {
                 enlem: formatCoordinate(row[CM.ENLEM]),
                 boylam: formatCoordinate(row[CM.BOYLAM]),
                 hasCoords: !!(row[CM.ENLEM] && row[CM.BOYLAM]),
-                durum: durum,
+                
+                durum: finalDurum,
                 tamamlanmaZamani: zaman,
-                not: not, // <<< YENİ EKLENDİ
+                not: not,
+                siraNo: sira
             });
         }
     });
@@ -75,11 +92,12 @@ function processSheetData(rows) {
     return processedData;
 }
 
-export async function updateGorevStatus(sheetName, rowId, newStatus) {
+export async function updateGorevStatus(sheetName, rowId, newStatus, note = null) {
     const formData = new FormData();
     formData.append('sheet', sheetName);
     formData.append('row', rowId);
     formData.append('sonuc', newStatus);
+    if (note) formData.append('not', note);
 
     try {
         const response = await fetch(config.appsScriptUrl, {
@@ -94,6 +112,7 @@ export async function updateGorevStatus(sheetName, rowId, newStatus) {
     }
 }
 
+// Güzergah verisi çekme (Değişmedi ama dosya bütünlüğü için koydum)
 export async function fetchGuzergahData(aracAdi) {
     const sheetName = 'Mahalleler Guzergah';
     const headerRange = `${sheetName}!A1:Z1`;
@@ -115,12 +134,9 @@ export async function fetchGuzergahData(aracAdi) {
         const response = await fetch(dataUrl);
         if (!response.ok) return [];
         const data = await response.json();
-
         if (!data.values) return [];
         return data.values.map(row => row[0]).filter(Boolean);
-        
     } catch (error) {
-        console.error("Güzergah hatası:", error);
         return [];
     }
 }
