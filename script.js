@@ -21,31 +21,28 @@ window.aracSec = function(secilenArac) {
 // Uygulamanın Ana Başlatma Mantığı
 async function baslat(aracAdi) {
     console.log("Uygulama başlatılıyor, Araç:", aracAdi);
-
     document.getElementById('gorev-baslik').textContent = `${aracAdi} Yükleniyor...`;
 
     try {
-        const [gorevler, guzergahSiralamasi] = await Promise.all([
+        const [tumGorevler, guzergahSiralamasi] = await Promise.all([
             fetchSheetData(aracAdi),
             fetchGuzergahData(aracAdi)
         ]);
         
-        if (gorevler.length === 0) {
-            document.getElementById('gorev-baslik').textContent = `Görev Yok`;
-            document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: 0`;
-            alert("Bu araç için kayıtlı görev bulunamadı.");
-            return;
-        }
+        // HARİTA İÇİN SADECE BEKLEYENLERİ SEÇ
+        const haritalikGorevler = tumGorevler.filter(g => g.durum === 'bekliyor');
         
         document.getElementById('gorev-baslik').textContent = `${aracAdi} Görevleri`;
-        document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${gorevler.length}`;
+        document.getElementById('kalan-gorev-sayaci').textContent = `Kalan: ${haritalikGorevler.length}`;
         
-        const { map, placemarks } = await initMap(gorevler);
-        initUI(gorevler, map, placemarks, aracAdi, guzergahSiralamasi);
+        // initMap'e sadece bekleyenleri gönderiyoruz
+        const { map, placemarks } = await initMap(haritalikGorevler);
+        
+        // initUI'a ise TÜMÜNÜ gönderiyoruz (Geçmiş listesi için)
+        initUI(tumGorevler, map, placemarks, aracAdi, guzergahSiralamasi);
 
     } catch (error) {
         console.error("Başlatma hatası:", error);
-        // Hatayı ekranda da gösterelim ki ne olduğunu anlayalım
         alert("Veriler yüklenirken hata oluştu: " + error.message);
         location.reload();
     }
@@ -65,3 +62,4 @@ function initApp() {
 
 // Başlat
 initApp();
+
