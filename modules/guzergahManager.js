@@ -1,74 +1,37 @@
 /**
- * Bu modül, önceden tanımlanmış bir mahalle sırasına göre
- * bir sonraki hedefin hangisi olacağını belirleme mantığını yönetir.
+ * GÜZERGAH YÖNETİCİSİ (YENİ SİSTEM)
+ * Eski karmaşık mahalle/mesafe mantığı yerine,
+ * doğrudan kullanıcının belirlediği SIRA NUMARASINA göre çalışır.
  */
 
 /**
- * Mahalle isimlerini karşılaştırma için standart bir formata sokar.
- * Örnek: "Güllük Mah." -> "GÜLLÜK", "75.YIL (SULTANDERE) MAH." -> "75YILSULTANDERE"
- * @param {string} name - Ham mahalle adı.
- * @returns {string} Temizlenmiş ve standartlaştırılmış mahalle adı.
+ * Sıradaki görevi bulur.
+ * Kriterler:
+ * 1. Durumu 'bekliyor' olmalı.
+ * 2. Koordinatı olmalı.
+ * 3. Rotaya ekli olmalı (Sıra No < 9000).
+ * 4. En küçük sıra numarasına sahip olmalı.
  */
-function normalizeMahalleName(name) {
-    if (!name) return '';
-    return name
-        .toLocaleUpperCase('tr-TR') // Türkçe karakterlere uygun büyük harf çevrimi
-        .replace(/MAHALLESİ|MAH\.|MAH/g, '') // "MAHALLESİ", "MAH." veya "MAH" eklerini kaldır
-        .replace(/[^A-Z0-9ÇĞİÖŞÜ]/g, '') // Harfler, sayılar ve Türkçe karakterler dışındaki her şeyi kaldır
-        .trim();
-}
+export function findNextGorev(allGorevler) {
+    // 1. Adayları filtrele
+    const routeTasks = allGorevler.filter(t => 
+        t.durum === 'bekliyor' && 
+        t.hasCoords && 
+        t.siraNo && 
+        t.siraNo < 9000
+    );
 
-/**
- * İki coğrafi koordinat arasındaki mesafeyi (kilometre olarak) hesaplar.
- * Haversine formülü kullanılır.
- */
-function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Dünya'nın yarıçapı (km)
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-        0.5 - Math.cos(dLat) / 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        (1 - Math.cos(dLon)) / 2;
-    return R * 2 * Math.asin(Math.sqrt(a));
-}
+    // 2. Sıra numarasına göre diz (1, 2, 3...)
+    routeTasks.sort((a, b) => a.siraNo - b.siraNo);
 
-/**
- * Belirtilen mahalle sırasına göre bir sonraki en uygun görevi bulur.
- */
-export function findNextGorev(userLocation, allGorevler, guzergahSiralamasi) {
-    // 1. Güzergah listesindeki her mahalle için sırayla kontrol et
-    for (const guzergahMahalle of guzergahSiralamasi) {
-        // GÜNCELLEME: Karşılaştırma için güzergahtaki mahalle adını temizle
-        const normalizedGuzergahMahalle = normalizeMahalleName(guzergahMahalle);
-        
-        // 2. O mahalleye ait tamamlanmamış görevleri bul
-        const gorevlerBuMahallede = allGorevler.filter(g => {
-            // GÜNCELLEME: Karşılaştırma için görevdeki mahalle adını da temizle
-            const normalizedGorevMahalle = normalizeMahalleName(g.mahalle);
-            return normalizedGorevMahalle === normalizedGuzergahMahalle && g.hasCoords;
-        });
-
-        // 3. Eğer bu mahallede görev varsa, en yakın olanı bul ve döngüyü bitir
-        if (gorevlerBuMahallede.length > 0) {
-            let enYakinGorev = null;
-            let enKisaMesafe = Infinity;
-            const [userLon, userLat] = userLocation;
-
-            gorevlerBuMahallede.forEach(gorev => {
-                const mesafe = getDistance(userLat, userLon, gorev.enlem, gorev.boylam);
-                if (mesafe < enKisaMesafe) {
-                    enKisaMesafe = mesafe;
-                    enYakinGorev = gorev;
-                }
-            });
-
-            console.log(`Güzergahtaki bir sonraki hedef: ${enYakinGorev.mahalle} -> ${enYakinGorev.adSoyad} (${enKisaMesafe.toFixed(2)} km)`);
-            return enYakinGorev;
-        }
+    // 3. Listenin en başındakini döndür
+    if (routeTasks.length > 0) {
+        const nextTask = routeTasks[0];
+        console.log(`Sıradaki Hedef: [#${nextTask.siraNo}] ${nextTask.adSoyad}`);
+        return nextTask;
     }
 
-    // 4. Döngü bitti ve hiçbir mahallede görev bulunamadıysa
-    console.log("Güzergah tamamlandı. Bekleyen görev kalmadı.");
+    // 4. Görev kalmadıysa null dön
+    console.log("Güzergah tamamlandı. Sırada bekleyen görev yok.");
     return null;
 }
