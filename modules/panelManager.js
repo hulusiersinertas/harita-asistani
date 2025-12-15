@@ -140,7 +140,6 @@ function setPanelContent(htmlContent) {
  */
 export function showDetailView(gorev) {
     // Sıra kontrolü (9000'den küçükse rotadadır varsayımı)
-    // Not: api.js ve customRouteManager.js'de boş veya atanmamışlar 9999 kabul edilir.
     const isInRoute = gorev.siraNo && gorev.siraNo < 9000;
 
     // Rota Yönetim Butonları HTML'i
@@ -148,11 +147,14 @@ export function showDetailView(gorev) {
     
     if (isInRoute) {
         // Zaten rotada ise: Yukarı/Aşağı oklar ve Çıkar butonu
+        // GÜNCELLEME: data-dir değerleri tersine çevrildi
+        // Yukarı Ok (-1 idi -> 1 oldu)
+        // Aşağı Ok (1 idi -> -1 oldu)
         routeControlsHtml = `
             <div class="route-controls-container" style="display:flex; align-items:center; gap:5px; background:#f0f9ff; padding:5px; border-radius:8px; border:1px solid #bae6fd;">
-                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="-1" data-id="${gorev.id}"><span class="material-icons" style="font-size:18px;">arrow_upward</span></button>
+                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="1" data-id="${gorev.id}"><span class="material-icons" style="font-size:18px;">arrow_upward</span></button>
                 <div style="font-weight:bold; color:#0284c7; min-width:24px; text-align:center; font-size:1.1rem;">${gorev.siraNo}</div>
-                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="1" data-id="${gorev.id}"><span class="material-icons" style="font-size:18px;">arrow_downward</span></button>
+                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="-1" data-id="${gorev.id}"><span class="material-icons" style="font-size:18px;">arrow_downward</span></button>
                 <div style="width:1px; height:20px; background:#ccc; margin:0 4px;"></div>
                 <button class="route-remove-btn circle-btn" style="width:32px; height:32px; border:1px solid #fee2e2; background:#fef2f2;" data-id="${gorev.id}" title="Rotadan Çıkar">
                     <span class="material-icons" style="font-size:18px; color:#ef4444;">close</span>
@@ -274,12 +276,12 @@ export function showCustomRouteListView(routeTasks) {
                             <p style="font-size:0.8rem; margin:2px 0 0 0; color:#64748b;">${gorev.mahalle} • ${gorev.miktar}</p>
                         </div>
 
-                        <!-- Yukarı/Aşağı Butonları -->
+                        <!-- Yukarı/Aşağı Butonları (GÜNCELLENDİ: data-dir tersine çevrildi) -->
                         <div style="display:flex; flex-direction:column; gap:2px;">
-                            <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="-1" style="width:32px; height:32px; border:1px solid #eee;">
+                            <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="1" style="width:32px; height:32px; border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_up</span>
                             </button>
-                            <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="1" style="width:32px; height:32px; border:1px solid #eee;">
+                            <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="-1" style="width:32px; height:32px; border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_down</span>
                             </button>
                         </div>
