@@ -380,17 +380,25 @@ function stopGuzergah() {
 
 async function findAndSelectNextGorev() {
     try {
-        const userLocation = await getUserLocation();
-        const nextGorev = findNextGorev(userLocation, pendingTasks, guzergahSiralamasi);
+        // 1. Sıradaki görevi bul (Artık sadece listeye bakıyor, konuma değil)
+        // Not: pendingTasks, ui.js içinde global değişkendir ve günceldir.
+        const nextGorev = findNextGorev(pendingTasks);
 
         if (nextGorev) {
-            stopNavigation();
+            stopNavigation(); // Önceki navigasyonu durdur (temiz kamera açısı için)
+            
+            // Görevi seç ve detay panelini aç
             selectGorev(nextGorev.id);
+            
+            // Dropdown ve filtreyi güncelle (Kullanıcı nerede olduğunu anlasın)
             updateDropdownText(nextGorev.mahalle);
             mahalleFiltresi.value = nextGorev.mahalle;
 
+            // 2. Rotayı Çiz (Kullanıcının konumunu burada alıyoruz)
+            // drawRouteToTask fonksiyonu kendi içinde getUserLocation çağırıyor zaten.
             await drawRouteToTask(nextGorev, null);
 
+            // 3. Kamerayı Hedefe Odakla
             mapInstance.update({ 
                 location: { 
                     center: [nextGorev.boylam, nextGorev.enlem], 
@@ -399,13 +407,14 @@ async function findAndSelectNextGorev() {
                 } 
             });
 
+            // 4. Kısa bir süre sonra Navigasyon Modunu (Kamera takibi) başlat
             setTimeout(() => { startNavigation(); }, 2000);
         } else {
-            alert("Güzergah tamamlandı!");
+            alert("Güzergah tamamlandı! Rotada bekleyen başka görev yok.");
             stopGuzergah();
         }
     } catch (error) {
-        console.error(error);
+        console.error("Sıradaki görev hatası:", error);
         stopGuzergah();
     }
 }
