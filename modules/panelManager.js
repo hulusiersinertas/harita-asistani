@@ -272,45 +272,45 @@ export function showDetailView(gorev) {
 }
 
 /**
- * ÖZEL ROTA LİSTESİ GÖRÜNÜMÜ
- * (Ok yönleri güncellendi: Yukarı=1, Aşağı=-1)
+ * ÖZEL ROTA LİSTESİ GÖRÜNÜMÜ (COMPACT / SIKIŞTIRILMIŞ VERSİYON)
  */
 export function showCustomRouteListView(routeTasks) {
     const html = `
         <div class="sheet-handle"></div>
-        <div class="sheet-content" style="padding-top: 0;"> <!-- Padding'i header'a taşıdık -->
+        <div class="sheet-content" style="padding-top: 0;">
             
-            <!-- STICKY HEADER: Kaydırınca üstte sabit kalır -->
-            <div class="detail-header" style="position: sticky; top: 0; background: #fff; z-index: 10; padding-top: 20px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px;">
+            <!-- STICKY HEADER -->
+            <div class="detail-header" style="position: sticky; top: 0; background: #fff; z-index: 10; padding-top: 20px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 0;">
                 <h2 style="font-size:1rem; margin:0;">Dağıtım Listem (${routeTasks.length})</h2>
                 <button id="close-custom-list-btn" class="close-btn-mini"><span class="material-icons-outlined">close</span></button>
             </div>
 
-            <div id="custom-route-list-container" style="padding-bottom: 20px;">
+            <div id="custom-route-list-container" style="padding-bottom: 20px; padding-top: 5px;">
                 ${routeTasks.length === 0 ? '<p style="text-align:center; color:#999; margin-top:20px;">Listeniz boş.<br>Haritadan bir görev seçip "Rotaya Ekle" diyebilirsiniz.</p>' : ''}
                 
                 ${routeTasks.map(gorev => `
-                    <div class="gorev-list-item" style="display:flex; align-items:center; gap:12px; padding:10px;">
+                    <!-- COMPACT SATIR YAPISI -->
+                    <div class="gorev-list-item" style="display:flex; align-items:center; gap:8px; padding:4px 8px; margin-bottom: 4px; min-height: 44px; border-radius: 6px;">
                         
-                        <!-- Manuel Sıra Girişi -->
+                        <!-- Manuel Sıra Girişi (Küçültüldü) -->
                         <div style="display:flex; flex-direction:column; align-items:center;">
                             <input type="number" class="manual-sira-input" data-id="${gorev.id}" value="${gorev.siraNo}" 
-                                style="width:40px; padding:8px 4px; border:1px solid #ccc; border-radius:8px; text-align:center; font-weight:bold; font-size:1rem; color:#0284c7;">
+                                style="width:34px; padding:2px; height: 28px; border:1px solid #ccc; border-radius:4px; text-align:center; font-weight:bold; font-size:0.9rem; color:#0284c7;">
                         </div>
                         
-                        <!-- Görev Bilgisi -->
-                        <div style="flex:1; cursor:pointer;" class="go-to-task" data-id="${gorev.id}">
-                            <h4 style="font-size:0.95rem; margin:0; color:#1e293b;">${gorev.adSoyad}</h4>
-                            <p style="font-size:0.8rem; margin:2px 0 0 0; color:#64748b;">${gorev.mahalle} • ${gorev.miktar}</p>
+                        <!-- Görev Bilgisi (Sıkıştırıldı) -->
+                        <div style="flex:1; cursor:pointer; overflow: hidden;" class="go-to-task" data-id="${gorev.id}">
+                            <h4 style="font-size:0.85rem; margin:0; color:#1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${gorev.adSoyad}</h4>
+                            <p style="font-size:0.75rem; margin:0; color:#64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${gorev.mahalle} • ${gorev.miktar}</p>
                         </div>
 
-                        <!-- Taşıma Butonları -->
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="1" style="width:32px; height:32px; border:1px solid #eee;">
-                                <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_up</span>
+                        <!-- Taşıma Butonları (Mini) -->
+                        <div style="display:flex; flex-direction:column; gap:1px;">
+                            <button class="mini-move-btn" data-id="${gorev.id}" data-dir="1" style="width:26px; height:20px; border:1px solid #eee; background:#fff; border-radius:3px; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <span class="material-icons" style="font-size:16px; color:#64748b;">keyboard_arrow_up</span>
                             </button>
-                            <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="-1" style="width:32px; height:32px; border:1px solid #eee;">
-                                <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_down</span>
+                            <button class="mini-move-btn" data-id="${gorev.id}" data-dir="-1" style="width:26px; height:20px; border:1px solid #eee; background:#fff; border-radius:3px; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <span class="material-icons" style="font-size:16px; color:#64748b;">keyboard_arrow_down</span>
                             </button>
                         </div>
                     </div>
@@ -449,4 +449,5 @@ export function hidePanel() {
         window.adjustFabPosition(false);
     }
 }
+
 
