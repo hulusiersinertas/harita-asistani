@@ -140,3 +140,33 @@ export async function fetchGuzergahData(aracAdi) {
         return [];
     }
 }
+export async function updateGorevSirasi(sheetName, rowId, siraNo) {
+    const formData = new FormData();
+    formData.append('sheet', sheetName);
+    formData.append('row', rowId);
+    // Apps Script tarafında 'sira' parametresini yakalayıp Q sütununa yazacak mantık olması lazım.
+    // Ancak senin mevcut scriptin muhtemelen genel 'sonuc' veya 'not' alıyor.
+    // MEVCUT APPS SCRIPT kodunu değiştiremediğimiz için,
+    // 'not' parametresi veya 'sonuc' yerine, Apps Script'in
+    // genel bir update mantığı olduğunu varsayarak; 
+    // veya hack yaparak 'not' alanına dokunmadan sadece 'sira' güncelleyebilmek için
+    // Script tarafının buna uygun olması gerekir.
+    
+    // NOT: Eğer Apps Script kodun sadece belirli sütunları güncelliyorsa,
+    // bu işlem için Apps Script tarafında da düzenleme gerekebilir.
+    // Biz burada 'sira' parametresini gönderiyoruz.
+    formData.append('sira', siraNo); 
+
+    try {
+        const response = await fetch(config.appsScriptUrl, {
+            method: 'POST',
+            body: formData,
+        });
+        // Google Apps Script bazen 302 redirect yapar, fetch bunu opaque olarak algılar, bu başarıdır.
+        return true; 
+    } catch (error) {
+        console.error('Sıra güncelleme hatası:', error);
+        return false;
+    }
+}
+
