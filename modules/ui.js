@@ -195,6 +195,13 @@ function setupEventListeners() {
     if(customRouteListBtn) {
         customRouteListBtn.addEventListener('click', openCustomRouteList);
     }
+    const generalListBtn = document.getElementById('general-list-btn');
+    if (generalListBtn) {
+        generalListBtn.addEventListener('click', () => {
+            // Seçili mahalleye göre standart listeyi açar
+            displayListView(mahalleFiltresi.value);
+        });
+    }
 }
 
 function checkNoCoords(gorevler) {
