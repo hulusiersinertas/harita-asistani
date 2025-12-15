@@ -1,10 +1,14 @@
+// DOSYA: modules/ui.js
+
 import { updateGorevStatus } from './api.js';
-import { initPanelManager, showDetailView, showListView, showHistoryView, hidePanel } from './panelManager.js';
+import { initPanelManager, showDetailView, showListView, showHistoryView, hidePanel, showCustomRouteListView } from './panelManager.js';
 import { initNavigation, updateExternalCameraState, startNavigation, stopNavigation, getUserLocation } from './navigation.js';
 import { initRouting, drawRouteToTask, clearCurrentRoute } from './route.js';
 import { findNextGorev } from './guzergahManager.js';
-import { addSingleMarker } from './map.js'; // YENİ IMPORT
+import { addSingleMarker } from './map.js';
+import * as CRM from './customRouteManager.js'; // Yeni Rota Yöneticisi
 
+// Sabitler
 const ZOOM_GENIS = 14;
 const ZOOM_YAKIN = 16;
 
@@ -16,7 +20,9 @@ const guzergahBtn = document.getElementById('guzergah-toggle-btn');
 const historyBtn = document.getElementById('history-btn');
 const noCoordsBtn = document.getElementById('no-coords-btn');
 const noCoordsBadge = document.getElementById('no-coords-badge');
+const customRouteListBtn = document.getElementById('custom-route-list-btn'); // Yeni Liste Butonu
 
+// Veri State
 let allTasks = [];
 let pendingTasks = [];
 let completedTasks = [];
@@ -29,6 +35,9 @@ let currentSelectedGorevId = null;
 let isGuzergahActive = false;
 let guzergahSiralamasi = [];
 
+/**
+ * Uygulama Arayüzünü Başlatır
+ */
 export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     allTasks = gorevler;
     mapInstance = map;
@@ -41,13 +50,7 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     setupEventListeners();
     checkNoCoords(pendingTasks);
 
-    if(noCoordsBtn) {
-        noCoordsBtn.addEventListener('click', () => {
-            const koordinatsizlar = pendingTasks.filter(g => !g.hasCoords);
-            showListView(koordinatsizlar, "Koordinatsız İşler");
-        });
-    }
-
+    // Panel Yöneticisini Başlat ve Callbackleri Bağla
     initPanelManager({
         onGorevSelect: (gorevId) => {
             if (isGuzergahActive) return;
@@ -60,7 +63,30 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
         },
         onDeselect: deselectGorev,
         onShowListView: () => displayListView(mahalleFiltresi.value),
-        onUndo: handleUndo
+        onUndo: handleUndo,
+        
+        // --- YENİ ROTA YÖNETİM CALLBACKLERİ ---
+        onRouteAdd: (gorev) => {
+            CRM.addToRoute(gorev, allTasks, currentAracAdi, () => {
+                // Eklendikten sonra paneli güncelle
+                showDetailView(gorev);
+            });
+        },
+        onRouteRemove: (gorev) => {
+            CRM.removeFromRoute(gorev, currentAracAdi, () => {
+                showDetailView(gorev);
+            });
+        },
+        onRouteMove: (gorev, direction) => {
+            CRM.moveTask(gorev, direction, allTasks, currentAracAdi, () => {
+                refreshActiveView(gorev);
+            });
+        },
+        onManualSiraChange: (gorev, newVal) => {
+            CRM.setManualSira(gorev, newVal, allTasks, currentAracAdi, () => {
+                refreshActiveView(gorev);
+            });
+        }
     });
     
     initNavigation(map);
@@ -72,12 +98,36 @@ export function initUI(gorevler, map, placemarks, aracAdi, guzergahData) {
     }
 }
 
+// --- YARDIMCI FONKSİYONLAR ---
+
+// Hangi görünüm açıksa (Liste veya Detay) onu yeniler
+function refreshActiveView(gorev) {
+    const isListOpen = document.getElementById('custom-route-list-container');
+    if(isListOpen) {
+        openCustomRouteList();
+    } else {
+        showDetailView(gorev);
+    }
+}
+
+// Yeni Özel Rota Listesini Aç
+function openCustomRouteList() {
+    // 9000'den küçük sırası olanları al (9999 varsayılan/boş kabul ediyoruz)
+    const routeTasks = pendingTasks.filter(t => t.siraNo && t.siraNo < 9000);
+    // Sıraya göre diz
+    routeTasks.sort((a, b) => a.siraNo - b.siraNo);
+    
+    showCustomRouteListView(routeTasks);
+}
+
 function distributeTasks() {
     pendingTasks = allTasks.filter(t => t.durum.toLowerCase() === 'bekliyor');
     completedTasks = allTasks.filter(t => t.durum.toLowerCase() !== 'bekliyor');
     
+    // Varsayılan sıralama: Sira numarasına göre
     pendingTasks.sort((a, b) => a.siraNo - b.siraNo);
 
+    // Tamamlananları tarihe göre sırala
     const parseDate = (str) => {
         if(!str) return 0;
         try {
@@ -98,10 +148,12 @@ function distributeTasks() {
 function setupEventListeners() {
     const { YMapListener } = ymaps3;
 
+    // Harita Tıklama
     const mapListener = new YMapListener({
         layer: 'any',
         onClick: (event) => {
             if (isGuzergahActive) return;
+            // Placemark elementine tıklandığını yakala
             if (event?.entity?.element?.classList.contains('placemark')) {
                 const gorevId = parseInt(event.entity.element.dataset.id, 10);
                 focusOnGorev(gorevId);
@@ -113,6 +165,7 @@ function setupEventListeners() {
     });
     mapInstance.addChild(mapListener);
 
+    // Mahalle Filtresi
     mahalleFiltresi.addEventListener('change', () => {
         updateDropdownText(mahalleFiltresi.value);
         if (currentSelectedGorevId) deselectGorev();
@@ -120,12 +173,27 @@ function setupEventListeners() {
         zoomToMahalle(mahalleFiltresi.value);
     });
 
+    // Otomatik Güzergah (Eski Özellik)
     guzergahBtn.addEventListener('click', toggleGuzergahModu);
     
+    // Geçmiş
     if (historyBtn) {
         historyBtn.addEventListener('click', () => {
             showHistoryView(completedTasks);
         });
+    }
+
+    // Koordinatsız Görevler Listesi
+    if(noCoordsBtn) {
+        noCoordsBtn.addEventListener('click', () => {
+            const koordinatsizlar = pendingTasks.filter(g => !g.hasCoords);
+            showListView(koordinatsizlar, "Koordinatsız İşler");
+        });
+    }
+
+    // YENİ: Dağıtım Listem Butonu
+    if(customRouteListBtn) {
+        customRouteListBtn.addEventListener('click', openCustomRouteList);
     }
 }
 
@@ -149,7 +217,7 @@ function updateDropdownText(mahalleAdi) {
     mahalleDisplayText.textContent = finalText;
 }
 
-// --- GÜNCELLENEN UNDO (GERİ ALMA) FONKSİYONU ---
+// --- GERİ ALMA (UNDO) ---
 async function handleUndo(gorevId) {
     const gorevIndex = allTasks.findIndex(g => g.id === gorevId);
     if (gorevIndex === -1) return;
@@ -158,47 +226,42 @@ async function handleUndo(gorevId) {
 
     if (!confirm(`${gorev.adSoyad} tekrar "Bekliyor" listesine alınsın mı?`)) return;
 
-    // 1. Veriyi güncelle
+    // Durum güncelle
     gorev.durum = 'bekliyor';
     gorev.not = "";
     gorev.tamamlanmaZamani = "";
 
-    // 2. Listeleri güncelle
     distributeTasks();
 
-    // 3. UI Elementlerini güncelle
     checkNoCoords(pendingTasks);
-    populateMahalleFiltresi(pendingTasks); // Filtreyi geri gelen göreve göre güncelle
+    populateMahalleFiltresi(pendingTasks);
 
-    // 4. Haritaya iğneyi geri ekle (Eğer koordinatı varsa)
+    // İğneyi geri ekle
     if (gorev.hasCoords) {
-        // map.js'den import ettiğimiz fonksiyon
         const pinData = addSingleMarker(gorev);
         if (pinData) {
             placemarksMap.set(gorev.id, pinData);
             
-            // Eğer şu anki filtreye uyuyorsa göster, değilse gizle
             const currentFilter = mahalleFiltresi.value;
             const isMatch = (currentFilter === 'TÜMÜ' || gorev.mahalle === currentFilter);
             pinData.element.classList.toggle('filtered-out', !isMatch);
         }
     }
 
-    // 5. Geçmiş panelini tekrar çiz (ki listeden silinsin)
-    // Eğer liste boşaldıysa paneli kapatabiliriz veya boş gösterebiliriz
+    // Paneli güncelle
     if (completedTasks.length > 0) {
         showHistoryView(completedTasks);
     } else {
         hidePanel();
     }
 
-    // 6. Arka planda sunucuya bildir
+    // API
     updateGorevStatus(currentAracAdi, gorevId, "Bekliyor")
         .then(success => { if (!success) console.warn("Sunucu geri almayı kaydedemedi!"); })
         .catch(err => console.error("Bağlantı hatası:", err));
 }
-// ---------------------------------------------
 
+// --- DURUM GÜNCELLEME ---
 async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton, note = "") {
     if (!confirm(`${adSoyad} durumu "${newStatus}" olarak işaretlensin mi?`)) return;
 
@@ -214,8 +277,6 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton, no
         const pin = placemarksMap.get(gorevId);
         if (pin) {
             mapInstance.removeChild(pin.marker);
-            // Placemark map'ten silmiyoruz, referans kalsın diyeceğim ama
-            // Marker'ı sildiğimiz için map'ten de silip, geri alınınca tekrar oluşturmak daha temiz.
             placemarksMap.delete(gorevId);
         }
     }
@@ -223,11 +284,14 @@ async function handleStatusUpdate(newStatus, gorevId, adSoyad, clickedButton, no
     distributeTasks(); 
     checkNoCoords(pendingTasks);
     
+    // Paneli kapat veya sonrakine geç
     if (currentSelectedGorevId === gorevId) deselectGorev();
     else hidePanel();
 
+    // Otomatik güzergah modundaysak sıradakine geç
     if (isGuzergahActive) findAndSelectNextGorev();
 
+    // API isteği
     updateGorevStatus(currentAracAdi, gorevId, newStatus, note)
         .then(success => { if (!success) alert("Sunucu hatası!"); })
         .catch(err => alert("Bağlantı hatası!"));
@@ -281,6 +345,7 @@ function focusOnGorev(gorevId) {
     }
 }
 
+// --- OTOMATİK GÜZERGAH (ESKİ) ---
 function toggleGuzergahModu() {
     if (isGuzergahActive) stopGuzergah();
     else startGuzergah();
@@ -290,7 +355,9 @@ async function startGuzergah() {
     isGuzergahActive = true;
     guzergahBtn.innerHTML = '<span class="material-icons-outlined" style="color: #dc2626;">stop_circle</span>';
     mahalleFiltresi.disabled = true;
-    navigationBtn.classList.remove('active');
+    const navBtn = document.getElementById('navigation-toggle-btn');
+    if(navBtn) navBtn.classList.remove('active');
+    
     startNavigation();
     await findAndSelectNextGorev();
 }
