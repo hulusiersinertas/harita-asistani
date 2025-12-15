@@ -45,8 +45,8 @@ function startDrag(clientY, target) {
     const isHandle = target.closest('.sheet-handle');
     const isHeader = target.closest('.detail-header');
     
-    // Eğer butonlara tıklanıyorsa sürüklemeyi başlatma
-    if (target.tagName === 'BUTTON' || target.closest('button')) return;
+    // Eğer butonlara veya inputlara tıklanıyorsa sürüklemeyi başlatma
+    if (target.tagName === 'BUTTON' || target.closest('button') || target.tagName === 'INPUT') return;
 
     if (!isHandle && !isHeader) return;
     
@@ -128,7 +128,7 @@ function setPanelContent(htmlContent) {
         altPanel.style.height = `${currentPeekHeight}px`;
     });
 
-    // FAB butonunun yerini ayarla (ui.js içinde tanımlı olabilir)
+    // FAB butonunun yerini ayarla
     if (typeof window.adjustFabPosition === 'function') {
         window.adjustFabPosition(true);
     }
@@ -136,7 +136,7 @@ function setPanelContent(htmlContent) {
 
 /**
  * TEKİL GÖREV DETAY GÖRÜNÜMÜ
- * (Rotaya ekle/çıkar butonlarını içerir)
+ * (Rotaya ekle/çıkar ve manuel sıra değiştirme içerir)
  */
 export function showDetailView(gorev) {
     // Sıra kontrolü (9000'den küçükse rotadadır varsayımı)
@@ -147,15 +147,27 @@ export function showDetailView(gorev) {
     
     if (isInRoute) {
         // Zaten rotada ise: Yukarı/Aşağı oklar ve Çıkar butonu
-        // GÜNCELLEME: data-dir değerleri tersine çevrildi
-        // Yukarı Ok (-1 idi -> 1 oldu)
-        // Aşağı Ok (1 idi -> -1 oldu)
+        // GÜNCELLEME: 
+        // 1. Ortadaki numara artık <input>
+        // 2. data-dir değerleri: Yukarı=1, Aşağı=-1 olarak ayarlandı.
         routeControlsHtml = `
-            <div class="route-controls-container" style="display:flex; align-items:center; gap:5px; background:#f0f9ff; padding:5px; border-radius:8px; border:1px solid #bae6fd;">
-                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="1" data-id="${gorev.id}"><span class="material-icons" style="font-size:18px;">arrow_upward</span></button>
-                <div style="font-weight:bold; color:#0284c7; min-width:24px; text-align:center; font-size:1.1rem;">${gorev.siraNo}</div>
-                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="-1" data-id="${gorev.id}"><span class="material-icons" style="font-size:18px;">arrow_downward</span></button>
+            <div class="route-controls-container" style="display:flex; align-items:center; gap:2px; background:#f0f9ff; padding:4px; border-radius:8px; border:1px solid #bae6fd;">
+                <!-- YUKARI OK (1) -->
+                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="1" data-id="${gorev.id}">
+                    <span class="material-icons" style="font-size:18px;">arrow_upward</span>
+                </button>
+                
+                <!-- MANUEL SIRA GİRİŞİ -->
+                <input type="number" class="detail-manual-input" data-id="${gorev.id}" value="${gorev.siraNo}" 
+                    style="width:40px; height:32px; border:none; background:transparent; text-align:center; font-weight:bold; font-size:1.1rem; color:#0284c7; outline:none; padding:0;">
+                
+                <!-- AŞAĞI OK (-1) -->
+                <button class="route-move-btn circle-btn" style="width:32px; height:32px; border:1px solid #ddd;" data-dir="-1" data-id="${gorev.id}">
+                    <span class="material-icons" style="font-size:18px;">arrow_downward</span>
+                </button>
+                
                 <div style="width:1px; height:20px; background:#ccc; margin:0 4px;"></div>
+                
                 <button class="route-remove-btn circle-btn" style="width:32px; height:32px; border:1px solid #fee2e2; background:#fef2f2;" data-id="${gorev.id}" title="Rotadan Çıkar">
                     <span class="material-icons" style="font-size:18px; color:#ef4444;">close</span>
                 </button>
@@ -215,11 +227,11 @@ export function showDetailView(gorev) {
     // Rota Çiz (Uygulama İçi)
     document.getElementById('route-btn').addEventListener('click', (e) => callbacks.onRouteClick(gorev, e.currentTarget));
     
-    // Durum Güncelleme (Not sorarak)
+    // Durum Güncelleme
     const handleStatusClick = (status, btn) => {
         let note = "";
         const userNote = prompt("Varsa notunuzu girin (İsteğe bağlı):");
-        if (userNote !== null) note = userNote; // İptal denmediyse
+        if (userNote !== null) note = userNote;
         callbacks.onStatusUpdate(status, gorev.id, gorev.adSoyad, btn, note);
     };
 
@@ -230,25 +242,38 @@ export function showDetailView(gorev) {
 
     // Rota Butonları Listener
     if (isInRoute) {
+        // Ok Tuşları
         altPanel.querySelectorAll('.route-move-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Panelin sürüklenmesini tetikleme ihtimaline karşı
+                e.stopPropagation();
                 const dir = parseInt(e.currentTarget.dataset.dir);
                 callbacks.onRouteMove(gorev, dir);
             });
         });
+        
+        // Silme Tuşu
         altPanel.querySelector('.route-remove-btn').addEventListener('click', (e) => {
              e.stopPropagation();
              callbacks.onRouteRemove(gorev);
         });
+
+        // Manuel Input
+        const detailInput = altPanel.querySelector('.detail-manual-input');
+        if (detailInput) {
+            detailInput.addEventListener('change', (e) => {
+                callbacks.onManualSiraChange(gorev, e.currentTarget.value);
+            });
+            detailInput.addEventListener('focus', (e) => e.currentTarget.select());
+        }
+
     } else {
         document.getElementById('add-to-route-btn').addEventListener('click', () => callbacks.onRouteAdd(gorev));
     }
 }
 
 /**
- * ÖZEL ROTA LİSTESİ GÖRÜNÜMÜ (YENİ)
- * Sıralanabilir, input ile değiştirilebilir liste.
+ * ÖZEL ROTA LİSTESİ GÖRÜNÜMÜ
+ * (Ok yönleri güncellendi: Yukarı=1, Aşağı=-1)
  */
 export function showCustomRouteListView(routeTasks) {
     const html = `
@@ -270,17 +295,19 @@ export function showCustomRouteListView(routeTasks) {
                                 style="width:40px; padding:8px 4px; border:1px solid #ccc; border-radius:8px; text-align:center; font-weight:bold; font-size:1rem; color:#0284c7;">
                         </div>
                         
-                        <!-- Görev Bilgisi (Tıklanınca Haritada Gider) -->
+                        <!-- Görev Bilgisi -->
                         <div style="flex:1; cursor:pointer;" class="go-to-task" data-id="${gorev.id}">
                             <h4 style="font-size:0.95rem; margin:0; color:#1e293b;">${gorev.adSoyad}</h4>
                             <p style="font-size:0.8rem; margin:2px 0 0 0; color:#64748b;">${gorev.mahalle} • ${gorev.miktar}</p>
                         </div>
 
-                        <!-- Yukarı/Aşağı Butonları (GÜNCELLENDİ: data-dir tersine çevrildi) -->
+                        <!-- Taşıma Butonları (YÖNLER GÜNCELLENDİ) -->
                         <div style="display:flex; flex-direction:column; gap:2px;">
+                            <!-- Yukarı (1) -->
                             <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="1" style="width:32px; height:32px; border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_up</span>
                             </button>
+                            <!-- Aşağı (-1) -->
                             <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="-1" style="width:32px; height:32px; border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_down</span>
                             </button>
@@ -292,10 +319,9 @@ export function showCustomRouteListView(routeTasks) {
     `;
     setPanelContent(html);
 
-    // Kapat
     document.getElementById('close-custom-list-btn').addEventListener('click', () => callbacks.onDeselect());
 
-    // 1. Tıklayınca göreve git
+    // Göreve Git
     altPanel.querySelectorAll('.go-to-task').forEach(div => {
         div.addEventListener('click', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -303,19 +329,18 @@ export function showCustomRouteListView(routeTasks) {
         });
     });
 
-    // 2. Manuel Input Değişimi
+    // Manuel Input
     altPanel.querySelectorAll('.manual-sira-input').forEach(input => {
         input.addEventListener('change', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
             const val = e.currentTarget.value;
-            // İlgili görevi bulup callback'e gönder
-            // (Not: routeTasks closure içinde mevcut)
             const gorev = routeTasks.find(g => g.id === id);
             if(gorev) callbacks.onManualSiraChange(gorev, val);
         });
+        input.addEventListener('focus', (e) => e.currentTarget.select());
     });
 
-    // 3. Ok Tuşları
+    // Ok Tuşları
     altPanel.querySelectorAll('.mini-move-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -327,7 +352,7 @@ export function showCustomRouteListView(routeTasks) {
 }
 
 /**
- * STANDART LİSTE GÖRÜNÜMÜ (Mahalle Filtresi vb.)
+ * STANDART LİSTE GÖRÜNÜMÜ
  */
 export function showListView(filtrelenmisGorevler, title = null) {
     const displayTitle = title ? title : `Görev Listesi (${filtrelenmisGorevler.length})`;
