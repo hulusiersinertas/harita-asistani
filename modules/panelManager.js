@@ -278,11 +278,14 @@ export function showDetailView(gorev) {
 export function showCustomRouteListView(routeTasks) {
     const html = `
         <div class="sheet-handle"></div>
-        <div class="sheet-content">
-            <div class="detail-header">
-                <h2 style="font-size:1rem;">Dağıtım Listem (${routeTasks.length})</h2>
+        <div class="sheet-content" style="padding-top: 0;"> <!-- Padding'i header'a taşıdık -->
+            
+            <!-- STICKY HEADER: Kaydırınca üstte sabit kalır -->
+            <div class="detail-header" style="position: sticky; top: 0; background: #fff; z-index: 10; padding-top: 20px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px;">
+                <h2 style="font-size:1rem; margin:0;">Dağıtım Listem (${routeTasks.length})</h2>
                 <button id="close-custom-list-btn" class="close-btn-mini"><span class="material-icons-outlined">close</span></button>
             </div>
+
             <div id="custom-route-list-container" style="padding-bottom: 20px;">
                 ${routeTasks.length === 0 ? '<p style="text-align:center; color:#999; margin-top:20px;">Listeniz boş.<br>Haritadan bir görev seçip "Rotaya Ekle" diyebilirsiniz.</p>' : ''}
                 
@@ -301,13 +304,11 @@ export function showCustomRouteListView(routeTasks) {
                             <p style="font-size:0.8rem; margin:2px 0 0 0; color:#64748b;">${gorev.mahalle} • ${gorev.miktar}</p>
                         </div>
 
-                        <!-- Taşıma Butonları (YÖNLER GÜNCELLENDİ) -->
+                        <!-- Taşıma Butonları -->
                         <div style="display:flex; flex-direction:column; gap:2px;">
-                            <!-- Yukarı (1) -->
                             <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="1" style="width:32px; height:32px; border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_up</span>
                             </button>
-                            <!-- Aşağı (-1) -->
                             <button class="mini-move-btn circle-btn" data-id="${gorev.id}" data-dir="-1" style="width:32px; height:32px; border:1px solid #eee;">
                                 <span class="material-icons" style="font-size:20px; color:#64748b;">keyboard_arrow_down</span>
                             </button>
@@ -319,9 +320,9 @@ export function showCustomRouteListView(routeTasks) {
     `;
     setPanelContent(html);
 
+    // --- Listenerlar ---
     document.getElementById('close-custom-list-btn').addEventListener('click', () => callbacks.onDeselect());
 
-    // Göreve Git
     altPanel.querySelectorAll('.go-to-task').forEach(div => {
         div.addEventListener('click', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -329,7 +330,6 @@ export function showCustomRouteListView(routeTasks) {
         });
     });
 
-    // Manuel Input
     altPanel.querySelectorAll('.manual-sira-input').forEach(input => {
         input.addEventListener('change', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -340,7 +340,6 @@ export function showCustomRouteListView(routeTasks) {
         input.addEventListener('focus', (e) => e.currentTarget.select());
     });
 
-    // Ok Tuşları
     altPanel.querySelectorAll('.mini-move-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -450,3 +449,4 @@ export function hidePanel() {
         window.adjustFabPosition(false);
     }
 }
+
