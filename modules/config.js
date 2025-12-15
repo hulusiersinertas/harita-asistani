@@ -1,7 +1,7 @@
 export const config = {
     googleApiKey: 'AIzaSyBgtFHotp01PD_MHOTqfFmYHmP6Zb-mFsY',
     spreadsheetId: '1OEfIZ4nuhG236chhiBibFUXMf2VR8ivBw_WXd4Zxkqc',
-    appsScriptUrl: 'https://script.google.com/macros/s/AKfycbzt051mVgYhCSKmofiqzyRhKPKpzZHbMAWXN6BfK5lEWH0jgeTB2NBZnIvH8CS5BcpR/exec',
+    appsScriptUrl: 'https://script.google.com/macros/s/AKfycbyZDemnIxlsu0IKH2Rl8_Q17byBaQPCY2KCdJIcm8NepB-98YbxD5T179A_yB6bKg6M/exec',
     openRouteServiceApiKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImE5MTRjZTI4M2E1YTQzODdiZmFhYzFkMmEyNDVkYmRjIiwiaCI6Im11cm11cjY0In0=',
 
     // SÜTUN HARİTASI (GÜNCELLENDİ)
@@ -20,5 +20,6 @@ export const config = {
         NOT: 17          // R (Girilen Not)
     }
 };
+
 
 
