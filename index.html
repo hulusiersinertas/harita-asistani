@@ -25,21 +25,27 @@
 
         <!-- SAĞ GRUP -->
         <div class="header-right-group">
-            <button id="guzergah-toggle-btn" class="circle-btn" style="display: none;" title="Güzergah">
-                <span class="material-icons-outlined">route</span>
-            </button>
-            
-            <button id="history-btn" class="circle-btn" title="Tamamlananlar">
-                <span class="material-icons-outlined">history</span>
-            </button>
+    
+    <!-- YENİ: Özel Rota Listesi Butonu -->
+    <button id="custom-route-list-btn" class="circle-btn" title="Dağıtım Listem">
+        <span class="material-icons-outlined">format_list_numbered</span>
+    </button>
 
-            <!-- Filtre -->
-            <div class="header-pill dropdown-wrapper">
-                <span id="mahalle-display-text">Tüm Mahalleler</span>
-                <span class="material-icons text-gray">arrow_drop_down</span>
-                <select id="mahalle-filtresi" disabled></select>
-            </div>
-        </div>
+    <button id="guzergah-toggle-btn" class="circle-btn" style="display: none;" title="Otomatik Güzergah">
+        <span class="material-icons-outlined">route</span>
+    </button>
+    
+    <button id="history-btn" class="circle-btn" title="Tamamlananlar">
+        <span class="material-icons-outlined">history</span>
+    </button>
+
+    <!-- Filtre ... (Aynı kalıyor) -->
+    <div class="header-pill dropdown-wrapper">
+        <span id="mahalle-display-text">Tüm Mahalleler</span>
+        <span class="material-icons text-gray">arrow_drop_down</span>
+        <select id="mahalle-filtresi" disabled></select>
+    </div>
+</div>
     </header>
 
     <!-- ALT PANEL -->
@@ -96,3 +102,4 @@
     </div>
 </body>
 </html>
+
