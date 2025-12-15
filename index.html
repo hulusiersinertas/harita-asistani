@@ -24,11 +24,16 @@
         </div>
 
         <!-- SAĞ GRUP -->
-        <div class="header-right-group">
+<div class="header-right-group">
     
-    <!-- YENİ: Özel Rota Listesi Butonu -->
-    <button id="custom-route-list-btn" class="circle-btn" title="Dağıtım Listem">
-        <span class="material-icons-outlined">format_list_numbered</span>
+    <!-- 1. ÖZEL GÜZERGAH LİSTESİ (Sıralı) -->
+    <button id="custom-route-list-btn" class="circle-btn" title="Dağıtım Listem (Sıralı)">
+        <span class="material-icons-outlined" style="color: #0284c7;">format_list_numbered</span>
+    </button>
+
+    <!-- 2. YENİ: GENEL GÖREV LİSTESİ (Filtreli) -->
+    <button id="general-list-btn" class="circle-btn" title="Mahalle Listesi">
+        <span class="material-icons-outlined">list</span>
     </button>
 
     <button id="guzergah-toggle-btn" class="circle-btn" style="display: none;" title="Otomatik Güzergah">
@@ -39,7 +44,7 @@
         <span class="material-icons-outlined">history</span>
     </button>
 
-    <!-- Filtre ... (Aynı kalıyor) -->
+    <!-- Filtre -->
     <div class="header-pill dropdown-wrapper">
         <span id="mahalle-display-text">Tüm Mahalleler</span>
         <span class="material-icons text-gray">arrow_drop_down</span>
@@ -102,4 +107,5 @@
     </div>
 </body>
 </html>
+
 
