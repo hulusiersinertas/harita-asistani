@@ -1,78 +1,84 @@
 /* ================================================================================ */
-/* DOSYA YOLU: style.css (TAM SÜRÜM - MODERN MOBİL ARAYÜZ) */
+/* DAĞITIM ASİSTANI - STİL DOSYASI (FIXED & CLEAN VERSION) */
 /* ================================================================================ */
 
-/* --- 1. Temel Değişkenler ve Ayarlar --- */
+/* --- 1. Temel Değişkenler ve Reset --- */
 :root {
-    /* Renk Paleti (Stitch Tasarımı) */
-    --primary-color: #3b82f6; /* Ana Mavi */
+    /* Renk Paleti */
+    --primary-color: #3b82f6; /* Mavi */
     --primary-dark: #2563eb;
-    --secondary-bg: #f1f5f9;  /* Arka Plan Gri */
-    --text-dark: #1e293b;     /* Koyu Yazı */
-    --text-gray: #64748b;     /* Gri Yazı */
+    --secondary-bg: #f1f5f9;  /* Açık Gri */
+    --text-dark: #1e293b;     /* Koyu Metin */
+    --text-gray: #64748b;     /* Gri Metin */
     --white: #ffffff;
-    --danger-color: #ef4444;
-    --success-color: #22c55e;
+    --danger-color: #ef4444;  /* Kırmızı */
+    --success-color: #22c55e; /* Yeşil */
+    --warning-color: #f59e0b; /* Turuncu */
     --border-color: #e2e8f0;
 
     /* Gölgeler */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-up: 0 -4px 20px rgba(0, 0, 0, 0.1);
-
-    /* Animasyon Eğrileri */
+    
+    /* Animasyon */
     --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-html, body, #app {
+html, body {
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* Sayfanın kendisi kaymasın, harita yönetsin */
+    overflow: hidden; /* Sayfanın kendisi kaymasın */
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     background-color: var(--secondary-bg);
-    -webkit-tap-highlight-color: transparent; /* Mobilde tıklama mavisini kaldır */
-    touch-action: none; /* Tarayıcı varsayılan sürüklemelerini engelle */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none; /* Tarayıcı sürüklemelerini engelle */
+    overscroll-behavior: none; /* Pull-to-refresh engelle */
 }
 
-/* --- 2. Yüzen Üst Panel (Floating Header / Pills) --- */
+#app {
+    width: 100%;
+    height: 100%;
+}
+
+/* --- 2. Yüzen Üst Panel (Header) --- */
 .floating-header {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    padding: 12px 16px; /* Kenar boşlukları */
     z-index: 100;
     pointer-events: none; /* Tıklamalar haritaya geçsin */
     display: flex;
-    justify-content: space-between; /* Sola ve sağa yasla */
+    justify-content: space-between;
     align-items: flex-start;
+    
+    /* Mobil Çentik Ayarı (Safe Area) */
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: 12px;
 }
 
-/* Ortak Hap Tasarımı */
+/* Hap Tasarımları (Sol ve Sağ Gruplar) */
 .header-pill {
     background: var(--white);
-    border-radius: 9999px; /* Tam yuvarlak kenarlar */
+    border-radius: 9999px;
     padding: 8px 16px;
     display: flex;
     align-items: center;
     gap: 10px;
     box-shadow: var(--shadow-float);
-    pointer-events: auto; /* Haplara tıklanabilsin */
-    height: 48px; /* Sabit yükseklik */
+    pointer-events: auto;
+    height: 48px;
     box-sizing: border-box;
 }
 
-/* Sol Hap: Başlık ve Sayaç */
+/* Sol Bilgi Hapı */
 .left-pill {
     padding-right: 20px;
-    max-width: 55%; /* Ekranın yarısından fazlasını kaplamasın */
-}
-
-.left-pill .material-icons {
-    color: var(--text-gray);
-    font-size: 24px;
+    max-width: 55%;
 }
 
 .title-info {
@@ -98,18 +104,18 @@ html, body, #app {
     color: var(--text-gray);
 }
 
-/* Sağ Grup: Ekranın sağına yapışık, gerekirse küçülsün */
+/* Sağ Kontrol Grubu */
 .header-right-group {
     display: flex;
     align-items: center;
-    gap: 6px; /* Boşluğu biraz azalttık */
+    gap: 8px;
     pointer-events: auto;
-    flex-shrink: 1; /* Alan daralırsa küçülmeye izin ver */
-    min-width: 0; /* Flexbox taşma koruması */
-    max-width: 65%; /* Sol tarafa (Başlığa) saygı duysun */
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 65%;
 }
 
-/* Yuvarlak İkon Butonlar (Güzergah, Liste vb.) */
+/* Yuvarlak Butonlar */
 .circle-btn {
     width: 48px;
     height: 48px;
@@ -123,6 +129,7 @@ html, body, #app {
     color: var(--text-gray);
     cursor: pointer;
     transition: transform 0.1s, background-color 0.2s;
+    flex-shrink: 0;
 }
 
 .circle-btn:active {
@@ -130,48 +137,104 @@ html, body, #app {
     background-color: var(--secondary-bg);
 }
 
-.circle-btn .material-icons-outlined {
-    font-size: 24px;
-}
-
-/* Dropdown Hapı: Çok geniş olmasın, yazı sığmazsa '...' koysun */
+/* Dropdown (Mahalle Seçimi) */
 .dropdown-wrapper {
     position: relative;
-    padding: 8px 12px 8px 12px;
-    /* Sabit min-width yerine esnek yapı */
-    min-width: 80px; 
-    max-width: 140px; /* Maksimum genişlik sınırı */
+    padding: 8px 12px;
+    min-width: 80px;
+    max-width: 140px;
     justify-content: space-between;
     cursor: pointer;
-    flex-shrink: 1; /* Küçülebilir */
+    flex-shrink: 1;
 }
 
-/* İçindeki Yazı */
 #mahalle-display-text {
-    font-size: 0.80rem; /* Yazıyı bir tık küçülttük */
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-dark);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Sığmayan yazı '...' olur */
+    text-overflow: ellipsis;
     display: block;
     width: 100%;
 }
 
-/* Görünmez Select Elementi (Hile) */
 #mahalle-filtresi {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    opacity: 0; /* Görünmez */
+    opacity: 0;
     cursor: pointer;
-    z-index: 2; /* Yazının üstünde olsun */
-    -webkit-appearance: none; /* Mobilde varsayılan stili kaldır */
+    z-index: 2;
+    -webkit-appearance: none;
 }
 
-/* --- 3. Alt Panel (Bottom Sheet - Draggable) --- */
+/* --- 3. Harita İşaretçileri (MARKER FIX) --- */
+/* Yandex API v3 uyumlu, bağımsız stil */
+
+.placemark {
+    width: 28px;  /* Görünür genişlik */
+    height: 28px; /* Görünür yükseklik */
+    background-color: var(--danger-color); /* Varsayılan Kırmızı */
+    border: 3px solid var(--white);
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-sizing: border-box;
+    z-index: 10;
+
+    /* Harita koordinatına tam ortalamak için kritik ayar */
+    position: relative;
+    transform: translate(-50%, -50%);
+}
+
+/* Seçili Marker (Büyük Mavi) */
+.placemark.selected {
+    background-color: var(--primary-color);
+    width: 40px;  /* Biraz büyüt */
+    height: 40px;
+    z-index: 50; /* En üstte */
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(0,0,0,0.5);
+    /* Transform override etmemiz gerek, yoksa kayar */
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Filtre Dışı (Soluk) */
+.placemark.filtered-out {
+    background-color: #fbbf24; /* Sarı */
+    border-color: #f59e0b;
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.6);
+    z-index: 1;
+    filter: grayscale(0.8);
+}
+
+/* Kullanıcı Konum İmleci (Ok) */
+.user-marker-container {
+    position: absolute;
+    width: 0;
+    height: 0;
+    z-index: 200;
+}
+
+.user-marker {
+    display: block;
+    width: 44px;
+    height: 44px;
+    position: absolute;
+    left: -22px; 
+    top: -22px;
+    background-image: url("data:image/svg+xml,%3Csvg width='44' height='44' viewBox='0 0 44 44' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='22' cy='22' r='20' fill='%233B82F6' stroke='white' stroke-width='3'/%3E%3Cpath d='M22 8L32 32L22 26L12 32L22 8Z' fill='white'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: transform 0.3s linear;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4));
+}
+
+/* --- 4. Alt Panel (Bottom Sheet) --- */
 .bottom-sheet {
     position: absolute;
     bottom: 0;
@@ -182,17 +245,13 @@ html, body, #app {
     border-top-left-radius: 24px;
     border-top-right-radius: 24px;
     box-shadow: var(--shadow-up);
-    
-    display: none; /* JS ile flex yapılacak */
+    display: none;
     flex-direction: column;
-    overflow: hidden; /* İçeriğin taşmasını engelle */
-    
-    /* Yükseklik animasyonu JS ile yönetilecek */
-    height: 0; 
+    overflow: hidden;
+    height: 0;
     transition: height 0.3s var(--ease-spring);
 }
 
-/* Tutamaç Çubuğu */
 .sheet-handle {
     width: 48px;
     height: 6px;
@@ -200,33 +259,31 @@ html, body, #app {
     border-radius: 10px;
     margin: 12px auto 8px auto;
     cursor: grab;
-    flex-shrink: 0; /* Asla küçülmesin */
+    flex-shrink: 0;
 }
 
-/* Panelin İçeriği */
 .sheet-content {
-    padding: 0 20px 30px 20px;
+    padding: 0 20px 20px 20px;
     overflow-y: auto;
     flex-grow: 1;
-    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     
-    /* ÇÖZÜM 3 DESTEK: İçerik bittiğinde üstteki paneli sürüklemeye çalışma */
-    overscroll-behavior: contain; 
+    /* iPhone Alt Çizgi (Home Bar) için boşluk */
+    padding-bottom: max(30px, env(safe-area-inset-bottom)) !important;
 }
 
-/* Detay Başlık Kısmı */
+/* Panel Detayları */
 .detail-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .detail-header h2 {
     font-size: 1.1rem;
     margin: 0 0 4px 0;
     color: var(--text-dark);
-    line-height: 1.3;
 }
 
 .detail-header p {
@@ -236,19 +293,26 @@ html, body, #app {
     line-height: 1.4;
 }
 
+.adres-notu-stili {
+    color: #d97706; 
+    font-size: 0.8rem !important; 
+    font-weight: 600;
+    display: block;
+    margin-top: 4px;
+}
+
 .close-btn-mini {
     background: transparent;
     border: none;
     color: var(--text-gray);
-    padding: 4px;
+    padding: 8px;
     cursor: pointer;
-    margin-left: 10px;
 }
 
-/* Buton Izgarası (Grid) */
+/* Aksiyon Butonları (Grid) */
 .action-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5 eşit sütun */
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
 }
 
@@ -262,353 +326,137 @@ html, body, #app {
     border-radius: 12px;
     padding: 12px 4px;
     cursor: pointer;
-    transition: background-color 0.2s;
     min-height: 70px;
 }
 
-.action-btn:active {
-    background-color: #e2e8f0;
-    transform: scale(0.98);
-}
+.action-btn:active { background-color: #e2e8f0; }
 
-.action-btn span.material-icons-outlined {
+.action-btn .material-icons-outlined {
     font-size: 24px;
     color: var(--primary-color);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .action-btn span.label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-dark);
-    font-weight: 500;
+    font-weight: 600;
     text-align: center;
-    white-space: nowrap;
 }
 
-/* Özel Renkli Butonlar */
+/* Renkli Butonlar */
 .btn-green { background: #dcfce7; }
-.btn-green span.material-icons-outlined { color: #16a34a; }
-.btn-green span.label { color: #14532d; }
+.btn-green .material-icons-outlined { color: #16a34a; }
+.btn-green .label { color: #14532d; }
 
 .btn-red { background: #fee2e2; }
-.btn-red span.material-icons-outlined { color: #dc2626; }
-.btn-red span.label { color: #7f1d1d; }
+.btn-red .material-icons-outlined { color: #dc2626; }
+.btn-red .label { color: #7f1d1d; }
 
-/* Liste Görünümü Elemanları */
+/* Liste Elemanları */
 .gorev-list-item {
     padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     background: var(--white);
     cursor: pointer;
-    transition: background-color 0.2s;
 }
 
-.gorev-list-item:hover {
-    background-color: #fafafa;
-    border-color: var(--primary-color);
-}
+.gorev-list-item:hover { background-color: #fafafa; border-color: var(--primary-color); }
+.gorev-list-item h4 { margin: 0; font-size: 0.95rem; color: var(--text-dark); }
+.gorev-list-item p { margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-gray); }
 
-.gorev-list-item h4 {
-    margin: 0;
-    font-size: 0.95rem;
-    color: var(--text-dark);
-}
+/* --- 5. Navigasyon ve Kontrol Butonları --- */
 
-.gorev-list-item p {
-    margin: 4px 0 0 0;
-    font-size: 0.8rem;
-    color: var(--text-gray);
-}
-
-/* --- 4. Navigasyon Butonu (FAB) --- */
+/* Ortak FAB Stili */
 .fab-btn {
     position: absolute;
-    bottom: 24px; /* Varsayılan konum */
     right: 20px;
     width: 56px;
     height: 56px;
-    background: var(--white);
     border-radius: 50%;
     border: none;
     box-shadow: var(--shadow-float);
-    color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 90;
     cursor: pointer;
-    /* JS ile translateY uygulanacağı için transition ekliyoruz */
     transition: transform 0.3s var(--ease-spring), background-color 0.3s;
 }
 
-.fab-btn .material-icons {
-    font-size: 28px;
+/* Navigasyon Butonu (Mavi) */
+#navigation-toggle-btn {
+    background: var(--white);
+    color: var(--primary-color);
+    /* Alt bardan 30px yukarıda + Safe Area */
+    bottom: max(30px, env(safe-area-inset-bottom) + 10px) !important;
 }
 
-.fab-btn.active {
+#navigation-toggle-btn.active {
     background-color: var(--primary-color);
     color: var(--white);
 }
 
-/* Uyarı Butonu (Koordinatsızlar) */
-.warning-fab {
-    background-color: #f59e0b; /* Turuncu */
+/* Koordinatsızlar Uyarısı (Turuncu) */
+#no-coords-btn {
+    background-color: var(--warning-color);
     color: white;
-    bottom: 110px; /* Navigasyon butonunun (24px) üstünde dursun */
-    z-index: 95; /* Harita üstü, nav butonu altı */
+    z-index: 95;
+    /* Navigasyon butonunun (56px) + Boşluk (20px) üzerinde */
+    bottom: max(106px, env(safe-area-inset-bottom) + 86px) !important;
 }
 
-/* iPhone çentik desteği (Mevcut kodun altına ekle veya güncelle) */
-.warning-fab {
-    bottom: max(110px, env(safe-area-inset-bottom) + 70px);
-}
-
-.warning-fab:active {
-    background-color: #d97706;
-}
-
-/* Sağ üstteki küçük sayı balonu */
 .badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #ef4444; /* Kırmızı */
+    top: -4px;
+    right: -4px;
+    background-color: var(--danger-color);
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 0.7rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
     font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-/* --- 5. Harita İşaretçileri (Placemarks) - RENK GÜNCELLEMESİ --- */
-
-/* ESKİ HALİ: .ymaps3x0--marker .placemark { ... } */
-/* YENİ HALİ: Doğrudan .placemark sınıfını hedefliyoruz */
-
-.placemark {
-    width: 24px;
-    height: 24px;
-    background-color: var(--danger-color); /* Varsayılan: KIRMIZI */
-    border: 2px solid var(--white);
-    border-radius: 50%;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    z-index: 10;
-    
-    /* Marker'ın tam ortalanması için gerekli olabilir (Yandex v3 yapısına göre) */
-    position: relative; 
-    transform: translate(-50%, -50%); /* Merkezi noktaya oturtmak için */
-}
-
-/* Seçili Olan (Mavi) */
-.placemark.selected {
-    background-color: var(--primary-color); /* MAVİ */
-    transform: translate(-50%, -50%) scale(1.4); /* Hem ortala hem büyüt */
-    z-index: 50;
-    border-color: var(--white);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
-}
-
-/* Filtre Dışı Kalanlar (Soluk Sarı) */
-.placemark.filtered-out {
-    background-color: #fde047; /* SOLUK SARI */
-    border-color: #eab308;
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(0.8); /* Hem ortala hem küçült */
-    z-index: 1;
-}
-/* --- 6. Responsive İnce Ayarlar --- */
-@media (max-width: 380px) {
-    /* Çok küçük telefonlar için fontları biraz daha küçült */
-    .header-pill { padding: 8px 12px; }
-    .title-info h1 { font-size: 0.8rem; }
-    .action-grid { gap: 4px; }
-    .action-btn span.label { font-size: 0.6rem; }
-}
-
-
-.user-marker-container {
-    /* Marker'ın merkezlenmesi için konteyner */
-    position: relative;
-    width: 0;
-    height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200; /* Haritada en üstte */
+    border: 2px solid white;
 }
 
-.user-marker-container {
-    /* Bu kutu haritada koordinatın tam üzerindedir */
-    position: absolute;
-    width: 0;
-    height: 0;
-    z-index: 9999; /* Diğer her şeyin üstünde olsun */
-    overflow: visible; /* İçinden taşan ok görünsün */
-}
-
-.user-marker {
-    /* Oku çizdiğimiz asıl kutu */
-    display: block;
-    width: 44px;
-    height: 44px;
-    
-    /* TAM ORTALAMA (Negatif Margin Tekniği) */
-    /* Transform kullanmıyoruz ki JS bozmasın */
-    position: absolute;
-    left: -22px; 
-    top: -22px;
-    
-    /* Mavi Daire İçinde Beyaz Ok SVG (Base64) */
-    background-image: url("data:image/svg+xml,%3Csvg width='44' height='44' viewBox='0 0 44 44' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='22' cy='22' r='20' fill='%233B82F6' stroke='white' stroke-width='3'/%3E%3Cpath d='M22 8L32 32L22 26L12 32L22 8Z' fill='white'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    
-    /* Sadece rotasyon için transition */
-    transition: transform 0.3s linear;
-    
-    /* Gölge */
-    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4));
-}
-
-/* --- Harita Döndürme Butonları (Kenarlar) --- */
+/* Harita Döndürme (Sol/Sağ Kenar) */
 .rotate-control {
     position: absolute;
-    top: 50%; /* Dikeyde tam orta */
-    transform: translateY(-50%); /* Ortalamayı dengelemek için */
-    z-index: 90; /* Haritanın üstünde olsun */
-    
+    top: 50%;
+    transform: translateY(-50%);
     width: 44px;
     height: 44px;
-    
-    /* Yarı şeffaf arka plan (Haritayı çok kapatmasın) */
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(4px); /* Arkadaki haritayı hafif bulanıklaştırır (Modern görüntü) */
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
     border: 1px solid rgba(0,0,0,0.1);
-    
-    /* Dokunma hissini iyileştirelim */
+    z-index: 90;
     color: var(--text-dark);
 }
 
-/* Sol Kenara Yasla */
-.rotate-control.left-edge {
-    left: 12px;
-}
+.rotate-control.left-edge { left: max(12px, env(safe-area-inset-left)); }
+.rotate-control.right-edge { right: max(12px, env(safe-area-inset-right)); }
 
-/* Sağ Kenara Yasla */
-.rotate-control.right-edge {
-    right: 12px;
-}
+.rotate-control:disabled { display: none; }
 
-/* İkon boyutu */
-.rotate-control .material-icons {
-    font-size: 26px; 
-    color: #475569; /* Slate-600 (Gri tonu) */
-}
-
-/* Navigasyon Modundayken Devre Dışı Görünümü */
-.rotate-control:disabled {
-    display: none; /* Navigasyon açılınca kalabalık yapmasın, gizlensin */
-    /* VEYA sadece soluklaşsın isterseniz:
-    opacity: 0.3;
-    pointer-events: none;
-    */
-}
-
-/* Mobilde basılı tutarken (Active state) */
-.rotate-control:active {
-    background-color: var(--primary-color);
-    color: white;
-    transform: translateY(-50%) scale(0.95); /* Hafif küçülme efekti */
-}
-
-.rotate-control:active .material-icons {
-    color: white;
-}
-
-/* 1. Üst Panel için Çentik Ayarı */
-.floating-header {
-    /* Mevcut padding 12px idi. Çentik varsa onun boyutunu, yoksa 12px'i kullan diyoruz */
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-}
-
-/* 2. Alt Panel İçeriği için Alt Çubuk Ayarı */
-.sheet-content {
-    /* iPhone'larda alttaki siyah çizgi (home bar) butonların üstüne gelmesin */
-    padding-bottom: max(30px, env(safe-area-inset-bottom)) !important;
-}
-
-/* 3. Navigasyon Butonu (FAB) Ayarı */
-.fab-btn {
-    /* Alt bardan biraz daha yukarıda dursun */
-    bottom: max(24px, env(safe-area-inset-bottom) + 10px);
-}
-
-/* 4. Harita Döndürme Butonları */
-.rotate-control.left-edge {
-    left: max(12px, env(safe-area-inset-left));
-}
-
-.rotate-control.right-edge {
-    right: max(12px, env(safe-area-inset-right));
-}
-
-/* 1. Üst Panel için Çentik Ayarı */
-.floating-header {
-    /* Mevcut padding 12px idi. Çentik varsa onun boyutunu, yoksa 12px'i kullan diyoruz */
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-}
-
-/* 2. Alt Panel İçeriği için Alt Çubuk Ayarı */
-.sheet-content {
-    /* iPhone'larda alttaki siyah çizgi (home bar) butonların üstüne gelmesin */
-    padding-bottom: max(30px, env(safe-area-inset-bottom)) !important;
-}
-
-/* 3. Navigasyon Butonu (FAB) Ayarı */
-.fab-btn {
-    /* Alt bardan biraz daha yukarıda dursun */
-    bottom: max(24px, env(safe-area-inset-bottom) + 10px);
-}
-
-/* 4. Harita Döndürme Butonları */
-.rotate-control.left-edge {
-    left: max(12px, env(safe-area-inset-left));
-}
-
-.rotate-control.right-edge {
-    right: max(12px, env(safe-area-inset-right));
-}
-
-/* --- Araç Seçim Modalı --- */
+/* --- 6. Modal (Araç Seçimi) --- */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(15, 23, 42, 0.9); /* Koyu arka plan */
-    backdrop-filter: blur(5px); /* Arkadaki haritayı bulanıklaştır */
-    z-index: 9999999 !important; /* En üstte */
-    display: flex; /* JS ile 'none' yapılınca gizlenir */
+    background-color: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(5px);
+    z-index: 10000;
+    display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 1;
-    transition: opacity 0.3s ease;
 }
 
 .modal-content {
@@ -618,8 +466,8 @@ html, body, #app {
     border-radius: 24px;
     padding: 30px 24px;
     text-align: center;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: popUp 0.4s var(--ease-spring);
 }
 
 @keyframes popUp {
@@ -636,29 +484,14 @@ html, body, #app {
     align-items: center;
     justify-content: center;
     margin: 0 auto 16px auto;
-}
-
-.modal-icon .material-icons {
-    font-size: 32px;
     color: var(--primary-color);
-}
-
-.modal-content h2 {
-    margin: 0 0 8px 0;
-    color: var(--text-dark);
-    font-size: 1.5rem;
-}
-
-.modal-content p {
-    margin: 0 0 24px 0;
-    color: var(--text-gray);
-    font-size: 0.95rem;
 }
 
 .arac-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 2 sütun */
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
+    margin-top: 20px;
 }
 
 .arac-btn {
@@ -670,100 +503,17 @@ html, body, #app {
     font-weight: 700;
     color: var(--text-dark);
     cursor: pointer;
-    transition: all 0.2s;
 }
 
-.arac-btn:active {
-    transform: scale(0.95);
-}
-
-/* Seçildiğinde (Mavi olsun istersen hover/active ekleyebilirsin) */
 .arac-btn:hover {
-    border-color: var(--primary-color);
     background: #eff6ff;
+    border-color: var(--primary-color);
     color: var(--primary-color);
 }
 
-/* ================================================================= */
-/* === BUTON POZİSYONLARI İÇİN KESİN ÇÖZÜM (EN ALTA EKLEYİN) === */
-/* ================================================================= */
-
-/* 1. Mavi Navigasyon Butonu (En Altta) */
-#navigation-toggle-btn {
-    position: absolute !important;
-    right: 20px !important;
-    bottom: 30px !important; /* Alt kenardan 30px yukarıda */
-    width: 56px;
-    height: 56px;
-    z-index: 90;
-    
-    /* iPhone Çentik Ayarı */
-    bottom: max(30px, env(safe-area-inset-bottom) + 10px) !important;
+/* Küçük Ekranlar */
+@media (max-width: 380px) {
+    .header-pill { padding: 8px 10px; font-size: 0.9rem; }
+    .action-grid { gap: 4px; }
+    .action-btn { padding: 8px 2px; }
 }
-
-/* 2. Turuncu Ünlem Butonu (Onun Üstünde) */
-#no-coords-btn {
-    position: absolute !important;
-    right: 20px !important;
-    /* 30px (alttaki buton) + 56px (boyut) + 24px (boşluk) = 110px */
-    bottom: 110px !important; 
-    width: 56px;
-    height: 56px;
-    z-index: 95;
-    background-color: #f59e0b;
-    color: white;
-    
-    /* iPhone Çentik Ayarı (Alttakine göre orantılı artırdık) */
-    bottom: max(110px, env(safe-area-inset-bottom) + 90px) !important;
-}
-
-/* Uyarı butonu içindeki sayı balonu */
-.badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #ef4444;
-    color: white;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid white;
-}
-
-/* --- style.css --- */
-
-/* Başlık alanının alt boşluğunu azalt */
-.detail-header {
-    margin-bottom: 10px !important; /* Eskiden 16px idi */
-    padding-top: 5px;
-}
-
-/* İsim boyutunu ve boşluğunu ayarla */
-.detail-header h2 {
-    font-size: 1.05rem !important;
-    margin: 0 0 2px 0 !important;
-    line-height: 1.2;
-}
-
-/* Adres ve Not satırlarının satır aralığını sıkılaştır */
-.detail-header p {
-    font-size: 0.85rem;
-    margin: 0;
-    line-height: 1.3 !important;
-}
-
-/* Not satırını (Turuncu yazı) daha kompakt yap */
-.adres-notu-stili {
-    color: #d97706; 
-    font-size: 0.8rem !important; 
-    font-weight: 500;
-    margin-top: 2px !important;
-    display: block;
-}
-
-
