@@ -61,7 +61,7 @@ function processSheetData(rows) {
             if (kDurum.toLowerCase() === 'tamamlandı' && oSonuc !== '') {
                 finalDurum = oSonuc; // "Verildi" veya "Evde Yok"
             } else if (kDurum !== '') {
-                finalDurum = kDurum;
+                finalDurum = kDurum.toLowerCase();
             }
             // -------------------------------------------
 
@@ -159,5 +159,6 @@ export async function updateGorevSirasi(sheetName, rowId, siraNo) {
         return false;
     }
 }
+
 
 
