@@ -388,35 +388,43 @@ html, body, #app {
 }
 
 /* --- 5. Harita İşaretçileri (Placemarks) - RENK GÜNCELLEMESİ --- */
-.ymaps3x0--marker .placemark {
+
+/* ESKİ HALİ: .ymaps3x0--marker .placemark { ... } */
+/* YENİ HALİ: Doğrudan .placemark sınıfını hedefliyoruz */
+
+.placemark {
     width: 24px;
     height: 24px;
-    background-color: var(--danger-color); /* Varsayılan: KIRMIZI (Seçili Bölge) */
+    background-color: var(--danger-color); /* Varsayılan: KIRMIZI */
     border: 2px solid var(--white);
     border-radius: 50%;
     box-shadow: 0 3px 8px rgba(0,0,0,0.4);
     cursor: pointer;
-    transition: all 0.3s ease; /* Renk geçişleri yumuşak olsun */
+    transition: all 0.3s ease;
     box-sizing: border-box;
     z-index: 10;
+    
+    /* Marker'ın tam ortalanması için gerekli olabilir (Yandex v3 yapısına göre) */
+    position: relative; 
+    transform: translate(-50%, -50%); /* Merkezi noktaya oturtmak için */
 }
 
-/* Seçili Olan (Mavi) - En baskın */
-.ymaps3x0--marker .placemark.selected {
+/* Seçili Olan (Mavi) */
+.placemark.selected {
     background-color: var(--primary-color); /* MAVİ */
-    transform: scale(1.4);
-    z-index: 50; /* En üstte */
+    transform: translate(-50%, -50%) scale(1.4); /* Hem ortala hem büyüt */
+    z-index: 50;
     border-color: var(--white);
     box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
 }
 
 /* Filtre Dışı Kalanlar (Soluk Sarı) */
-.ymaps3x0--marker .placemark.filtered-out {
+.placemark.filtered-out {
     background-color: #fde047; /* SOLUK SARI */
-    border-color: #eab308; /* Kenarları biraz daha koyu sarı */
-    opacity: 0.8; /* Hafif şeffaf */
-    transform: scale(0.8); /* Biraz küçülüyor */
-    z-index: 1; /* Arkada kalsın */
+    border-color: #eab308;
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.8); /* Hem ortala hem küçült */
+    z-index: 1;
 }
 /* --- 6. Responsive İnce Ayarlar --- */
 @media (max-width: 380px) {
@@ -757,4 +765,5 @@ html, body, #app {
     margin-top: 2px !important;
     display: block;
 }
+
 
