@@ -4,12 +4,25 @@ import { initUI } from './modules/ui.js';
 
 // Sayfa tamamen yüklendiğinde çalışır
 document.addEventListener('DOMContentLoaded', () => {
-    // URL'den araç parametresi var mı kontrol et
+    // 1. URL'den araç parametresi var mı kontrol et
     const params = new URLSearchParams(window.location.search);
     const urlArac = params.get('arac');
 
+    // 2. Sol Üst Başlık (Left Pill) Tıklama Olayı - YENİ EKLENDİ
+    const headerPill = document.querySelector('.left-pill');
+    if (headerPill) {
+        headerPill.addEventListener('click', () => {
+            const modal = document.getElementById('arac-secim-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                // Animasyon için minik gecikme
+                setTimeout(() => { modal.style.opacity = '1'; }, 10);
+            }
+        });
+    }
+
     if (urlArac) {
-        // Parametre varsa direkt başlat
+        // Parametre varsa direkt başlat ve modalı gizle
         const modal = document.getElementById('arac-secim-modal');
         if (modal) modal.style.display = 'none';
         baslat(urlArac);
@@ -28,7 +41,19 @@ document.addEventListener('DOMContentLoaded', () => {
 function aracSecimIslemi(secilenArac) {
     if (!secilenArac) return;
 
-    // Modalı Gizle
+    // Mevcut URL'deki aracı kontrol et
+    const params = new URLSearchParams(window.location.search);
+    const mevcutArac = params.get('arac');
+
+    // Eğer şu anki araçtan FARKLI bir araç seçildiyse sayfayı o araçla yükle
+    // Bu sayede "Sayfayı yenilemek zorunda kalıyoruz" derdinden kurtulursunuz.
+    if (mevcutArac !== secilenArac) {
+        // Tarayıcıyı yeni parametre ile yönlendir (Otomatik Refresh)
+        window.location.search = `?arac=${secilenArac}`;
+        return; 
+    }
+
+    // Eğer AYNI araç seçildiyse sadece modalı kapat
     const modal = document.getElementById('arac-secim-modal');
     if (modal) {
         modal.style.transition = 'opacity 0.3s ease';
@@ -38,8 +63,10 @@ function aracSecimIslemi(secilenArac) {
         }, 300);
     }
 
-    // Başlat
-    baslat(secilenArac);
+    // Eğer sayfa ilk açılışıysa (URL'de parametre yoksa) başlat
+    if (!mevcutArac) {
+        baslat(secilenArac);
+    }
 }
 
 // Uygulamanın Ana Başlatma Mantığı
@@ -54,8 +81,6 @@ async function baslat(aracAdi) {
             fetchGuzergahData(aracAdi)
         ]);
         
-        // HARİTA İÇİN SADECE BEKLEYENLERİ SEÇ
-        // Not: 'durum' alanını api.js içinde küçük harfe çevirmiştik
         const haritalikGorevler = tumGorevler.filter(g => g.durum === 'bekliyor');
         
         if (baslik) baslik.textContent = `${aracAdi} Görevleri`;
@@ -66,19 +91,15 @@ async function baslat(aracAdi) {
             alert("Bu araç için kayıtlı görev bulunamadı veya veri çekilemedi.");
         }
 
-        // initMap'e sadece bekleyenleri gönderiyoruz ki harita karışmasın
         const { map, placemarks } = await initMap(haritalikGorevler);
         
-        // initUI'a ise TÜMÜNÜ gönderiyoruz (Geçmiş listesi ve yönetim için)
+        // initUI'a tüm görevleri gönderiyoruz
         initUI(tumGorevler, map, placemarks, aracAdi, guzergahSiralamasi);
 
     } catch (error) {
         console.error("Başlatma hatası:", error);
         alert("HATA: " + error.message);
-        // Hata durumunda sayfayı yenilemeyelim ki hatayı görebilelim.
-        // location.reload(); 
         
-        // Eğer modal kapandıysa ve hata olduysa, kullanıcı sıkışmasın diye modalı geri açabiliriz:
         const modal = document.getElementById('arac-secim-modal');
         if (modal) {
             modal.style.display = 'flex';
