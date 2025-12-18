@@ -12,23 +12,23 @@ export async function initMap(gorevler) {
         YMapMarker
     } = ymaps3;
 
-    const centerCoordinates = calculateCenter(gorevler);
-
-    // Harita zaten varsa tekrar oluşturma (Hata önleyici)
+    // Harita zaten varsa tekrar oluşturma
     if (!map) {
+        // İlk açılış konumu hesapla (Bounds veya Merkez)
+        const locationParams = calculateInitialLocation(gorevler);
+
         map = new YMap(document.getElementById('app'), {
-            location: {
-                center: centerCoordinates,
-                zoom: 12
-            }
+            location: locationParams
         });
+        
         map.addChild(new YMapDefaultSchemeLayer());
         map.addChild(new YMapDefaultFeaturesLayer({}));
     }
 
+    // Görevleri haritaya ekle
     gorevler.forEach(gorev => {
         if (gorev.hasCoords) {
-            addSingleMarker(gorev); // Kod tekrarını önlemek için burayı da güncelledik
+            addSingleMarker(gorev);
         }
     });
 
@@ -36,27 +36,23 @@ export async function initMap(gorevler) {
     return { map, placemarks };
 }
 
-/**
- * Haritaya tek bir marker ekler ve referansını döner.
- * (Geri alma işlemi için gereklidir)
- */
 export function addSingleMarker(gorev) {
     if (!map || !gorev.hasCoords) return null;
 
     const { YMapMarker } = ymaps3;
     const placemarkElement = createPlacemarkElement(gorev.id);
     
+    // Yandex v3 Marker
     const marker = new YMapMarker(
         {
             coordinates: [gorev.boylam, gorev.enlem],
-            zIndex: 10 // Varsayılan z-index
+            zIndex: 10
         },
         placemarkElement
     );
     
     map.addChild(marker);
     
-    // Map'e kaydet
     const pinData = { marker, element: placemarkElement };
     placemarks.set(gorev.id, pinData);
     
@@ -70,21 +66,48 @@ function createPlacemarkElement(gorevId) {
     return element;
 }
 
-function calculateCenter(gorevler) {
-    let totalLat = 0;
-    let totalLng = 0;
+/**
+ * Haritanın başlangıç konumunu hesaplar.
+ * Eğer koordinat varsa "bounds" (sınırlar) döner, yoksa varsayılan Ankara döner.
+ */
+function calculateInitialLocation(gorevler) {
+    let minLat = 90, maxLat = -90;
+    let minLng = 180, maxLng = -180;
     let count = 0;
 
     gorevler.forEach(gorev => {
         if (gorev.hasCoords) {
-            totalLat += gorev.enlem;
-            totalLng += gorev.boylam;
+            if (gorev.enlem < minLat) minLat = gorev.enlem;
+            if (gorev.enlem > maxLat) maxLat = gorev.enlem;
+            if (gorev.boylam < minLng) minLng = gorev.boylam;
+            if (gorev.boylam > maxLng) maxLng = gorev.boylam;
             count++;
         }
     });
 
-    if (count > 0) {
-        return [totalLng / count, totalLat / count];
+    // Eğer hiç koordinat yoksa Ankara'yı aç
+    if (count === 0) {
+        return {
+            center: [32.8597, 39.9334], // Ankara
+            zoom: 12
+        };
     }
-    return [32.8597, 39.9334];
+
+    // Tek bir nokta varsa oraya zoom yap
+    if (count === 1) {
+        return {
+            center: [minLng, minLat],
+            zoom: 15
+        };
+    }
+
+    // Birden fazla nokta varsa hepsini kapsayan alanı (Bounds) aç
+    // Yandex bounds formatı: [[minLng, minLat], [maxLng, maxLat]]
+    // Kenarlardan biraz boşluk bırakmak için zoom ile oynanabilir ama bounds en iyisidir.
+    return {
+        bounds: [
+            [minLng, minLat], // Sol Alt
+            [maxLng, maxLat]  // Sağ Üst
+        ]
+    };
 }
