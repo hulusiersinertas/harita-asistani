@@ -91,7 +91,7 @@ async function baslat(aracAdi) {
             fetchGuzergahData(aracAdi)
         ]);
         
-        const haritalikGorevler = tumGorevler.filter(g => g.durum === 'bekliyor');
+        const haritalikGorevler = tumGorevler.filter(g => g.durum.toLowerCase() === 'bekliyor');
         
         if (baslik) baslik.textContent = `${aracAdi} Görevleri`;
         const sayac = document.getElementById('kalan-gorev-sayaci');
@@ -117,4 +117,5 @@ async function baslat(aracAdi) {
         }
     }
 }
+
 
