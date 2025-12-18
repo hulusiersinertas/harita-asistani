@@ -4,28 +4,38 @@ import { initUI } from './modules/ui.js';
 
 // Sayfa tamamen yüklendiğinde çalışır
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. URL'den araç parametresi var mı kontrol et
-    const params = new URLSearchParams(window.location.search);
-    const urlArac = params.get('arac');
+    
+    // 1. ÖNCE BUTONLARI DİNLEMEYE BAŞLA (HER DURUMDA ÇALIŞMALI)
+    const buttons = document.querySelectorAll('.arac-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const secilenArac = btn.getAttribute('data-arac');
+            aracSecimIslemi(secilenArac);
+        });
+    });
 
-    // 2. Sol Üst Başlık (Left Pill) Tıklama Olayı - YENİ EKLENDİ
+    // 2. Sol Üst Başlık (Left Pill) Tıklama Olayı
     const headerPill = document.querySelector('.left-pill');
     if (headerPill) {
         headerPill.addEventListener('click', () => {
             const modal = document.getElementById('arac-secim-modal');
             if (modal) {
                 modal.style.display = 'flex';
-                // Animasyon için minik gecikme
                 setTimeout(() => { modal.style.opacity = '1'; }, 10);
             }
         });
     }
+
+    // 3. URL KONTROLÜ VE BAŞLATMA
+    const params = new URLSearchParams(window.location.search);
+    const urlArac = params.get('arac');
 
     if (urlArac) {
         // Parametre varsa direkt başlat ve modalı gizle
         const modal = document.getElementById('arac-secim-modal');
         if (modal) modal.style.display = 'none';
         baslat(urlArac);
+    } 
     } else {
         // Yoksa butonları dinle
         const buttons = document.querySelectorAll('.arac-btn');
@@ -107,3 +117,4 @@ async function baslat(aracAdi) {
         }
     }
 }
+
