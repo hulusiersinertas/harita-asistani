@@ -68,8 +68,20 @@ html, body, #app {
 .left-pill {
     padding-right: 20px;
     max-width: 55%; /* Ekranın yarısından fazlasını kaplamasın */
+    
+    /* YENİ EKLENENLER: Tıklanabilirlik özellikleri */
+    cursor: pointer; 
+    transition: transform 0.2s ease, background-color 0.2s;
+    user-select: none; /* Metnin seçilmesini engeller */
 }
 
+/* YENİ: Tıklanınca hafif küçülme efekti */
+.left-pill:active {
+    transform: scale(0.96);
+    background-color: #f1f5f9;
+}
+
+/* BU KISIM AYNEN KALIYOR */
 .left-pill .material-icons {
     color: var(--text-gray);
     font-size: 24px;
@@ -757,4 +769,5 @@ html, body, #app {
     margin-top: 2px !important;
     display: block;
 }
+
 
