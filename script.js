@@ -35,17 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('arac-secim-modal');
         if (modal) modal.style.display = 'none';
         baslat(urlArac);
-    } 
-    } else {
-        // Yoksa butonları dinle
-        const buttons = document.querySelectorAll('.arac-btn');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const secilenArac = btn.getAttribute('data-arac');
-                aracSecimIslemi(secilenArac);
-            });
-        });
     }
+    // URL'de araç yoksa zaten modal görünür halde açılacak
+    // ve kullanıcı butonlardan birini tıklayacak
 });
 
 function aracSecimIslemi(secilenArac) {
@@ -56,7 +48,6 @@ function aracSecimIslemi(secilenArac) {
     const mevcutArac = params.get('arac');
 
     // Eğer şu anki araçtan FARKLI bir araç seçildiyse sayfayı o araçla yükle
-    // Bu sayede "Sayfayı yenilemek zorunda kalıyoruz" derdinden kurtulursunuz.
     if (mevcutArac !== secilenArac) {
         // Tarayıcıyı yeni parametre ile yönlendir (Otomatik Refresh)
         window.location.search = `?arac=${secilenArac}`;
@@ -118,4 +109,20 @@ async function baslat(aracAdi) {
     }
 }
 
-
+// FAB buton pozisyonunu ayarlamak için global fonksiyon
+window.adjustFabPosition = (panelAcilikDurumu) => {
+    const navBtn = document.getElementById('navigation-toggle-btn');
+    const warningBtn = document.getElementById('no-coords-btn');
+    
+    if (!navBtn) return;
+    
+    if (panelAcilikDurumu) {
+        // Panel açıksa butonları yukarı kaydır
+        navBtn.style.transform = 'translateY(-50px)';
+        if (warningBtn) warningBtn.style.transform = 'translateY(-50px)';
+    } else {
+        // Panel kapalıysa normal pozisyona döndür
+        navBtn.style.transform = 'translateY(0)';
+        if (warningBtn) warningBtn.style.transform = 'translateY(0)';
+    }
+};
