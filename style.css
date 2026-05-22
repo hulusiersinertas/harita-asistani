@@ -400,7 +400,7 @@ html, body, #app {
 }
 
 /* --- 5. Harita İşaretçileri (Placemarks) - RENK GÜNCELLEMESİ --- */
-.ymaps3x0--marker .placemark {
+.ymaps3--marker .placemark {
     width: 24px;
     height: 24px;
     background-color: var(--danger-color); /* Varsayılan: KIRMIZI (Seçili Bölge) */
@@ -414,7 +414,7 @@ html, body, #app {
 }
 
 /* Seçili Olan (Mavi) - En baskın */
-.ymaps3x0--marker .placemark.selected {
+.ymaps3--marker .placemark.selected {
     background-color: var(--primary-color); /* MAVİ */
     transform: scale(1.4);
     z-index: 50; /* En üstte */
@@ -423,7 +423,7 @@ html, body, #app {
 }
 
 /* Filtre Dışı Kalanlar (Soluk Sarı) */
-.ymaps3x0--marker .placemark.filtered-out {
+.ymaps3--marker .placemark.filtered-out {
     background-color: #fde047; /* SOLUK SARI */
     border-color: #eab308; /* Kenarları biraz daha koyu sarı */
     opacity: 0.8; /* Hafif şeffaf */
